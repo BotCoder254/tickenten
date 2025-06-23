@@ -91,19 +91,26 @@ UserSchema.pre('save', async function (next) {
   }
 
   try {
-    // Generate salt
-    const salt = await bcrypt.genSalt(10);
+    // Generate salt with higher work factor for better security
+    const salt = await bcrypt.genSalt(12);
     // Hash password with salt
     this.password = await bcrypt.hash(this.password, salt);
+    console.log(`Password hashed successfully for user: ${this.email}`);
     next();
   } catch (error) {
+    console.error(`Error hashing password for user ${this.email}:`, error);
     next(error);
   }
 });
 
 // Method to check if password matches
 UserSchema.methods.matchPassword = async function (enteredPassword) {
-  return await bcrypt.compare(enteredPassword, this.password);
+  try {
+    return await bcrypt.compare(enteredPassword, this.password);
+  } catch (error) {
+    console.error('Password comparison error:', error);
+    return false;
+  }
 };
 
 // Method to generate JWT token

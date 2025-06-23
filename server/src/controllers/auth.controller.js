@@ -49,14 +49,13 @@ exports.register = async (req, res) => {
       // Verification fields are removed as they're not needed anymore
     });
 
-    // Hash password
-    const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(password, salt);
-
+    // Password will be hashed in the pre-save hook in the User model
     await user.save();
 
-    // Generate token
-    const token = generateToken(user._id);
+    console.log(`User registered successfully: ${email}`);
+
+    // Generate token using user model's method
+    const token = user.getSignedJwtToken();
 
     res.status(201).json({
       success: true,
@@ -105,8 +104,10 @@ exports.login = async (req, res) => {
       });
     }
 
-    // Check if password matches
-    const isMatch = await bcrypt.compare(password, user.password);
+    // Check if password matches using the model's method
+    const isMatch = await user.matchPassword(password);
+    
+    console.log('Login attempt:', { email, passwordProvided: !!password, isMatch });
 
     if (!isMatch) {
       return res.status(401).json({
@@ -115,8 +116,8 @@ exports.login = async (req, res) => {
       });
     }
 
-    // Generate token
-    const token = generateToken(user._id);
+    // Generate token using user model's method
+    const token = user.getSignedJwtToken();
 
     res.status(200).json({
       success: true,
