@@ -17,6 +17,7 @@ import EventDetails from './pages/EventDetails';
 import TicketDetails from './pages/TicketDetails';
 import UserProfile from './pages/UserProfile';
 import NotFound from './pages/NotFound';
+import Events from './pages/Events';
 
 // Components
 import ProtectedRoute from './components/ProtectedRoute';
@@ -65,6 +66,7 @@ function App() {
               {/* Public routes */}
               <Route path="/" element={<Layout />}>
                 <Route index element={<LandingPage />} />
+                <Route path="events" element={<Events />} />
                 <Route path="events/:eventId" element={<EventDetails />} />
                 <Route path="login" element={<Login />} />
                 <Route path="register" element={<Register />} />

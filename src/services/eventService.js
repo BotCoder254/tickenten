@@ -128,7 +128,7 @@ const eventService = {
    */
   searchEvents: async (query) => {
     try {
-      const response = await api.get('/events/search', { params: { query } });
+      const response = await api.get('/events/search', { params: { q: query } });
       return response.data;
     } catch (error) {
       throw error;
