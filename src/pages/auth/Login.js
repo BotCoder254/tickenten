@@ -74,6 +74,16 @@ const Login = () => {
           </motion.div>
         </div>
         
+        {location.state?.message && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 p-3 rounded-md text-sm"
+          >
+            {location.state.message}
+          </motion.div>
+        )}
+        
         {error && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}

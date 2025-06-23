@@ -41,17 +41,12 @@ exports.register = async (req, res) => {
       });
     }
 
-    // Create verification token
-    const verificationToken = crypto.randomBytes(20).toString('hex');
-    const verificationTokenExpire = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
-
-    // Create user
+    // Create user (without verification token)
     user = new User({
       name,
       email,
       password,
-      verificationToken,
-      verificationTokenExpire,
+      // Verification fields are removed as they're not needed anymore
     });
 
     // Hash password
@@ -59,33 +54,6 @@ exports.register = async (req, res) => {
     user.password = await bcrypt.hash(password, salt);
 
     await user.save();
-
-    // Send verification email
-    const verificationUrl = `${process.env.FRONTEND_URL}/verify-email/${verificationToken}`;
-
-    try {
-      await sendEmail({
-        to: email,
-        subject: 'Email Verification',
-        html: `
-          <h1>Verify Your Email</h1>
-          <p>Please click the link below to verify your email address:</p>
-          <a href="${verificationUrl}" target="_blank">Verify Email</a>
-          <p>This link will expire in 24 hours.</p>
-        `,
-      });
-    } catch (err) {
-      console.error('Verification email error:', err);
-      user.verificationToken = undefined;
-      user.verificationTokenExpire = undefined;
-      await user.save({ validateBeforeSave: false });
-
-      return res.status(500).json({
-        success: false,
-        message: 'Email could not be sent',
-        error: err.message,
-      });
-    }
 
     // Generate token
     const token = generateToken(user._id);

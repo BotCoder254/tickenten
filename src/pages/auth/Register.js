@@ -48,10 +48,10 @@ const Register = () => {
       
       // Show success message or redirect
       if (response && response.success) {
-        // Redirect to login or dashboard depending on whether email verification is required
+        // Redirect to login with success message (no mention of email verification)
         navigate('/login', { 
           state: { 
-            message: 'Registration successful! Please check your email to verify your account.' 
+            message: 'Registration successful! You can now log in with your credentials.' 
           } 
         });
       }

@@ -338,12 +338,16 @@ const Events = () => {
                               ? `${event.ticketTypes[0].price} ${event.ticketTypes[0].currency}`
                               : 'Free'}
                           </span>
-                          <Link
-                            to={`/events/${event._id}`}
-                            className="text-sm font-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
-                          >
-                            View Details
-                          </Link>
+                          {event._id && /^[0-9a-fA-F]{24}$/.test(event._id) ? (
+                            <Link
+                              to={`/events/${event._id}`}
+                              className="text-sm font-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
+                            >
+                              View Details
+                            </Link>
+                          ) : (
+                            <span className="text-sm font-medium text-gray-400">Details Unavailable</span>
+                          )}
                         </div>
                       </div>
                     </motion.div>
@@ -408,12 +412,16 @@ const Events = () => {
                               ? `${event.ticketTypes[0].price} ${event.ticketTypes[0].currency}`
                               : 'Free'}
                           </span>
-                          <Link
-                            to={`/events/${event._id}`}
-                            className="btn btn-primary"
-                          >
-                            View Details
-                          </Link>
+                          {event._id && /^[0-9a-fA-F]{24}$/.test(event._id) ? (
+                            <Link
+                              to={`/events/${event._id}`}
+                              className="btn btn-primary"
+                            >
+                              View Details
+                            </Link>
+                          ) : (
+                            <span className="text-sm font-medium text-gray-400">Details Unavailable</span>
+                          )}
                         </div>
                       </div>
                     </motion.div>

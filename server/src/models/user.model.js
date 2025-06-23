@@ -55,7 +55,7 @@ const UserSchema = new mongoose.Schema(
     verificationTokenExpire: Date,
     isEmailVerified: {
       type: Boolean,
-      default: false,
+      default: true,
     },
     stripeCustomerId: String,
     stripeConnectId: String,

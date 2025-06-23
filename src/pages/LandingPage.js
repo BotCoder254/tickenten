@@ -276,12 +276,16 @@ const LandingPage = () => {
                   </div>
                   <div className="mt-4 flex justify-between items-center">
                     <span className="font-bold text-gray-900 dark:text-white">{event.price}</span>
-                    <Link
-                      to={`/events/${event.id}`}
-                      className="text-sm font-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
-                    >
-                      View Details
-                    </Link>
+                    {event.id && /^[0-9a-fA-F]{24}$/.test(event.id) ? (
+                      <Link
+                        to={`/events/${event.id}`}
+                        className="text-sm font-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
+                      >
+                        View Details
+                      </Link>
+                    ) : (
+                      <span className="text-sm font-medium text-gray-400">Details Unavailable</span>
+                    )}
                   </div>
                 </div>
               </motion.div>

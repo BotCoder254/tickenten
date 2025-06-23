@@ -1,6 +1,7 @@
 const { validationResult } = require('express-validator');
 const Event = require('../models/event.model');
 const User = require('../models/user.model');
+const mongoose = require('mongoose');
 
 /**
  * @desc    Get all events
@@ -220,6 +221,14 @@ exports.getUserEvents = async (req, res) => {
  */
 exports.getEventById = async (req, res) => {
   try {
+    // Check if the ID is a valid MongoDB ObjectId
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid event ID format',
+      });
+    }
+
     const event = await Event.findById(req.params.id).populate(
       'creator',
       'name avatar'

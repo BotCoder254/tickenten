@@ -39,6 +39,16 @@ const eventService = {
    */
   getEventById: async (eventId) => {
     try {
+      // Validate eventId format (MongoDB ObjectId is a 24-character hex string)
+      if (!eventId || !/^[0-9a-fA-F]{24}$/.test(eventId)) {
+        throw {
+          response: {
+            status: 400,
+            data: { message: 'Invalid event ID format' }
+          }
+        };
+      }
+      
       const response = await api.get(`/events/${eventId}`);
       return response.data;
     } catch (error) {

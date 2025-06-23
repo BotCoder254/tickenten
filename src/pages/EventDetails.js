@@ -119,7 +119,9 @@ const EventDetails = () => {
         <div className="text-center">
           <h2 className="text-2xl font-bold text-red-600 dark:text-red-400">Error Loading Event</h2>
           <p className="mt-2 text-gray-600 dark:text-gray-400">
-            {error.response?.data?.message || 'Failed to load event details. Please try again.'}
+            {error.response?.status === 400 
+              ? 'Invalid event ID format. Please check the URL and try again.'
+              : error.response?.data?.message || 'Failed to load event details. Please try again.'}
           </p>
           <Link to="/events" className="mt-4 btn btn-primary inline-block">
             Browse Other Events

@@ -28,21 +28,21 @@ const sendEmail = async (options) => {
       },
     });
   } else {
-    // Regular authentication
+    // Regular authentication with Gmail requires an App Password
+    // Make sure to generate an App Password in your Google Account settings
+    // See: https://support.google.com/accounts/answer/185833
     transporter = nodemailer.createTransport({
-      host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-      port: process.env.EMAIL_PORT || 587,
-      secure: process.env.EMAIL_SECURE === 'true',
+      service: 'gmail',
       auth: {
-        user: process.env.EMAIL_USERNAME || 'telvinteum@gmail.com',
-        pass: process.env.EMAIL_PASSWORD || 'your-app-password',
+        user: process.env.EMAIL_USERNAME || 'telvivaztelvin@gmail.com',
+        pass: process.env.EMAIL_PASSWORD || 'wyat thsy uhiy xvgv',
       },
     });
   }
 
   // Define mail options
   const mailOptions = {
-    from: `"Tickenten" <${process.env.EMAIL_FROM || 'noreply@tickenten.com'}>`,
+    from: `"Tickenten" <${process.env.EMAIL_FROM || process.env.EMAIL_USERNAME || 'noreply@tickenten.com'}>`,
     to: options.to,
     subject: options.subject,
     text: options.text || '',
