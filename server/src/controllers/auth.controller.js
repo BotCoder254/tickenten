@@ -78,7 +78,7 @@ exports.register = async (req, res) => {
       console.error('Verification email error:', err);
       user.verificationToken = undefined;
       user.verificationTokenExpire = undefined;
-      await user.save();
+      await user.save({ validateBeforeSave: false });
 
       return res.status(500).json({
         success: false,
@@ -274,7 +274,7 @@ exports.updatePassword = async (req, res) => {
     // Update password
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(req.body.newPassword, salt);
-    await user.save();
+    await user.save({ validateBeforeSave: false });
 
     res.status(200).json({
       success: true,
@@ -322,7 +322,7 @@ exports.forgotPassword = async (req, res) => {
       .digest('hex');
     user.resetPasswordExpire = Date.now() + 10 * 60 * 1000; // 10 minutes
 
-    await user.save();
+    await user.save({ validateBeforeSave: false });
 
     // Create reset URL
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
@@ -348,7 +348,7 @@ exports.forgotPassword = async (req, res) => {
       console.error('Reset email error:', err);
       user.resetPasswordToken = undefined;
       user.resetPasswordExpire = undefined;
-      await user.save();
+      await user.save({ validateBeforeSave: false });
 
       return res.status(500).json({
         success: false,
@@ -404,7 +404,7 @@ exports.resetPassword = async (req, res) => {
     user.password = await bcrypt.hash(req.body.password, salt);
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
-    await user.save();
+    await user.save({ validateBeforeSave: false });
 
     // Generate token
     const token = generateToken(user._id);
@@ -447,7 +447,7 @@ exports.verifyEmail = async (req, res) => {
     user.isEmailVerified = true;
     user.verificationToken = undefined;
     user.verificationTokenExpire = undefined;
-    await user.save();
+    await user.save({ validateBeforeSave: false });
 
     res.status(200).json({
       success: true,
@@ -484,7 +484,7 @@ exports.resendVerification = async (req, res) => {
     user.verificationToken = verificationToken;
     user.verificationTokenExpire = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
 
-    await user.save();
+    await user.save({ validateBeforeSave: false });
 
     // Send verification email
     const verificationUrl = `${process.env.FRONTEND_URL}/verify-email/${verificationToken}`;
@@ -509,7 +509,7 @@ exports.resendVerification = async (req, res) => {
       console.error('Verification email error:', err);
       user.verificationToken = undefined;
       user.verificationTokenExpire = undefined;
-      await user.save();
+      await user.save({ validateBeforeSave: false });
 
       return res.status(500).json({
         success: false,

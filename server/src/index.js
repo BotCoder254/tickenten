@@ -1,5 +1,6 @@
 const express = require('express');
 const mongoose = require('mongoose');
+const { MongoClient, ServerApiVersion } = require('mongodb');
 const cors = require('cors');
 const passport = require('passport');
 const path = require('path');
@@ -20,16 +21,40 @@ const app = express();
 // Set port
 const PORT = process.env.PORT || 5000;
 
+// MongoDB Connection URI
+const uri = "mongodb+srv://stream:telvinteum@stream.o3qip.mongodb.net/?retryWrites=true&w=majority&appName=stream";
+
+// Create a MongoClient with a MongoClientOptions object
+const client = new MongoClient(uri, {
+    serverApi: {
+        version: ServerApiVersion.v1,
+        strict: true,
+        deprecationErrors: true,
+    }
+});
+
 // Connect to MongoDB
-mongoose
-  .connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/tickenten')
-  .then(() => {
-    console.log('MongoDB connected successfully');
-  })
-  .catch((err) => {
-    console.error('MongoDB connection error:', err);
-    process.exit(1);
-  });
+mongoose.connect(uri, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    serverApi: {
+        version: ServerApiVersion.v1,
+        strict: true,
+        deprecationErrors: true
+    }
+})
+.then(async () => {
+    try {
+        // Connect the client to the server
+        await client.connect();
+        // Send a ping to confirm a successful connection
+        await client.db("admin").command({ ping: 1 });
+        console.log("MongoDB Connected Successfully!");
+    } catch (err) {
+        console.error("Error connecting to MongoDB:", err);
+    }
+})
+.catch(err => console.error('MongoDB connection error:', err));
 
 // Middleware
 app.use(express.json());
