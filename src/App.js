@@ -13,6 +13,7 @@ import ForgotPassword from './pages/auth/ForgotPassword';
 import ResetPassword from './pages/auth/ResetPassword';
 import VerifyEmail from './pages/auth/VerifyEmail';
 import Dashboard from './pages/dashboard/Dashboard';
+import EventForm from './pages/dashboard/EventForm';
 import EventDetails from './pages/EventDetails';
 import TicketDetails from './pages/TicketDetails';
 import UserProfile from './pages/UserProfile';
@@ -77,8 +78,8 @@ function App() {
                 {/* Protected routes */}
                 <Route element={<ProtectedRoute />}>
                   <Route path="dashboard" element={<Dashboard />} />
-                  <Route path="dashboard/events/new" element={<Dashboard />} />
-                  <Route path="dashboard/events/edit/:eventId" element={<Dashboard />} />
+                  <Route path="dashboard/events/new" element={<EventForm />} />
+                  <Route path="dashboard/events/edit/:eventId" element={<EventForm isEditing={true} />} />
                   <Route path="dashboard/events" element={<Dashboard />} />
                   <Route path="tickets/:ticketId" element={<TicketDetails />} />
                   <Route path="profile" element={<UserProfile />} />

@@ -1,24 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiMenu, FiX, FiMoon, FiSun, FiUser } from 'react-icons/fi';
+import { FiMenu, FiX, FiMoon, FiSun, FiUser, FiPlus } from 'react-icons/fi';
 import { useTheme } from '../../App';
+import { useAuth } from '../../context/AuthContext';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const { darkMode, toggleDarkMode } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
-
-  // Check if user is logged in
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      setIsLoggedIn(true);
-    }
-  }, []);
+  const { currentUser, isAuthenticated, logout } = useAuth();
 
   // Handle scroll effect
   useEffect(() => {
@@ -42,9 +35,7 @@ const Navbar = () => {
   }, [location.pathname]);
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    setIsLoggedIn(false);
-    navigate('/');
+    logout();
   };
 
   return (
@@ -91,7 +82,7 @@ const Navbar = () => {
               >
                 Events
               </Link>
-              {isLoggedIn ? (
+              {isAuthenticated ? (
                 <>
                   <Link
                     to="/dashboard"
@@ -103,9 +94,20 @@ const Navbar = () => {
                   >
                     Dashboard
                   </Link>
+                  <Link
+                    to="/dashboard/events/new"
+                    className={`px-3 py-2 rounded-md text-sm font-medium ${
+                      location.pathname.includes('/dashboard/events/new')
+                        ? 'text-primary-600 dark:text-primary-400'
+                        : 'text-gray-700 hover:text-primary-600 dark:text-gray-300 dark:hover:text-primary-400'
+                    } transition-colors duration-200`}
+                  >
+                    <FiPlus className="inline mr-1" />
+                    Create Event
+                  </Link>
                   <button
                     onClick={handleLogout}
-                    className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-primary-600 dark:text-gray-300 dark:hover:text-primary-400 transition-colors duration-200"
+                    className="px-4 py-2 rounded-md text-sm font-medium bg-red-600 text-white hover:bg-red-700 transition-colors duration-200"
                   >
                     Logout
                   </button>
@@ -200,7 +202,7 @@ const Navbar = () => {
               >
                 Events
               </Link>
-              {isLoggedIn ? (
+              {isAuthenticated ? (
                 <>
                   <Link
                     to="/dashboard"
@@ -212,9 +214,20 @@ const Navbar = () => {
                   >
                     Dashboard
                   </Link>
+                  <Link
+                    to="/dashboard/events/new"
+                    className={`block px-3 py-2 rounded-md text-base font-medium ${
+                      location.pathname.includes('/dashboard/events/new')
+                        ? 'text-primary-600 dark:text-primary-400'
+                        : 'text-gray-700 hover:text-primary-600 dark:text-gray-300 dark:hover:text-primary-400'
+                    } transition-colors duration-200`}
+                  >
+                    <FiPlus className="inline mr-1" />
+                    Create Event
+                  </Link>
                   <button
                     onClick={handleLogout}
-                    className="w-full text-left block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary-600 dark:text-gray-300 dark:hover:text-primary-400 transition-colors duration-200"
+                    className="w-full text-left block px-3 py-2 rounded-md text-base font-medium text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-500 transition-colors duration-200"
                   >
                     Logout
                   </button>
