@@ -1,70 +1,129 @@
-# Getting Started with Create React App
+# TickenTen - Modern Ticketing Platform
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+TickenTen is an open-source ticketing platform built with modern web technologies. It allows event creators to easily create, manage, and sell tickets for their events, while providing attendees with a seamless experience to discover and purchase tickets.
 
-## Available Scripts
+## Features
 
-In the project directory, you can run:
+- **Modern UI**: Built with React, Tailwind CSS, and Framer Motion for beautiful, responsive, and animated interfaces
+- **Dark Mode**: Full support for light and dark themes
+- **Authentication**: Secure user authentication with JWT and password reset functionality
+- **Event Management**: Create, edit, and manage events with rich details
+- **Ticket Types**: Support for multiple ticket types with different prices
+- **Dashboard**: Comprehensive dashboard for event creators
+- **Responsive Design**: Works seamlessly on desktop, tablet, and mobile devices
 
-### `npm start`
+## Tech Stack
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+### Frontend
+- **React**: UI library
+- **React Router**: For navigation
+- **Tailwind CSS**: For styling
+- **Framer Motion**: For animations
+- **React Icons**: For icons
+- **TanStack Query**: For data fetching and caching
+- **Formik & Yup**: For form handling and validation
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+### Backend
+- **Node.js**: Runtime environment
+- **Express**: Web framework
+- **MongoDB**: Database
+- **Mongoose**: ODM for MongoDB
+- **JWT**: For authentication
+- **Passport.js**: Authentication middleware
+- **Nodemailer**: For sending emails
 
-### `npm test`
+## Getting Started
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### Prerequisites
+- Node.js (v18 or higher)
+- MongoDB (local or Atlas)
 
-### `npm run build`
+### Installation
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/tickenten.git
+cd tickenten
+```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+2. Install frontend dependencies:
+```bash
+npm install
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+3. Install backend dependencies:
+```bash
+cd server
+npm install
+```
 
-### `npm run eject`
+4. Create a `.env` file in the server directory (copy from `.env.example`):
+```bash
+cp .env.example .env
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+5. Update the `.env` file with your configuration values.
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### Running the Application
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+1. Start the backend server:
+```bash
+cd server
+npm run dev
+```
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+2. In a new terminal, start the frontend:
+```bash
+npm start
+```
 
-## Learn More
+3. Open your browser and navigate to `http://localhost:3000`
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## Project Structure
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+```
+tickenten/
+├── public/              # Public assets
+├── src/                 # Frontend source code
+│   ├── components/      # React components
+│   ├── pages/           # Page components
+│   ├── hooks/           # Custom React hooks
+│   ├── context/         # React context providers
+│   ├── utils/           # Utility functions
+│   ├── App.js           # Main App component
+│   └── index.js         # Entry point
+├── server/              # Backend source code
+│   ├── src/
+│   │   ├── config/      # Configuration files
+│   │   ├── controllers/ # Route controllers
+│   │   ├── models/      # Mongoose models
+│   │   ├── routes/      # Express routes
+│   │   ├── middleware/  # Custom middleware
+│   │   ├── utils/       # Utility functions
+│   │   └── index.js     # Server entry point
+│   └── package.json     # Backend dependencies
+└── package.json         # Frontend dependencies
+```
 
-### Code Splitting
+## Contributing
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-### Analyzing the Bundle Size
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+## License
 
-### Making a Progressive Web App
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+## Acknowledgments
 
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- [React](https://reactjs.org/)
+- [Tailwind CSS](https://tailwindcss.com/)
+- [Framer Motion](https://www.framer.com/motion/)
+- [Express](https://expressjs.com/)
+- [MongoDB](https://www.mongodb.com/)
+- [TanStack Query](https://tanstack.com/query/latest)
