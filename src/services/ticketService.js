@@ -42,6 +42,11 @@ const ticketService = {
       // If payment info is provided, add it to the ticket data
       let purchaseData = { ...ticketData };
       
+      // Add phone number if provided in guest info
+      if (ticketData.attendeeInfo && ticketData.attendeeInfo.phoneNumber) {
+        purchaseData.phoneNumber = ticketData.attendeeInfo.phoneNumber;
+      }
+      
       if (paymentInfo) {
         purchaseData = {
           ...purchaseData,
@@ -67,8 +72,13 @@ const ticketService = {
    */
   guestPurchaseTickets: async (ticketData, paymentInfo = null) => {
     // Make sure attendee info is provided for guest purchases
-    if (!ticketData.attendeeInfo || !ticketData.attendeeInfo.name || !ticketData.attendeeInfo.email) {
-      throw new Error('Name and email are required for guest ticket purchases');
+    if (!ticketData.attendeeInfo || !ticketData.attendeeInfo.name || !ticketData.attendeeInfo.email || !ticketData.attendeeInfo.phoneNumber) {
+      throw new Error('Name, email, and phone number are required for guest ticket purchases');
+    }
+    
+    // Validate phone number
+    if (ticketData.attendeeInfo.phoneNumber.trim() === '') {
+      throw new Error('Please provide a valid phone number');
     }
 
     try {

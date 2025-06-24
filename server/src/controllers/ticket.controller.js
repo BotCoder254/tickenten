@@ -3,6 +3,7 @@ const Ticket = require('../models/ticket.model');
 const Event = require('../models/event.model');
 const User = require('../models/user.model');
 const sendEmail = require('../utils/email');
+const sendSMSNotification = require('../utils/sms');
 
 /**
  * @desc    Get tickets purchased by the current user
@@ -273,6 +274,7 @@ exports.purchaseTickets = async (req, res) => {
         status: 'valid',
         attendeeName: req.user ? req.user.name : (attendeeInfo ? attendeeInfo.name : 'Guest'),
         attendeeEmail: req.user ? req.user.email : (attendeeInfo ? attendeeInfo.email : null),
+        attendeePhone: req.user ? req.user.phoneNumber : (attendeeInfo ? attendeeInfo.phoneNumber : null),
         paymentMethod: paymentMethod || 'standard',
         paymentReference: paymentReference || null,
         paymentCurrency: paymentCurrency || ticketType.currency || 'USD',
@@ -362,6 +364,27 @@ exports.purchaseTickets = async (req, res) => {
         });
       } catch (err) {
         console.error('Error sending ticket confirmation email:', err);
+      }
+    }
+
+    // Send SMS notification if phone number is available
+    const phoneToSend = req.user ? req.user.phoneNumber : (attendeeInfo ? attendeeInfo.phoneNumber : null);
+    if (phoneToSend) {
+      try {
+        // Generate SMS message with ticket info
+        const smsMessage = `
+Ticket Confirmation for ${event.title}
+Date: ${new Date(event.startDate).toLocaleDateString()}
+Time: ${new Date(event.startDate).toLocaleTimeString()}
+Ticket(s): ${quantity} x ${ticketType.name}
+Total: ${ticketType.price * quantity} ${ticketType.currency}
+${tickets.length > 0 ? `Ticket #: ${tickets[0].ticketNumber}` : ''}
+        `.trim();
+
+        // Send SMS via VasPro
+        await sendSMSNotification(phoneToSend, smsMessage);
+      } catch (err) {
+        console.error('Error sending ticket confirmation SMS:', err);
       }
     }
 

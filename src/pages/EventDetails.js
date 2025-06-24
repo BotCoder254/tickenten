@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FiCalendar, FiMapPin, FiClock, FiTag, FiShare2, FiHeart, FiTrash2, FiMail, FiUser } from 'react-icons/fi';
+import { FiCalendar, FiMapPin, FiClock, FiTag, FiShare2, FiHeart, FiTrash2, FiMail, FiUser, FiPhone } from 'react-icons/fi';
 import { useQuery } from '@tanstack/react-query';
 import eventService from '../services/eventService';
 import ticketService from '../services/ticketService';
@@ -24,7 +24,7 @@ const EventDetails = () => {
   const [selectedTicketType, setSelectedTicketType] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [deleting, setDeleting] = useState(false);
-  const [guestInfo, setGuestInfo] = useState({ name: '', email: '' });
+  const [guestInfo, setGuestInfo] = useState({ name: '', email: '', phoneNumber: '' });
   const [isProcessing, setIsProcessing] = useState(false);
   const [purchaseSuccess, setPurchaseSuccess] = useState(false);
   const [purchaseError, setPurchaseError] = useState(null);
@@ -133,12 +133,15 @@ const EventDetails = () => {
           await ticketService.purchaseTickets({
             eventId,
             ticketTypeId,
-            quantity
+            quantity,
+            attendeeInfo: {
+              phoneNumber: guestInfo.phoneNumber
+            }
           }, paymentInfo);
         } else {
           // Guest purchase
-          if (!guestInfo.name || !guestInfo.email) {
-            setPurchaseError('Please provide your name and email to purchase tickets');
+          if (!guestInfo.name || !guestInfo.email || !guestInfo.phoneNumber) {
+            setPurchaseError('Please provide your name, email, and phone number to purchase tickets');
             setIsProcessing(false);
             return;
           }
@@ -162,7 +165,7 @@ const EventDetails = () => {
             // For guests, just reset the form
             setSelectedTicketType(null);
             setQuantity(1);
-            setGuestInfo({ name: '', email: '' });
+            setGuestInfo({ name: '', email: '', phoneNumber: '' });
             setPurchaseSuccess(false);
           }
         }, 3000);
@@ -195,6 +198,20 @@ const EventDetails = () => {
       // Check if all required data is available
       if (!userEmail) {
         setPurchaseError('Email is required for payment processing');
+        setIsProcessing(false);
+        return;
+      }
+      
+      // Check for phone number
+      if (!guestInfo.phoneNumber) {
+        setPurchaseError('Please provide your phone number to receive ticket information via SMS');
+        setIsProcessing(false);
+        return;
+      }
+      
+      // Check if all guest information is provided
+      if (!isAuthenticated && (!guestInfo.name)) {
+        setPurchaseError('Please provide your name and email to purchase tickets');
         setIsProcessing(false);
         return;
       }
@@ -687,6 +704,34 @@ const EventDetails = () => {
                         </span>
                       </div>
                       
+                      {isAuthenticated && (
+                        <div className="mb-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                          <h3 className="font-medium text-gray-900 dark:text-white mb-2">Your Information</h3>
+                          <div className="space-y-3">
+                            <div>
+                              <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">
+                                Phone Number
+                              </label>
+                              <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                  <FiPhone className="text-gray-400" />
+                                </div>
+                                <input
+                                  type="text"
+                                  name="phoneNumber"
+                                  value={guestInfo.phoneNumber}
+                                  onChange={handleGuestInfoChange}
+                                  className="input pl-10 w-full"
+                                  placeholder="Your phone number for SMS notifications"
+                                  required
+                                />
+                              </div>
+                              <p className="text-xs text-gray-500 mt-1">We'll send your ticket details via SMS</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
                       {!isAuthenticated && (
                         <div className="mb-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
                           <h3 className="font-medium text-gray-900 dark:text-white mb-2">Your Information</h3>
@@ -729,6 +774,25 @@ const EventDetails = () => {
                                 />
                               </div>
                             </div>
+                            <div>
+                              <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">
+                                Phone
+                              </label>
+                              <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                  <FiPhone className="text-gray-400" />
+                                </div>
+                                <input
+                                  type="text"
+                                  name="phoneNumber"
+                                  value={guestInfo.phoneNumber}
+                                  onChange={handleGuestInfoChange}
+                                  className="input pl-10 w-full"
+                                  placeholder="Your phone number"
+                                  required
+                                />
+                              </div>
+                            </div>
                           </div>
                         </div>
                       )}
@@ -736,7 +800,7 @@ const EventDetails = () => {
                       <button 
                         className="btn btn-primary w-full"
                         onClick={handlePurchaseTicket}
-                        disabled={isProcessing || (!isAuthenticated && (!guestInfo.name || !guestInfo.email))}
+                        disabled={isProcessing || !guestInfo.phoneNumber || (!isAuthenticated && (!guestInfo.name || !guestInfo.email))}
                       >
                         {isProcessing ? 'Processing...' : 'Get Tickets'}
                       </button>

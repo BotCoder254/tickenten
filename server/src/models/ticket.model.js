@@ -45,6 +45,10 @@ const TicketSchema = new mongoose.Schema(
         return this.user === null || this.user === undefined;
       },
     },
+    attendeePhone: {
+      type: String,
+      required: false,
+    },
     qrCodeData: {
       type: String,
     },
@@ -85,6 +89,7 @@ TicketSchema.pre('save', function (next) {
       type: this.ticketType.toString(),
       purchaser: this.attendeeName,
       email: this.attendeeEmail,
+      phone: this.attendeePhone,
       time: timestamp
     };
     
