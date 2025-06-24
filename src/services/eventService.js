@@ -116,14 +116,18 @@ const eventService = {
    * Upload event image
    * @param {string} eventId - Event ID
    * @param {FormData} formData - Form data with image
+   * @param {Function} progressCallback - Optional callback for tracking upload progress
    * @returns {Promise} - API response with image URL
    */
-  uploadEventImage: async (eventId, formData) => {
+  uploadEventImage: async (eventId, formData, progressCallback) => {
     try {
       const response = await api.post(`/events/${eventId}/upload-image`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
+        onUploadProgress: progressCallback ? 
+          (progressEvent) => progressCallback(progressEvent) : 
+          undefined
       });
       return response.data;
     } catch (error) {
@@ -181,6 +185,20 @@ const eventService = {
   checkLiked: async (eventId) => {
     try {
       const response = await api.get(`/events/${eventId}/like`);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Publish an event
+   * @param {string} eventId - Event ID
+   * @returns {Promise} - API response
+   */
+  publishEvent: async (eventId) => {
+    try {
+      const response = await api.put(`/events/${eventId}/publish`);
       return response.data;
     } catch (error) {
       throw error;

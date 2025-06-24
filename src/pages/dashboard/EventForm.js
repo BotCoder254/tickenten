@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { FiSave, FiArrowLeft, FiImage, FiCalendar, FiMapPin, FiDollarSign, FiTag, FiInfo } from 'react-icons/fi';
+import { FiSave, FiArrowLeft, FiImage, FiCalendar, FiMapPin, FiDollarSign, FiTag, FiInfo, FiUpload, FiSend } from 'react-icons/fi';
 import eventService from '../../services/eventService';
 import { motion } from 'framer-motion';
+import { toast } from 'react-toastify';
 
 const EventForm = ({ isEditing = false }) => {
   const navigate = useNavigate();
@@ -14,6 +15,7 @@ const EventForm = ({ isEditing = false }) => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
+    shortDescription: '',
     date: '',
     time: '',
     location: '',
@@ -34,6 +36,9 @@ const EventForm = ({ isEditing = false }) => {
   const [imageFile, setImageFile] = useState(null);
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
+  const [formSubmissionProgress, setFormSubmissionProgress] = useState(0);
   
   // Fetch event data if editing
   const { data: eventData, isLoading: eventLoading } = useQuery({
@@ -51,6 +56,7 @@ const EventForm = ({ isEditing = false }) => {
         setFormData({
           title: data.title || '',
           description: data.description || '',
+          shortDescription: data.shortDescription || '',
           date: formattedDate || '',
           time: formattedTime || '',
           location: data.location || '',
@@ -83,34 +89,117 @@ const EventForm = ({ isEditing = false }) => {
   
   // Create event mutation
   const createEventMutation = useMutation({
-    mutationFn: (data) => eventService.createEvent(data),
+    mutationFn: (data) => {
+      setFormSubmissionProgress(25);
+      console.log('Sending to server:', data);
+      return eventService.createEvent(data);
+    },
     onSuccess: async (response) => {
+      setFormSubmissionProgress(50);
+      console.log('Event created successfully:', response);
+      
       // Upload image if available
       if (imageFile && response.data?._id) {
+        setIsUploading(true);
         const formData = new FormData();
         formData.append('image', imageFile);
-        await eventService.uploadEventImage(response.data._id, formData);
+        
+        try {
+          // Create a custom axios request to track upload progress
+          await eventService.uploadEventImage(
+            response.data._id, 
+            formData, 
+            (progressEvent) => {
+              const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+              setUploadProgress(percentCompleted);
+            }
+          );
+          setFormSubmissionProgress(100);
+          toast.success('Event created with image successfully!');
+        } catch (error) {
+          console.error('Image upload error:', error);
+          setFormSubmissionProgress(100);
+          toast.warning('Event created but image upload failed. You can try uploading the image later.');
+        } finally {
+          setIsUploading(false);
+        }
+      } else {
+        setFormSubmissionProgress(100);
+        toast.success('Event created successfully!');
       }
       
       queryClient.invalidateQueries(['userEvents']);
       navigate('/dashboard/events');
+    },
+    onError: (error) => {
+      console.error('Create event error:', error);
+      toast.error(error.response?.data?.message || 'Failed to create event');
+      setFormSubmissionProgress(0);
     }
   });
   
   // Update event mutation
   const updateEventMutation = useMutation({
-    mutationFn: ({ id, data }) => eventService.updateEvent(id, data),
+    mutationFn: ({ id, data }) => {
+      setFormSubmissionProgress(25);
+      return eventService.updateEvent(id, data);
+    },
     onSuccess: async (response) => {
+      setFormSubmissionProgress(50);
+      
       // Upload image if available
       if (imageFile && eventId) {
+        setIsUploading(true);
         const formData = new FormData();
         formData.append('image', imageFile);
-        await eventService.uploadEventImage(eventId, formData);
+        
+        try {
+          // Create a custom axios request to track upload progress
+          await eventService.uploadEventImage(
+            eventId, 
+            formData, 
+            (progressEvent) => {
+              const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+              setUploadProgress(percentCompleted);
+            }
+          );
+          setFormSubmissionProgress(100);
+          toast.success('Event updated with image successfully!');
+        } catch (error) {
+          console.error('Image upload error:', error);
+          setFormSubmissionProgress(100);
+          toast.warning('Event updated but image upload failed. You can try uploading the image later.');
+        } finally {
+          setIsUploading(false);
+        }
+      } else {
+        setFormSubmissionProgress(100);
+        toast.success('Event updated successfully!');
       }
       
       queryClient.invalidateQueries(['userEvents']);
       queryClient.invalidateQueries(['event', eventId]);
       navigate('/dashboard/events');
+    },
+    onError: (error) => {
+      console.error('Update event error:', error);
+      toast.error(error.response?.data?.message || 'Failed to update event');
+      setFormSubmissionProgress(0);
+    }
+  });
+  
+  // Publish event mutation
+  const publishEventMutation = useMutation({
+    mutationFn: (id) => eventService.publishEvent(id),
+    onSuccess: () => {
+      toast.success('Event published successfully!');
+      queryClient.invalidateQueries(['userEvents']);
+      queryClient.invalidateQueries(['event', eventId]);
+      navigate('/dashboard/events');
+    },
+    onError: (error) => {
+      console.error('Publish event error:', error);
+      toast.error(error.response?.data?.message || 'Failed to publish event');
     }
   });
   
@@ -170,14 +259,29 @@ const EventForm = ({ isEditing = false }) => {
   // Handle image change
   const handleImageChange = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      setImageFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result);
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+    
+    // Check file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image size should be less than 5MB');
+      return;
     }
+    
+    // Check file type
+    const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif'];
+    if (!validTypes.includes(file.type)) {
+      toast.error('Please upload an image file (JPEG, PNG, GIF)');
+      return;
+    }
+    
+    setImageFile(file);
+    
+    // Create preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result);
+    };
+    reader.readAsDataURL(file);
   };
   
   // Validate form
@@ -191,6 +295,12 @@ const EventForm = ({ isEditing = false }) => {
     if (!formData.location) newErrors.location = 'Location is required';
     if (!formData.category) newErrors.category = 'Category is required';
     
+    // Check if the category is valid (matches server enum)
+    const validCategories = ['music', 'sports', 'arts', 'food', 'business', 'technology', 'other'];
+    if (formData.category && !validCategories.includes(formData.category.toLowerCase())) {
+      newErrors.category = 'Please select a valid category';
+    }
+    
     // Validate ticket types
     const ticketErrors = [];
     formData.ticketTypes.forEach((ticket, index) => {
@@ -198,6 +308,16 @@ const EventForm = ({ isEditing = false }) => {
       if (!ticket.name) ticketError.name = 'Name is required';
       if (!ticket.price) ticketError.price = 'Price is required';
       if (!ticket.quantity) ticketError.quantity = 'Quantity is required';
+      
+      // Validate price is a valid number
+      if (ticket.price && isNaN(parseFloat(ticket.price))) {
+        ticketError.price = 'Price must be a valid number';
+      }
+      
+      // Validate quantity is a valid integer
+      if (ticket.quantity && (isNaN(parseInt(ticket.quantity)) || parseInt(ticket.quantity) < 1)) {
+        ticketError.quantity = 'Quantity must be at least 1';
+      }
       
       if (Object.keys(ticketError).length > 0) {
         ticketErrors[index] = ticketError;
@@ -221,20 +341,47 @@ const EventForm = ({ isEditing = false }) => {
     }
     
     setIsSubmitting(true);
+    setFormSubmissionProgress(10);
     
     try {
       // Combine date and time
       const eventDateTime = new Date(`${formData.date}T${formData.time}`);
+      const endDateTime = new Date(eventDateTime.getTime() + 2 * 60 * 60 * 1000); // Default end time is 2 hours after start
       
+      // Create a short description if missing (required by server)
+      const shortDesc = formData.description.length > 200 
+        ? formData.description.substring(0, 197) + '...' 
+        : formData.description;
+      
+      // Format the data to match server requirements
       const eventData = {
         title: formData.title,
         description: formData.description,
-        date: eventDateTime.toISOString(),
-        location: formData.location,
-        venue: formData.venue,
-        category: formData.category,
-        ticketTypes: formData.ticketTypes
+        shortDescription: shortDesc,
+        startDate: eventDateTime.toISOString(),
+        endDate: endDateTime.toISOString(),
+        location: {
+          venue: formData.venue || '',
+          address: '',
+          city: formData.location || '',
+          state: '',
+          country: 'United States',
+          zipCode: ''
+        },
+        category: formData.category.charAt(0).toUpperCase() + formData.category.slice(1), // Capitalize first letter
+        ticketTypes: formData.ticketTypes.map(ticket => ({
+          name: ticket.name,
+          description: ticket.description || '',
+          price: parseFloat(ticket.price) || 0,
+          quantity: parseInt(ticket.quantity) || 0,
+          currency: 'USD'
+        })),
+        featuredImage: 'https://via.placeholder.com/800x400', // Placeholder until actual upload
+        status: 'draft',
+        visibility: 'public'
       };
+      
+      console.log('Submitting event data:', JSON.stringify(eventData));
       
       if (isEditing) {
         await updateEventMutation.mutateAsync({ id: eventId, data: eventData });
@@ -244,8 +391,31 @@ const EventForm = ({ isEditing = false }) => {
     } catch (error) {
       console.error('Error saving event:', error);
       setErrors({ submit: error.response?.data?.message || 'Failed to save event. Please try again.' });
+      setFormSubmissionProgress(0);
+      toast.error(error.response?.data?.message || 'Failed to save event');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+  
+  // Handle event publishing
+  const handlePublishEvent = async () => {
+    if (!validateForm()) {
+      toast.error('Please fix the form errors before publishing');
+      return;
+    }
+    
+    try {
+      // If this is a new event, create it first
+      if (!isEditing) {
+        await handleSubmit(new Event('submit'));
+        return; // handleSubmit will navigate away
+      }
+      
+      // If it's an existing event, publish it
+      await publishEventMutation.mutateAsync(eventId);
+    } catch (error) {
+      console.error('Error during publish flow:', error);
     }
   };
   
@@ -276,8 +446,24 @@ const EventForm = ({ isEditing = false }) => {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-8">
+              {/* Form Progress Bar */}
+              {(isSubmitting || isUploading) && (
+                <div className="w-full mb-6">
+                  <div className="bg-gray-200 dark:bg-gray-700 rounded-full h-4 overflow-hidden">
+                    <div 
+                      className="bg-primary-600 h-4 rounded-full transition-all duration-500"
+                      style={{ width: `${isUploading ? uploadProgress : formSubmissionProgress}%` }}
+                    ></div>
+                  </div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 text-center">
+                    {isUploading ? 'Uploading image...' : 'Saving event...'}
+                    {isUploading ? ` ${uploadProgress}%` : ` ${formSubmissionProgress}%`}
+                  </p>
+                </div>
+              )}
+              
               {/* Basic Details */}
-              <div className="card p-6">
+              <div className="card p-6 shadow-md rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                 <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Basic Details</h2>
                 
                 <div className="space-y-4">
@@ -292,7 +478,7 @@ const EventForm = ({ isEditing = false }) => {
                       name="title"
                       value={formData.title}
                       onChange={handleChange}
-                      className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white ${
+                      className={`mt-1 block w-full h-12 px-4 rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white ${
                         errors.title ? 'border-red-500' : ''
                       }`}
                       placeholder="Enter event title"
@@ -310,13 +496,31 @@ const EventForm = ({ isEditing = false }) => {
                       name="description"
                       value={formData.description}
                       onChange={handleChange}
-                      rows={5}
-                      className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white ${
+                      rows={6}
+                      className={`mt-1 block w-full px-4 py-3 rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white ${
                         errors.description ? 'border-red-500' : ''
                       }`}
                       placeholder="Describe your event"
                     />
-                    {errors.description && <p className="mt-1 text-sm text-red-600">{errors.description}</p>}
+                    {errors.description && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.description}</p>}
+                  </div>
+                  
+                  {/* Event Short Description */}
+                  <div>
+                    <label htmlFor="shortDescription" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Short Description (Optional)
+                    </label>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">A brief summary of your event (will be auto-generated if left empty)</p>
+                    <textarea
+                      id="shortDescription"
+                      name="shortDescription"
+                      value={formData.shortDescription}
+                      onChange={handleChange}
+                      rows={2}
+                      maxLength={200}
+                      className="mt-1 block w-full px-4 py-3 rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                      placeholder="Short summary (max 200 characters)"
+                    />
                   </div>
                   
                   {/* Event Category */}
@@ -329,18 +533,17 @@ const EventForm = ({ isEditing = false }) => {
                       name="category"
                       value={formData.category}
                       onChange={handleChange}
-                      className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white ${
+                      className={`mt-1 block w-full h-12 rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white ${
                         errors.category ? 'border-red-500' : ''
                       }`}
                     >
                       <option value="">Select a category</option>
                       <option value="music">Music</option>
-                      <option value="conference">Conference</option>
-                      <option value="workshop">Workshop</option>
                       <option value="sports">Sports</option>
-                      <option value="arts">Arts & Theater</option>
-                      <option value="food">Food & Drink</option>
-                      <option value="charity">Charity</option>
+                      <option value="arts">Arts</option>
+                      <option value="food">Food</option>
+                      <option value="business">Business</option>
+                      <option value="technology">Technology</option>
                       <option value="other">Other</option>
                     </select>
                     {errors.category && <p className="mt-1 text-sm text-red-600">{errors.category}</p>}
@@ -357,10 +560,10 @@ const EventForm = ({ isEditing = false }) => {
                           <img
                             src={imagePreview}
                             alt="Event preview"
-                            className="h-32 w-32 object-cover rounded-md"
+                            className="h-40 w-40 object-cover rounded-md"
                           />
                         ) : (
-                          <div className="h-32 w-32 rounded-md bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                          <div className="h-40 w-40 rounded-md bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
                             <FiImage className="h-12 w-12 text-gray-400" />
                           </div>
                         )}
@@ -370,12 +573,12 @@ const EventForm = ({ isEditing = false }) => {
                           htmlFor="image-upload"
                           className="cursor-pointer inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"
                         >
-                          <FiImage className="mr-2 -ml-1 h-5 w-5" />
+                          <FiUpload className="mr-2 -ml-1 h-5 w-5" />
                           {imagePreview ? 'Change Image' : 'Upload Image'}
                         </label>
                         <input
                           id="image-upload"
-                          name="image"
+                          name="featuredImage"
                           type="file"
                           accept="image/*"
                           onChange={handleImageChange}
@@ -391,7 +594,7 @@ const EventForm = ({ isEditing = false }) => {
               </div>
               
               {/* Date, Time & Location */}
-              <div className="card p-6">
+              <div className="card p-6 shadow-md rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                 <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Date, Time & Location</h2>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -410,7 +613,7 @@ const EventForm = ({ isEditing = false }) => {
                         name="date"
                         value={formData.date}
                         onChange={handleChange}
-                        className={`pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white ${
+                        className={`pl-10 block w-full h-12 rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white ${
                           errors.date ? 'border-red-500' : ''
                         }`}
                       />
@@ -429,17 +632,17 @@ const EventForm = ({ isEditing = false }) => {
                       name="time"
                       value={formData.time}
                       onChange={handleChange}
-                      className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white ${
+                      className={`mt-1 block w-full h-12 rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white ${
                         errors.time ? 'border-red-500' : ''
                       }`}
                     />
                     {errors.time && <p className="mt-1 text-sm text-red-600">{errors.time}</p>}
                   </div>
                   
-                  {/* Event Location */}
+                  {/* City/Location */}
                   <div>
                     <label htmlFor="location" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Location*
+                      City/Location*
                     </label>
                     <div className="mt-1 relative rounded-md shadow-sm">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -451,7 +654,7 @@ const EventForm = ({ isEditing = false }) => {
                         name="location"
                         value={formData.location}
                         onChange={handleChange}
-                        className={`pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white ${
+                        className={`pl-10 block w-full h-12 rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white ${
                           errors.location ? 'border-red-500' : ''
                         }`}
                         placeholder="City, State"
@@ -471,7 +674,7 @@ const EventForm = ({ isEditing = false }) => {
                       name="venue"
                       value={formData.venue}
                       onChange={handleChange}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                      className="mt-1 block w-full h-12 rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
                       placeholder="Venue name"
                     />
                   </div>
@@ -609,8 +812,17 @@ const EventForm = ({ isEditing = false }) => {
                 </div>
               )}
               
-              {/* Submit Button */}
-              <div className="flex justify-end">
+              {/* Submit Buttons */}
+              <div className="flex justify-end space-x-4">
+                <button
+                  type="button"
+                  onClick={handlePublishEvent}
+                  disabled={isSubmitting}
+                  className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <FiSend className="mr-2 -ml-1" />
+                  {isEditing ? 'Publish Event' : 'Save & Publish'}
+                </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
@@ -627,7 +839,7 @@ const EventForm = ({ isEditing = false }) => {
                   ) : (
                     <>
                       <FiSave className="mr-2 -ml-1" />
-                      {isEditing ? 'Update Event' : 'Create Event'}
+                      {isEditing ? 'Save as Draft' : 'Save as Draft'}
                     </>
                   )}
                 </button>

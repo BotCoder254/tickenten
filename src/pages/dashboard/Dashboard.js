@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { FiPlusCircle, FiCalendar, FiUsers, FiTag, FiDollarSign, FiBarChart2, FiPieChart } from 'react-icons/fi';
+import { FiPlusCircle, FiCalendar, FiUsers, FiTag, FiDollarSign, FiBarChart2, FiPieChart, FiMapPin } from 'react-icons/fi';
 import eventService from '../../services/eventService';
 import ticketService from '../../services/ticketService';
 
@@ -277,8 +277,8 @@ const DashboardCard = ({ title, value, icon }) => {
 // Event Card Component
 const EventCard = ({ event, formatDate }) => {
   return (
-    <div className="card overflow-hidden flex flex-col">
-      <div className="h-40 bg-gray-200 dark:bg-gray-700 relative">
+    <div className="card overflow-hidden flex flex-col bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow duration-200">
+      <div className="h-48 bg-gray-200 dark:bg-gray-700 relative">
         {event.featuredImage ? (
           <img 
             src={event.featuredImage} 
@@ -290,18 +290,36 @@ const EventCard = ({ event, formatDate }) => {
             <FiCalendar className="h-12 w-12" />
           </div>
         )}
+        {/* Dark overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
+        
+        {/* Status badge */}
         <div className="absolute top-2 right-2 px-2 py-1 bg-white dark:bg-gray-800 rounded text-xs font-medium">
-          {event.status || 'Draft'}
+          {event.status === 'published' ? 'Published' : 'Draft'}
+        </div>
+        
+        {/* Category tag */}
+        <div className="absolute top-2 left-2 px-2 py-1 bg-blue-600 text-white rounded text-xs font-medium">
+          {event.category || 'Technology'}
+        </div>
+        
+        {/* Date and location at bottom */}
+        <div className="absolute bottom-2 left-2 right-2 text-white">
+          <div className="flex items-center text-sm">
+            <FiCalendar className="mr-1" />
+            <span>{formatDate(event.startDate)}</span>
+          </div>
+          <div className="flex items-center text-sm mt-1">
+            <FiMapPin className="mr-1" />
+            <span>{event.location?.city || 'Location unavailable'}</span>
+          </div>
         </div>
       </div>
       <div className="p-4 flex-grow">
-        <h3 className="font-bold text-gray-900 dark:text-white text-lg mb-1 line-clamp-1">
+        <h3 className="font-bold text-gray-900 dark:text-white text-lg mb-1 line-clamp-2">
           {event.title}
         </h3>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
-          {formatDate(event.startDate)}
-        </p>
-        <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2 mb-4">
+        <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2 mb-3">
           {event.shortDescription}
         </p>
         <div className="flex justify-between items-center text-sm">
@@ -309,7 +327,7 @@ const EventCard = ({ event, formatDate }) => {
             {(event.ticketTypes || []).reduce((sum, ticket) => sum + (ticket.quantitySold || 0), 0)} tickets sold
           </span>
           <span className="font-medium text-primary-600 dark:text-primary-400">
-            ${event.revenue || 0}
+            ${(event.ticketTypes || []).reduce((sum, ticket) => sum + ((ticket.price || 0) * (ticket.quantitySold || 0)), 0)}
           </span>
         </div>
       </div>

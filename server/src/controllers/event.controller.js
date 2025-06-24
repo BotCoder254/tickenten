@@ -681,3 +681,63 @@ exports.deleteTicketType = async (req, res) => {
     });
   }
 };
+
+/**
+ * @desc    Upload event image
+ * @route   POST /api/events/:id/upload-image
+ * @access  Private
+ */
+exports.uploadEventImage = async (req, res) => {
+  try {
+    // Check if file exists in request
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please upload an image file',
+      });
+    }
+
+    const event = await Event.findById(req.params.id);
+
+    if (!event) {
+      return res.status(404).json({
+        success: false,
+        message: 'Event not found',
+      });
+    }
+
+    // Check if user is the event creator
+    if (event.creator.toString() !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to upload images for this event',
+      });
+    }
+
+    // Update event with image URL
+    // In a real implementation, you would:
+    // 1. Save the uploaded file to a storage service (AWS S3, etc.)
+    // 2. Get the URL of the saved file
+    // 3. Update the event with the image URL
+    
+    // For this implementation, we'll use a simple approach
+    const imageUrl = `/uploads/${req.file.filename}`;
+    
+    event.featuredImage = imageUrl;
+    await event.save();
+
+    res.status(200).json({
+      success: true,
+      data: {
+        imageUrl,
+      },
+    });
+  } catch (error) {
+    console.error('Upload event image error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+      error: error.message,
+    });
+  }
+};

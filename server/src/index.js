@@ -61,6 +61,9 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 
+// Serve uploaded files
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
 // Initialize Passport
 app.use(passport.initialize());
 require('./config/passport')(passport);
@@ -79,6 +82,9 @@ if (process.env.NODE_ENV === 'production') {
   app.get('*', (req, res) => {
     res.sendFile(path.resolve(__dirname, '../../build', 'index.html'));
   });
+} else {
+  // In development, serve images from uploads directly
+  app.use('/images', express.static(path.join(__dirname, '../uploads')));
 }
 
 // Error handling middleware
