@@ -35,10 +35,9 @@ services:
         sync: false
 
   # Frontend service
-  - type: web
+  - type: static
     name: tickenten-frontend
     env: static
-    region: ohio
     plan: free
     buildCommand: npm install && npm run build
     staticPublishPath: ./build
