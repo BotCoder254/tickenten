@@ -94,7 +94,26 @@ const LandingPage = () => {
   const [error, setError] = useState(null);
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
+useEffect(() => {
+  const counter = document.getElementById("active-user-counter");
+  if (!counter) return;
 
+  let start = 0;
+  const target = 10000;
+  const duration = 2; // seconds
+  const increment = target / (duration * 60); // 60fps
+
+  const interval = setInterval(() => {
+    start += increment;
+    if (start >= target) {
+      start = target;
+      clearInterval(interval);
+    }
+    counter.innerText = `${Math.floor(start).toLocaleString()}+`;
+  }, 1000 / 60);
+
+  return () => clearInterval(interval);
+}, []);
   // Fetch featured events
   useEffect(() => {
     const fetchFeaturedEvents = async () => {
@@ -221,19 +240,24 @@ const LandingPage = () => {
             </div>
           </div>
         </div>
-
-        {/* Floating Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.6 }}
-          className="absolute -bottom-8 -right-8 backdrop-blur-md bg-white/70 dark:bg-black/40 border border-white/10 rounded-2xl shadow-lg p-4 w-48"
-        >
-          <div className="text-center">
-            <div className="text-sm text-gray-700 dark:text-gray-300">Active Users</div>
-            <div className="text-2xl font-bold text-gray-900 dark:text-white mt-1">10,000+</div>
-          </div>
-        </motion.div>
+              <motion.div
+  initial={{ opacity: 0, y: 30, scale: 0.95 }}
+  animate={{ opacity: 1, y: 0, scale: 1 }}
+  transition={{ duration: 0.6, delay: 0.6 }}
+  className="absolute -bottom-8 -right-8 backdrop-blur-md bg-white/80 dark:bg-black/40 border border-white/10 rounded-2xl shadow-2xl p-5 w-56 hover:scale-105 transition-transform"
+>
+  <div className="text-center space-y-1">
+    <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
+      Active Users
+    </div>
+    <span
+      className="text-2xl font-bold text-gray-900 dark:text-white mt-1"
+      id="active-user-counter"
+    >
+      0
+    </span>
+  </div>
+</motion.div>
       </motion.div>
     </div>
   </div>
