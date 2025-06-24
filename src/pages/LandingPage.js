@@ -505,38 +505,47 @@ useEffect(() => {
   <div className="absolute top-10 -left-10 w-72 h-72 bg-gradient-to-br from-primary-400 to-purple-400 dark:from-primary-600 dark:to-purple-800 opacity-10 blur-[100px] rounded-full animate-pulse"></div>
   <div className="absolute bottom-10 -right-10 w-72 h-72 bg-gradient-to-br from-secondary-400 to-pink-500 dark:from-secondary-600 dark:to-pink-800 opacity-10 blur-[100px] rounded-full animate-pulse delay-300"></div>
 </section>
-      {/* CTA Section */}
-      <section className="py-16 bg-gradient-to-r from-primary-600 to-secondary-600 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5 }}
-            >
-              <h2 className="text-3xl font-bold">Ready to create your first event?</h2>
-              <p className="mt-4 text-lg text-white/90 max-w-lg">
-                Join thousands of event creators who trust TickenTen to manage their events and ticket sales.
-              </p>
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5 }}
-              className="flex justify-center lg:justify-end"
-            >
-              <Link
-                to="/register"
-                className="btn bg-white text-primary-600 hover:bg-gray-100 focus:ring-white"
-              >
-                Get Started for Free
-              </Link>
-            </motion.div>
-          </div>
-        </div>
-      </section>
+  {/* CTA Section */}
+<section className="relative py-24 bg-gradient-to-br from-primary-600 to-secondary-700 text-white overflow-hidden">
+  <div className="absolute top-0 left-0 w-72 h-72 bg-white/10 rounded-full blur-[120px] opacity-10 animate-pulse"></div>
+  <div className="absolute bottom-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-[120px] opacity-10 animate-pulse delay-200"></div>
+
+  <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+      <motion.div
+        initial={{ opacity: 0, x: -30 }}
+        whileInView={{ opacity: 1, x: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.6 }}
+      >
+        <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight leading-snug">
+          Ready to launch your first event?
+        </h2>
+        <p className="mt-4 text-lg text-white/90 max-w-xl">
+          Join thousands of successful event creators who trust <span className="font-semibold underline decoration-white/30">TickenTen</span> to host, promote, and sell tickets with ease.
+        </p>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, x: 30 }}
+        whileInView={{ opacity: 1, x: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.6, delay: 0.2 }}
+        className="flex justify-center lg:justify-end"
+      >
+        <Link
+          to="/register"
+          className="inline-flex items-center gap-3 px-6 py-3 bg-white text-primary-700 font-semibold rounded-xl shadow-lg hover:bg-gray-100 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-white/30"
+        >
+          <svg className="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+          </svg>
+          Get Started for Free
+        </Link>
+      </motion.div>
+    </div>
+  </div>
+</section>
     </div>
   );
 };
