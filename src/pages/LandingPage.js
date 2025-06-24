@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FiSearch, FiCalendar, FiMapPin, FiArrowRight, FiStar } from 'react-icons/fi';
 import eventService from '../services/eventService';
+import { useAuth } from '../context/AuthContext';
 
 // Categories
 const categories = [
@@ -49,21 +50,42 @@ const LandingPage = () => {
   const [featuredEvents, setFeaturedEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
 
   // Fetch featured events
   useEffect(() => {
     const fetchFeaturedEvents = async () => {
       setLoading(true);
       try {
+        // First, try to get featured events
         const response = await eventService.getFeaturedEvents(4);
-        if (response && response.success) {
+        
+        if (response && response.success && response.data && response.data.length > 0) {
           setFeaturedEvents(response.data);
         } else {
-          throw new Error('Failed to fetch featured events');
+          // If no featured events, fall back to getting regular events
+          const allEventsResponse = await eventService.getEvents({ limit: 4 });
+          if (allEventsResponse && allEventsResponse.success) {
+            setFeaturedEvents(allEventsResponse.data);
+          } else {
+            throw new Error('Failed to fetch events');
+          }
         }
       } catch (err) {
         console.error('Error fetching featured events:', err);
-        setError('Failed to load featured events');
+        // Try to get regular events as a final fallback
+        try {
+          const allEventsResponse = await eventService.getEvents({ limit: 4 });
+          if (allEventsResponse && allEventsResponse.success) {
+            setFeaturedEvents(allEventsResponse.data);
+          } else {
+            setError('Failed to load events');
+          }
+        } catch (fallbackErr) {
+          console.error('Error fetching fallback events:', fallbackErr);
+          setError('Failed to load events');
+        }
       } finally {
         setLoading(false);
       }
@@ -71,6 +93,24 @@ const LandingPage = () => {
 
     fetchFeaturedEvents();
   }, []);
+
+  // Handle view details with authentication check
+  const handleViewDetails = (eventId) => {
+    if (!isAuthenticated) {
+      navigate('/login', { state: { from: `/events/${eventId}` } });
+    } else {
+      navigate(`/events/${eventId}`);
+    }
+  };
+
+  // Handle search form submission
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) {
+      return; // Don't search if query is empty
+    }
+    navigate(`/events?q=${encodeURIComponent(searchQuery)}`);
+  };
 
   return (
     <div className="min-h-screen">
@@ -160,7 +200,7 @@ const LandingPage = () => {
             transition={{ duration: 0.5 }}
             className="relative -mt-24 bg-white dark:bg-dark-100 rounded-xl shadow-xl p-6"
           >
-            <div className="flex flex-col md:flex-row gap-4">
+            <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-4">
               <div className="flex-grow relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <FiSearch className="h-5 w-5 text-gray-400" />
@@ -174,11 +214,11 @@ const LandingPage = () => {
                 />
               </div>
               <div className="flex-shrink-0">
-                <Link to={`/events${searchQuery ? `?q=${encodeURIComponent(searchQuery)}` : ''}`} className="btn btn-primary w-full md:w-auto">
+                <button type="submit" className="btn btn-primary w-full md:w-auto">
                   Search Events
-                </Link>
+                </button>
               </div>
-            </div>
+            </form>
             
             <div className="mt-6 flex flex-wrap gap-3">
               {categories.map((category, index) => (
@@ -192,6 +232,7 @@ const LandingPage = () => {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   className={`${category.color} px-4 py-2 rounded-full cursor-pointer transition-all duration-200`}
+                  onClick={() => navigate(`/events?category=${encodeURIComponent(category.name)}`)}
                 >
                   <span className="mr-2">{category.icon}</span>
                   <span className="text-sm font-medium text-gray-800 dark:text-gray-200">{category.name}</span>
@@ -240,8 +281,14 @@ const LandingPage = () => {
               <p className="text-red-500">{error}</p>
             </div>
           ) : featuredEvents.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-gray-500">No featured events available at the moment.</p>
+            <div className="text-center py-12 bg-white dark:bg-dark-100 rounded-lg shadow-md p-8">
+              <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-3">No events found</h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-6">
+                Try adjusting your search or filters to find what you're looking for.
+              </p>
+              <Link to="/events" className="btn btn-primary">
+                Browse All Events
+              </Link>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -294,12 +341,21 @@ const LandingPage = () => {
                           ? `From ${event.ticketTypes[0].price} ${event.ticketTypes[0].currency}`
                           : 'Free'}
                       </span>
-                      <Link
-                        to={`/events/${event._id}`}
-                        className="text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400"
-                      >
-                        View details
-                      </Link>
+                      {isAuthenticated ? (
+                        <Link
+                          to={`/events/${event._id}`}
+                          className="text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400"
+                        >
+                          View details
+                        </Link>
+                      ) : (
+                        <button
+                          onClick={() => handleViewDetails(event._id)}
+                          className="text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400"
+                        >
+                          View details
+                        </button>
+                      )}
                     </div>
                   </div>
                 </motion.div>

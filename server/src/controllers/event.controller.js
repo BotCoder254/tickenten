@@ -180,7 +180,10 @@ exports.searchEvents = async (req, res) => {
       });
     }
 
-    // Prepare the search query
+    // Create a case-insensitive regex for the search term
+    const searchRegex = new RegExp(q, 'i');
+    
+    // Prepare the search query using regex instead of text search
     let searchQuery;
     
     // If user is authenticated, include their draft events in search results
@@ -193,7 +196,16 @@ exports.searchEvents = async (req, res) => {
               { creator: req.user.id } // Include user's own events regardless of status
             ]
           },
-          { $text: { $search: q } }
+          {
+            $or: [
+              { title: searchRegex },
+              { description: searchRegex },
+              { shortDescription: searchRegex },
+              { 'location.city': searchRegex },
+              { 'location.country': searchRegex },
+              { tags: searchRegex }
+            ]
+          }
         ]
       };
     } else {
@@ -201,13 +213,22 @@ exports.searchEvents = async (req, res) => {
       searchQuery = {
         $and: [
           { status: 'published', visibility: 'public' },
-          { $text: { $search: q } }
+          {
+            $or: [
+              { title: searchRegex },
+              { description: searchRegex },
+              { shortDescription: searchRegex },
+              { 'location.city': searchRegex },
+              { 'location.country': searchRegex },
+              { tags: searchRegex }
+            ]
+          }
         ]
       };
     }
 
     const events = await Event.find(searchQuery)
-      .sort({ score: { $meta: 'textScore' } })
+      .sort({ createdAt: -1 })
       .limit(20)
       .populate('creator', 'name avatar');
 

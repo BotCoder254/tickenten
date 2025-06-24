@@ -33,6 +33,38 @@ const client = new MongoClient(uri, {
     }
 });
 
+// Function to check and create text index for Event collection
+async function ensureTextIndex() {
+  try {
+    console.log('Checking Event collection text index...');
+    const collections = await mongoose.connection.db.listCollections({ name: 'events' }).toArray();
+    
+    if (collections.length > 0) {
+      const indexes = await mongoose.connection.db.collection('events').indexes();
+      const hasTextIndex = indexes.some(index => index.textIndexVersion);
+      
+      if (!hasTextIndex) {
+        console.log('Text index not found. Creating index for Event collection...');
+        const result = await mongoose.connection.db.collection('events').createIndex({
+          title: 'text',
+          description: 'text',
+          shortDescription: 'text',
+          'location.city': 'text',
+          'location.country': 'text',
+          tags: 'text'
+        });
+        console.log('Text index created successfully:', result);
+      } else {
+        console.log('Text index already exists.');
+      }
+    } else {
+      console.log('Events collection does not exist yet. Index will be created when the collection is created.');
+    }
+  } catch (error) {
+    console.error('Error checking/creating text index:', error);
+  }
+}
+
 // Connect to MongoDB
 mongoose.connect(uri, {
     useNewUrlParser: true,
@@ -50,6 +82,9 @@ mongoose.connect(uri, {
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
         console.log("MongoDB Connected Successfully!");
+        
+        // Ensure text index exists for Event collection
+        await ensureTextIndex();
     } catch (err) {
         console.error("Error connecting to MongoDB:", err);
     }

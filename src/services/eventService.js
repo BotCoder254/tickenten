@@ -12,9 +12,28 @@ const eventService = {
   getEvents: async (filters = {}) => {
     try {
       const response = await api.get('/events', { params: filters });
+      
+      // Handle empty response data
+      if (!response.data || !response.data.data) {
+        return {
+          success: true,
+          data: [],
+          message: 'No events found',
+          total: 0
+        };
+      }
+      
       return response.data;
     } catch (error) {
-      throw error;
+      console.error('Error in getEvents:', error);
+      
+      // Return a standardized error response
+      return {
+        success: false,
+        data: [],
+        message: error.response?.data?.message || 'Failed to fetch events',
+        error: error
+      };
     }
   },
 
@@ -26,9 +45,28 @@ const eventService = {
   getFeaturedEvents: async (limit = 4) => {
     try {
       const response = await api.get('/events/featured', { params: { limit } });
+      
+      // Handle empty response data
+      if (!response.data || !response.data.data) {
+        return {
+          success: true,
+          data: [],
+          message: 'No featured events found',
+          total: 0
+        };
+      }
+      
       return response.data;
     } catch (error) {
-      throw error;
+      console.error('Error in getFeaturedEvents:', error);
+      
+      // Return a standardized error response instead of throwing
+      return {
+        success: false,
+        data: [],
+        message: error.response?.data?.message || 'Failed to fetch featured events',
+        error: error
+      };
     }
   },
 
@@ -142,10 +180,59 @@ const eventService = {
    */
   searchEvents: async (query) => {
     try {
+      // Make sure query is not empty
+      if (!query || query.trim() === '') {
+        return {
+          success: true,
+          data: [],
+          message: 'Please enter a search term',
+          total: 0
+        };
+      }
+      
       const response = await api.get('/events/search', { params: { q: query } });
+      
+      // Handle empty response data
+      if (!response.data || !response.data.data) {
+        return {
+          success: true,
+          data: [],
+          message: 'No events found matching your search',
+          total: 0
+        };
+      }
+      
       return response.data;
     } catch (error) {
-      throw error;
+      console.error('Error in searchEvents:', error);
+      
+      // If search fails, try to get all events as a fallback
+      try {
+        console.log('Falling back to getEvents due to search error');
+        const fallbackResponse = await api.get('/events', { 
+          params: { limit: 20 } 
+        });
+        
+        if (fallbackResponse && fallbackResponse.data && fallbackResponse.data.success) {
+          return {
+            success: true,
+            data: fallbackResponse.data.data || [],
+            message: 'Search unavailable, showing all events instead',
+            total: fallbackResponse.data.count || 0,
+            searchFallback: true
+          };
+        }
+      } catch (fallbackError) {
+        console.error('Fallback search also failed:', fallbackError);
+      }
+      
+      // Return a standardized error response
+      return {
+        success: false,
+        data: [],
+        message: error.response?.data?.message || 'Failed to search events',
+        error: error
+      };
     }
   },
 

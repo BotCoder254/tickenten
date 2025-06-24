@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FiSearch, FiCalendar, FiMapPin, FiFilter, FiGrid, FiList, FiStar } from 'react-icons/fi';
 import eventService from '../services/eventService';
+import { useAuth } from '../context/AuthContext';
 
 // Animation variants
 const fadeIn = {
@@ -100,6 +101,8 @@ const Events = () => {
     limit: 12,
     total: 0,
   });
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
 
   // Format date helper function
   const formatDate = (dateString) => {
@@ -137,22 +140,49 @@ const Events = () => {
         // If there's a search query, use the search endpoint instead
         if (searchQuery) {
           response = await eventService.searchEvents(searchQuery);
+          // If it's a fallback response, show a notification
+          if (response && response.success && response.searchFallback) {
+            setError(response.message || 'Search is currently unavailable. Showing all events instead.');
+          }
         } else {
           response = await eventService.getEvents(filterParams);
         }
         
         if (response && response.success) {
-          setEvents(response.data);
+          setEvents(response.data || []);
           setPagination(prev => ({
             ...prev,
             total: response.total || response.count || 0,
           }));
+        } else if (response && !response.success) {
+          console.error('API returned unsuccessful response:', response);
+          throw new Error(response.message || 'Failed to fetch events');
         } else {
           throw new Error('Failed to fetch events');
         }
       } catch (err) {
         console.error('Error fetching events:', err);
         setError('Failed to load events. Please try again later.');
+        
+        // Try to get events with minimal filtering as a fallback
+        try {
+          const fallbackResponse = await eventService.getEvents({ 
+            page: 1,
+            limit: 10
+          });
+          
+          if (fallbackResponse && fallbackResponse.success && fallbackResponse.data) {
+            setEvents(fallbackResponse.data);
+            setPagination(prev => ({
+              ...prev,
+              total: fallbackResponse.total || fallbackResponse.count || 0,
+            }));
+            // Keep the error message visible to indicate that the original request failed
+          }
+        } catch (fallbackErr) {
+          console.error('Fallback event fetch also failed:', fallbackErr);
+          // Keep the original error message
+        }
       } finally {
         setLoading(false);
       }
@@ -184,6 +214,15 @@ const Events = () => {
   const handlePageChange = (newPage) => {
     setPagination({ ...pagination, page: newPage });
     window.scrollTo(0, 0);
+  };
+
+  // Handle view details with authentication check
+  const handleViewDetails = (eventId) => {
+    if (!isAuthenticated) {
+      navigate('/login', { state: { from: `/events/${eventId}` } });
+    } else {
+      navigate(`/events/${eventId}`);
+    }
   };
 
   return (
@@ -402,12 +441,21 @@ const Events = () => {
                               : 'Free'}
                           </span>
                           {event._id && /^[0-9a-fA-F]{24}$/.test(event._id) ? (
-                            <Link
-                              to={`/events/${event._id}`}
-                              className="text-sm font-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
-                            >
-                              View Details
-                            </Link>
+                            isAuthenticated ? (
+                              <Link
+                                to={`/events/${event._id}`}
+                                className="text-sm font-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
+                              >
+                                View Details
+                              </Link>
+                            ) : (
+                              <button
+                                onClick={() => handleViewDetails(event._id)}
+                                className="text-sm font-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
+                              >
+                                View Details
+                              </button>
+                            )
                           ) : (
                             <span className="text-sm font-medium text-gray-400">Details Unavailable</span>
                           )}
@@ -484,12 +532,21 @@ const Events = () => {
                               : 'Free'}
                           </span>
                           {event._id && /^[0-9a-fA-F]{24}$/.test(event._id) ? (
-                            <Link
-                              to={`/events/${event._id}`}
-                              className="btn btn-primary"
-                            >
-                              View Details
-                            </Link>
+                            isAuthenticated ? (
+                              <Link
+                                to={`/events/${event._id}`}
+                                className="btn btn-primary"
+                              >
+                                View Details
+                              </Link>
+                            ) : (
+                              <button
+                                onClick={() => handleViewDetails(event._id)}
+                                className="btn btn-primary"
+                              >
+                                View Details
+                              </button>
+                            )
                           ) : (
                             <span className="text-sm font-medium text-gray-400">Details Unavailable</span>
                           )}
