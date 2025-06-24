@@ -30,6 +30,10 @@ router.post(
     body('ticketTypeId').not().isEmpty().withMessage('Ticket type ID is required'),
     body('quantity').isInt({ min: 1 }).withMessage('Quantity must be at least 1'),
     body('attendeeInfo').optional().isObject().withMessage('Attendee info must be an object'),
+    body('paymentMethod').optional().isString().withMessage('Payment method must be a string'),
+    body('paymentReference').optional().isString().withMessage('Payment reference must be a string'),
+    body('paymentCurrency').optional().isString().withMessage('Payment currency must be a string'),
+    body('paymentTransaction').optional()
   ],
   optionalProtect,
   ticketController.purchaseTickets

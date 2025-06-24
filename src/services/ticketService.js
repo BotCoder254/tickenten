@@ -34,12 +34,25 @@ const ticketService = {
   /**
    * Purchase tickets for an event
    * @param {Object} ticketData - Ticket purchase data
+   * @param {Object} paymentInfo - Optional payment information from Paystack
    * @returns {Promise} - API response with purchase confirmation
    */
-  purchaseTickets: async (ticketData) => {
+  purchaseTickets: async (ticketData, paymentInfo = null) => {
     try {
-      // Ensure the ticketData contains all required fields for guest purchases if user is not authenticated
-      const response = await api.post('/tickets/purchase', ticketData);
+      // If payment info is provided, add it to the ticket data
+      let purchaseData = { ...ticketData };
+      
+      if (paymentInfo) {
+        purchaseData = {
+          ...purchaseData,
+          paymentMethod: `Paystack - ${paymentInfo.currency || 'USD'}`,
+          paymentReference: paymentInfo.reference,
+          paymentTransaction: paymentInfo.trans,
+          paymentCurrency: paymentInfo.currency || 'USD'
+        };
+      }
+      
+      const response = await api.post('/tickets/purchase', purchaseData);
       return response.data;
     } catch (error) {
       throw error;
@@ -49,16 +62,30 @@ const ticketService = {
   /**
    * Purchase tickets as a guest (without authentication)
    * @param {Object} ticketData - Ticket purchase data including attendee information
+   * @param {Object} paymentInfo - Optional payment information from Paystack
    * @returns {Promise} - API response with purchase confirmation
    */
-  guestPurchaseTickets: async (ticketData) => {
+  guestPurchaseTickets: async (ticketData, paymentInfo = null) => {
     // Make sure attendee info is provided for guest purchases
     if (!ticketData.attendeeInfo || !ticketData.attendeeInfo.name || !ticketData.attendeeInfo.email) {
       throw new Error('Name and email are required for guest ticket purchases');
     }
 
     try {
-      const response = await api.post('/tickets/purchase', ticketData);
+      // If payment info is provided, add it to the ticket data
+      let purchaseData = { ...ticketData };
+      
+      if (paymentInfo) {
+        purchaseData = {
+          ...purchaseData,
+          paymentMethod: `Paystack - ${paymentInfo.currency || 'USD'}`,
+          paymentReference: paymentInfo.reference,
+          paymentTransaction: paymentInfo.trans,
+          paymentCurrency: paymentInfo.currency || 'USD'
+        };
+      }
+      
+      const response = await api.post('/tickets/purchase', purchaseData);
       return response.data;
     } catch (error) {
       throw error;

@@ -188,7 +188,16 @@ exports.purchaseTickets = async (req, res) => {
     });
   }
 
-  const { eventId, ticketTypeId, quantity, attendeeInfo } = req.body;
+  const { 
+    eventId, 
+    ticketTypeId, 
+    quantity, 
+    attendeeInfo,
+    paymentMethod,
+    paymentReference,
+    paymentCurrency,
+    paymentTransaction
+  } = req.body;
 
   try {
     // Find event and check if it exists
@@ -264,6 +273,9 @@ exports.purchaseTickets = async (req, res) => {
         status: 'valid',
         attendeeName: req.user ? req.user.name : (attendeeInfo ? attendeeInfo.name : 'Guest'),
         attendeeEmail: req.user ? req.user.email : (attendeeInfo ? attendeeInfo.email : null),
+        paymentMethod: paymentMethod || 'standard',
+        paymentReference: paymentReference || null,
+        paymentCurrency: paymentCurrency || ticketType.currency || 'USD',
         guestPurchase: !req.user,
       });
 
@@ -283,19 +295,70 @@ exports.purchaseTickets = async (req, res) => {
     const emailToSend = req.user ? req.user.email : (attendeeInfo ? attendeeInfo.email : null);
     if (emailToSend) {
       try {
+        // Generate ticket information for email
+        const ticketListItems = tickets.map(ticket => {
+          return `
+            <li style="margin-bottom: 10px;">
+              <div style="border: 1px solid #ddd; padding: 15px; border-radius: 8px;">
+                <p><strong>Ticket #:</strong> ${ticket.ticketNumber}</p>
+                <p><strong>Attendee:</strong> ${ticket.attendeeName}</p>
+                <div style="margin-top: 10px; text-align: center;">
+                  <p><strong>Scan QR code at the event:</strong></p>
+                  <img src="https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(ticket.qrCodeData)}&size=150x150" alt="Ticket QR Code" style="width: 150px; height: 150px;">
+                </div>
+              </div>
+            </li>
+          `;
+        }).join('');
+
+        // Create an enhanced HTML email with ticket details and QR code
+        const emailHtml = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #333;">Ticket Confirmation</h1>
+              <p style="font-size: 16px; color: #666;">Thank you for purchasing tickets for ${event.title}!</p>
+            </div>
+            
+            <div style="margin-bottom: 30px; background-color: #f8f9fa; padding: 15px; border-radius: 8px;">
+              <h2 style="color: #333; margin-top: 0;">Event Details</h2>
+              <p><strong>Event:</strong> ${event.title}</p>
+              <p><strong>Date:</strong> ${new Date(event.startDate).toLocaleDateString()} at ${new Date(event.startDate).toLocaleTimeString()}</p>
+              <p><strong>Location:</strong> ${event.isVirtual ? 'Virtual Event' : `${event.location.venue}, ${event.location.city}, ${event.location.country}`}</p>
+              ${event.isVirtual ? `<p><strong>Virtual Link:</strong> Will be sent before the event</p>` : ''}
+            </div>
+            
+            <div style="margin-bottom: 30px;">
+              <h2 style="color: #333;">Purchase Summary</h2>
+              <p><strong>Ticket Type:</strong> ${ticketType.name}</p>
+              <p><strong>Quantity:</strong> ${quantity}</p>
+              <p><strong>Price per Ticket:</strong> ${ticketType.price} ${ticketType.currency}</p>
+              <p><strong>Total:</strong> ${ticketType.price * quantity} ${ticketType.currency}</p>
+              ${paymentReference ? `<p><strong>Payment Reference:</strong> ${paymentReference}</p>` : ''}
+              ${paymentMethod ? `<p><strong>Payment Method:</strong> ${paymentMethod}</p>` : ''}
+            </div>
+            
+            <div style="margin-bottom: 30px;">
+              <h2 style="color: #333;">Your Tickets</h2>
+              <ul style="list-style-type: none; padding: 0;">
+                ${ticketListItems}
+              </ul>
+            </div>
+            
+            <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd;">
+              <p style="color: #666; font-size: 14px;">
+                ${req.user ? 'You can view your tickets in your account dashboard.' : 'Please keep this email as proof of purchase.'}
+              </p>
+              <p style="color: #666; font-size: 14px;">
+                If you have any questions, please contact the event organizer.
+              </p>
+            </div>
+          </div>
+        `;
+
         await sendEmail({
           to: emailToSend,
           subject: `Your Tickets for ${event.title}`,
-          html: `
-            <h1>Ticket Confirmation</h1>
-            <p>Thank you for purchasing tickets for ${event.title}!</p>
-            <p>Event Date: ${new Date(event.startDate).toLocaleDateString()}</p>
-            <p>Ticket Type: ${ticketType.name}</p>
-            <p>Quantity: ${quantity}</p>
-            <p>Total: ${ticketType.price * quantity} ${ticketType.currency}</p>
-            <p>Your ticket numbers: ${tickets.map(t => t.ticketNumber).join(', ')}</p>
-            ${req.user ? '<p>You can view your tickets in your account dashboard.</p>' : ''}
-          `,
+          html: emailHtml,
         });
       } catch (err) {
         console.error('Error sending ticket confirmation email:', err);
@@ -495,16 +558,25 @@ exports.verifyTicket = async (req, res) => {
       }
     }
 
+    // Format response data
+    const responseData = {
+      ticketNumber: ticket.ticketNumber,
+      eventTitle: ticket.event.title,
+      eventDate: new Date(ticket.event.startDate).toLocaleDateString(),
+      ticketType: ticketTypeName,
+      status: ticket.status,
+      attendeeName: ticket.attendeeName,
+      attendeeEmail: ticket.attendeeEmail,
+      purchaseDate: new Date(ticket.purchaseDate).toLocaleDateString(),
+      qrCodeData: ticket.qrCodeData,
+      paymentReference: ticket.paymentReference || 'N/A'
+    };
+
     res.status(200).json({
       success: true,
       isValid,
       status: ticket.status,
-      data: {
-        ticketNumber: ticket.ticketNumber,
-        eventTitle: ticket.event.title,
-        ticketType: ticketTypeName,
-        status: ticket.status,
-      },
+      data: responseData,
     });
   } catch (error) {
     console.error('Verify ticket error:', error);

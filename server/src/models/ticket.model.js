@@ -45,6 +45,20 @@ const TicketSchema = new mongoose.Schema(
         return this.user === null || this.user === undefined;
       },
     },
+    qrCodeData: {
+      type: String,
+    },
+    paymentMethod: {
+      type: String,
+      default: 'standard',
+    },
+    paymentReference: {
+      type: String,
+    },
+    paymentCurrency: {
+      type: String,
+      default: 'USD',
+    },
     additionalInfo: {
       type: Object,
     },
@@ -54,7 +68,7 @@ const TicketSchema = new mongoose.Schema(
   }
 );
 
-// Generate unique ticket number before saving
+// Generate unique ticket number and QR code data before saving
 TicketSchema.pre('save', function (next) {
   if (!this.ticketNumber) {
     // Generate a random ticket number with event ID prefix
@@ -62,8 +76,20 @@ TicketSchema.pre('save', function (next) {
     const randomPart = crypto.randomBytes(8).toString('hex');
     this.ticketNumber = `${eventPrefix}-${randomPart}`;
     
-    // Generate QR code data (in a real app, you would use a QR code library)
-    this.qrCode = `TICKET:${this.ticketNumber}`;
+    // Generate more detailed QR code data
+    // Include ticket number, event ID, ticket type ID, and purchase timestamp for verification
+    const timestamp = Date.now();
+    const verificationData = {
+      ticket: this.ticketNumber,
+      event: this.event.toString(),
+      type: this.ticketType.toString(),
+      purchaser: this.attendeeName,
+      email: this.attendeeEmail,
+      time: timestamp
+    };
+    
+    // Create a JSON string of the verification data
+    this.qrCodeData = JSON.stringify(verificationData);
   }
   next();
 });

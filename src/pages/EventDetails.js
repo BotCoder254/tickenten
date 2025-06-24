@@ -99,6 +99,22 @@ const EventDetails = () => {
     setGuestInfo(prev => ({ ...prev, [name]: value }));
   };
 
+  // Add this useEffect for loading Paystack script
+  useEffect(() => {
+    // Load the Paystack script when the component mounts
+    const script = document.createElement('script');
+    script.src = 'https://js.paystack.co/v1/inline.js';
+    script.async = true;
+    document.body.appendChild(script);
+    
+    // Cleanup function to remove the script when component unmounts
+    return () => {
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
+    };
+  }, []);
+
   // Handle ticket purchase
   const handlePurchaseTicket = async () => {
     if (!selectedTicketType) return;
@@ -107,48 +123,104 @@ const EventDetails = () => {
     setPurchaseError(null);
     
     try {
-      if (isAuthenticated) {
-        // Authenticated user purchase
-        await ticketService.purchaseTickets({
-          eventId,
-          ticketTypeId: selectedTicketType._id,
-          quantity
-        });
-      } else {
-        // Guest purchase
-        if (!guestInfo.name || !guestInfo.email) {
-          setPurchaseError('Please provide your name and email to purchase tickets');
-          setIsProcessing(false);
-          return;
-        }
-        
-        await ticketService.guestPurchaseTickets({
-          eventId,
-          ticketTypeId: selectedTicketType._id,
-          quantity,
-          attendeeInfo: guestInfo
-        });
+      // Calculate total amount in the smallest currency unit (kobo for NGN, cents for USD)
+      const totalAmount = selectedTicketType.price * quantity * 100; // Convert to cents/kobo
+      
+      // Determine the email to use for Paystack
+      const userEmail = isAuthenticated ? currentUser.email : guestInfo.email;
+      
+      // Check if all required data is available
+      if (!userEmail) {
+        setPurchaseError('Email is required for payment processing');
+        setIsProcessing(false);
+        return;
       }
       
-      // Show success message
-      setPurchaseSuccess(true);
+      if (!window.PaystackPop) {
+        setPurchaseError('Payment system is not available. Please try again later.');
+        setIsProcessing(false);
+        return;
+      }
       
-      // Reset form
-      setTimeout(() => {
-        if (isAuthenticated) {
-          navigate('/tickets'); // Redirect authenticated users to tickets page
-        } else {
-          // For guests, just reset the form
-          setSelectedTicketType(null);
-          setQuantity(1);
-          setGuestInfo({ name: '', email: '' });
-          setPurchaseSuccess(false);
+      // Initialize Paystack payment
+      const handler = window.PaystackPop.setup({
+        key: 'pk_live_f75e7fc5c652583410d16789fc9955853373fc8c', // Paystack public key
+        email: userEmail,
+        amount: totalAmount,
+        currency: selectedTicketType.currency || "USD",
+        callback: async function(response) {
+          if (response.status === 'success') {
+            // Prepare payment info from Paystack
+            const paymentInfo = {
+              method: "Paystack",
+              currency: selectedTicketType.currency || "USD",
+              reference: response.reference,
+              trans: response.trans
+            };
+            
+            try {
+              // Process the actual ticket purchase with payment info
+              if (isAuthenticated) {
+                // Authenticated user purchase
+                await ticketService.purchaseTickets({
+                  eventId,
+                  ticketTypeId: selectedTicketType._id,
+                  quantity
+                }, paymentInfo);
+              } else {
+                // Guest purchase
+                if (!guestInfo.name || !guestInfo.email) {
+                  setPurchaseError('Please provide your name and email to purchase tickets');
+                  setIsProcessing(false);
+                  return;
+                }
+                
+                await ticketService.guestPurchaseTickets({
+                  eventId,
+                  ticketTypeId: selectedTicketType._id,
+                  quantity,
+                  attendeeInfo: guestInfo
+                }, paymentInfo);
+              }
+              
+              // Show success message
+              setPurchaseSuccess(true);
+              
+              // Reset form
+              setTimeout(() => {
+                if (isAuthenticated) {
+                  navigate('/tickets'); // Redirect authenticated users to tickets page
+                } else {
+                  // For guests, just reset the form
+                  setSelectedTicketType(null);
+                  setQuantity(1);
+                  setGuestInfo({ name: '', email: '' });
+                  setPurchaseSuccess(false);
+                }
+              }, 3000);
+            } catch (err) {
+              console.error('Error completing ticket purchase after payment:', err);
+              setPurchaseError(err.response?.data?.message || 'Payment was successful, but we could not complete your ticket purchase. Please contact support with your payment reference: ' + response.reference);
+            } finally {
+              setIsProcessing(false);
+            }
+          } else {
+            setPurchaseError('Payment was not successful. Please try again.');
+            setIsProcessing(false);
+          }
+        },
+        onClose: function() {
+          // Handle payment cancellation
+          setPurchaseError('Payment was cancelled. Please try again to complete your purchase.');
+          setIsProcessing(false);
         }
-      }, 3000);
+      });
+      
+      // Open the Paystack payment modal
+      handler.openIframe();
     } catch (err) {
-      console.error('Error purchasing ticket:', err);
-      setPurchaseError(err.response?.data?.message || 'Failed to purchase tickets. Please try again.');
-    } finally {
+      console.error('Error initiating payment:', err);
+      setPurchaseError(err.response?.data?.message || 'Failed to process payment. Please try again.');
       setIsProcessing(false);
     }
   };
