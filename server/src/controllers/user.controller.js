@@ -223,11 +223,13 @@ exports.uploadAvatar = async (req, res) => {
       });
     }
 
-    // Update user with avatar URL
+    // Update user with avatar URL - ensure it's accessible from frontend
     const avatarUrl = `/uploads/${req.file.filename}`;
     
     user.avatar = avatarUrl;
     await user.save();
+
+    console.log(`Avatar uploaded successfully for user ${user._id}: ${avatarUrl}`);
 
     res.status(200).json({
       success: true,

@@ -143,6 +143,20 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Delete account function
+  const deleteAccount = async () => {
+    setError(null);
+    try {
+      const response = await authService.deleteAccount();
+      authService.logout();
+      setCurrentUser(null);
+      return response;
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to delete account. Please try again.');
+      throw err;
+    }
+  };
+
   // Context value
   const value = {
     currentUser,
@@ -158,6 +172,8 @@ export const AuthProvider = ({ children }) => {
     resetPassword,
     verifyEmail,
     resendVerification,
+    deleteAccount,
+    setCurrentUser,
     setError
   };
 

@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiMenu, FiX, FiMoon, FiSun, FiUser, FiPlus } from 'react-icons/fi';
+import { FiMenu, FiX, FiMoon, FiSun, FiUser, FiPlus, FiSettings } from 'react-icons/fi';
 import { useTheme } from '../../App';
 import { useAuth } from '../../context/AuthContext';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
   const { darkMode, toggleDarkMode } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
@@ -32,10 +33,26 @@ const Navbar = () => {
   // Close mobile menu when route changes
   useEffect(() => {
     setIsOpen(false);
+    setShowProfileMenu(false);
   }, [location.pathname]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showProfileMenu && !event.target.closest('.profile-menu')) {
+        setShowProfileMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showProfileMenu]);
 
   const handleLogout = () => {
     logout();
+    navigate('/login');
   };
 
   return (
@@ -105,12 +122,54 @@ const Navbar = () => {
                     <FiPlus className="inline mr-1" />
                     Create Event
                   </Link>
-                  <button
-                    onClick={handleLogout}
-                    className="px-4 py-2 rounded-md text-sm font-medium bg-red-600 text-white hover:bg-red-700 transition-colors duration-200"
-                  >
-                    Logout
-                  </button>
+                  
+                  {/* User Profile Dropdown */}
+                  <div className="relative profile-menu">
+                    <button
+                      onClick={() => setShowProfileMenu(!showProfileMenu)}
+                      className="flex items-center px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-primary-600 dark:text-gray-300 dark:hover:text-primary-400 transition-colors duration-200"
+                    >
+                      <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center mr-2 overflow-hidden">
+                        {currentUser?.avatar ? (
+                          <img 
+                            src={currentUser.avatar} 
+                            alt={currentUser.name} 
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <FiUser className="w-4 h-4" />
+                        )}
+                      </div>
+                      <span>{currentUser?.name?.split(' ')[0] || 'Account'}</span>
+                    </button>
+                    
+                    {/* Dropdown Menu */}
+                    <AnimatePresence>
+                      {showProfileMenu && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          transition={{ duration: 0.2 }}
+                          className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-dark-200 ring-1 ring-black ring-opacity-5 py-1"
+                        >
+                          <Link
+                            to="/profile"
+                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-dark-100"
+                          >
+                            <FiSettings className="inline mr-2" />
+                            Profile Settings
+                          </Link>
+                          <button
+                            onClick={handleLogout}
+                            className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 dark:text-red-400 dark:hover:bg-dark-100"
+                          >
+                            Logout
+                          </button>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
                 </>
               ) : (
                 <Link
@@ -224,6 +283,17 @@ const Navbar = () => {
                   >
                     <FiPlus className="inline mr-1" />
                     Create Event
+                  </Link>
+                  <Link
+                    to="/profile"
+                    className={`block px-3 py-2 rounded-md text-base font-medium ${
+                      location.pathname === '/profile'
+                        ? 'text-primary-600 dark:text-primary-400'
+                        : 'text-gray-700 hover:text-primary-600 dark:text-gray-300 dark:hover:text-primary-400'
+                    } transition-colors duration-200`}
+                  >
+                    <FiSettings className="inline mr-1" />
+                    Profile Settings
                   </Link>
                   <button
                     onClick={handleLogout}

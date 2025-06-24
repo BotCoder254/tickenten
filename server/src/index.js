@@ -5,6 +5,7 @@ const cors = require('cors');
 const passport = require('passport');
 const path = require('path');
 const dotenv = require('dotenv');
+const fs = require('fs');
 
 // Load environment variables
 dotenv.config();
@@ -96,8 +97,16 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 
-// Serve uploaded files
+// Create uploads directory if it doesn't exist
+const uploadsDir = path.join(__dirname, '../uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+  console.log('Created uploads directory');
+}
+
+// Serve uploaded files - make sure this is before the routes
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use('/api/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Initialize Passport
 app.use(passport.initialize());

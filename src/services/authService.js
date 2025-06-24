@@ -140,6 +140,50 @@ const authService = {
   },
 
   /**
+   * Upload user avatar
+   * @param {File} avatarFile - The avatar image file
+   * @returns {Promise} - API response with avatar URL
+   */
+  uploadAvatar: async (avatarFile) => {
+    try {
+      const formData = new FormData();
+      formData.append('avatar', avatarFile);
+      
+      // Use axios directly with multipart/form-data
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/users/me/avatar', {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to upload avatar');
+      }
+      
+      return await response.json();
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Delete user account
+   * @returns {Promise} - API response
+   */
+  deleteAccount: async () => {
+    try {
+      const response = await api.delete('/users/me');
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
    * Check if user is authenticated
    * @returns {boolean} - True if user is authenticated
    */

@@ -11,6 +11,7 @@ const fs = require('fs');
 const uploadDir = path.join(__dirname, '../../uploads');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
+  console.log('Created uploads directory in user routes');
 }
 
 // Configure multer for file uploads
@@ -27,7 +28,7 @@ const storage = multer.diskStorage({
 const upload = multer({ 
   storage: storage,
   limits: {
-    fileSize: 2 * 1024 * 1024, // 2MB limit
+    fileSize: 5 * 1024 * 1024, // 5MB limit
   },
   fileFilter: function (req, file, cb) {
     // Accept only image files
@@ -37,6 +38,20 @@ const upload = multer({
     cb(null, true);
   }
 });
+
+// Error handling middleware for multer
+const uploadErrorHandler = (req, res, next) => {
+  upload.single('avatar')(req, res, (err) => {
+    if (err) {
+      console.error('Multer error:', err);
+      return res.status(400).json({
+        success: false,
+        message: err.message || 'Error uploading file',
+      });
+    }
+    next();
+  });
+};
 
 /**
  * @route   GET /api/users/me
@@ -97,7 +112,7 @@ router.get('/:id/events', userController.getUserEvents);
  * @desc    Upload user avatar
  * @access  Private
  */
-router.put('/me/avatar', protect, upload.single('avatar'), userController.uploadAvatar);
+router.put('/me/avatar', protect, uploadErrorHandler, userController.uploadAvatar);
 
 /**
  * @route   DELETE /api/users/me

@@ -171,7 +171,7 @@ exports.getMe = async (req, res) => {
  */
 exports.updateProfile = async (req, res) => {
   try {
-    const { name, email, bio, location, website, socialLinks } = req.body;
+    const { name, email, phoneNumber, bio, location, website, socialLinks } = req.body;
 
     // Build update object
     const updateFields = {};
@@ -187,10 +187,13 @@ exports.updateProfile = async (req, res) => {
       }
       updateFields.email = email;
     }
-    if (bio) updateFields.bio = bio;
-    if (location) updateFields.location = location;
-    if (website) updateFields.website = website;
+    if (phoneNumber !== undefined) updateFields.phoneNumber = phoneNumber;
+    if (bio !== undefined) updateFields.bio = bio;
+    if (location !== undefined) updateFields.location = location;
+    if (website !== undefined) updateFields.website = website;
     if (socialLinks) updateFields.socialLinks = socialLinks;
+
+    console.log('Updating user profile with fields:', updateFields);
 
     // Update user
     const user = await User.findByIdAndUpdate(
