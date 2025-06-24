@@ -159,82 +159,85 @@ const LandingPage = () => {
 
   return (
     <div className="min-h-screen">
-      {/* Hero Section */}
-      <section className="relative pt-32 pb-20 md:pt-40 md:pb-24 bg-gradient-to-br from-primary-50 to-secondary-50 dark:from-dark-200 dark:to-dark-300">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <motion.div
-              initial={{ opacity: 0, x: -50 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5 }}
-            >
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 dark:text-white leading-tight">
-                Discover and Create
-                <span className="bg-gradient-to-r from-primary-500 to-secondary-500 bg-clip-text text-transparent"> Amazing Events</span>
-              </h1>
-              <p className="mt-6 text-lg text-gray-700 dark:text-gray-300 max-w-lg">
-                Find the perfect events or create your own. TickenTen makes it easy to discover, manage, and attend events that match your interests.
-              </p>
-              <div className="mt-8 flex flex-col sm:flex-row gap-4">
-                <Link
-                  to="/register"
-                  className="btn btn-primary"
-                >
-                  Create an Event
-                </Link>
-                <Link
-                  to="/events"
-                  className="btn btn-outline"
-                >
-                  Explore Events
-                </Link>
+   <section className="relative pt-32 pb-24 md:pt-40 md:pb-32 bg-gradient-to-br from-primary-50 to-secondary-50 dark:from-dark-200 dark:to-dark-300 overflow-hidden">
+  {/* Background Blobs */}
+  <div className="absolute top-[-10rem] right-[-10rem] w-[32rem] h-[32rem] rounded-full bg-secondary-400 dark:bg-secondary-900 opacity-20 blur-3xl z-0"></div>
+  <div className="absolute bottom-[-10rem] left-[-10rem] w-[32rem] h-[32rem] rounded-full bg-primary-400 dark:bg-primary-900 opacity-20 blur-3xl z-0"></div>
+
+  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+      {/* Left Text */}
+      <motion.div
+        initial={{ opacity: 0, x: -50 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.7, ease: "easeOut" }}
+      >
+        <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight text-gray-900 dark:text-white tracking-tight">
+          Discover and Create <br />
+          <span className="bg-gradient-to-r from-primary-500 to-secondary-500 bg-clip-text text-transparent">
+            Amazing Events
+          </span>
+        </h1>
+        <p className="mt-6 text-lg text-gray-700 dark:text-gray-300 max-w-xl leading-relaxed">
+          Find the perfect events or create your own. TickenTen makes it easy to
+          discover, manage, and attend events that match your interests.
+        </p>
+        <div className="mt-8 flex flex-col sm:flex-row gap-4">
+          <Link
+            to="/register"
+            className="px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg shadow-md transition duration-300 ease-in-out text-center"
+          >
+            Create an Event
+          </Link>
+          <Link
+            to="/events"
+            className="px-6 py-3 border border-gray-300 dark:border-gray-600 hover:border-primary-500 dark:hover:border-primary-500 text-gray-800 dark:text-white hover:text-primary-600 dark:hover:text-primary-400 font-semibold rounded-lg transition duration-300 ease-in-out text-center"
+          >
+            Explore Events
+          </Link>
+        </div>
+      </motion.div>
+
+      {/* Right Visual */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.7, delay: 0.2 }}
+        className="relative"
+      >
+        <div className="relative overflow-hidden rounded-3xl shadow-2xl border border-white/10">
+          <img
+            src="https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80"
+            alt="Events showcase"
+            className="w-full h-auto object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-6">
+            <div className="text-white">
+              <div className="text-sm font-medium opacity-80">🎉 Featured Event</div>
+              <div className="text-2xl font-bold mt-1">Summer Music Festival 2023</div>
+              <div className="flex items-center mt-2 text-sm text-white/80">
+                <FiCalendar className="mr-2" /> June 15–18, 2023
               </div>
-            </motion.div>
-            
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="relative"
-            >
-              <div className="relative rounded-2xl overflow-hidden shadow-xl">
-                <img
-                  src="https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80"
-                  alt="Events showcase"
-                  className="w-full h-auto object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-6">
-                  <div className="text-white">
-                    <div className="text-sm font-medium">Featured Event</div>
-                    <div className="text-xl font-bold mt-1">Summer Music Festival 2023</div>
-                    <div className="flex items-center mt-2 text-sm">
-                      <FiCalendar className="mr-1" /> June 15-18, 2023
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Floating card */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.5 }}
-                className="absolute -bottom-6 -right-6 bg-white dark:bg-dark-100 rounded-xl shadow-lg p-4 w-40"
-              >
-                <div className="text-center">
-                  <div className="text-sm text-gray-600 dark:text-gray-400">Active Users</div>
-                  <div className="text-2xl font-bold text-gray-900 dark:text-white mt-1">10,000+</div>
-                </div>
-              </motion.div>
-            </motion.div>
+            </div>
           </div>
         </div>
-        
-        {/* Decorative elements */}
-        <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/4 w-96 h-96 bg-secondary-300 dark:bg-secondary-900 rounded-full opacity-10 blur-3xl"></div>
-        <div className="absolute bottom-0 left-0 translate-y-1/2 -translate-x-1/4 w-96 h-96 bg-primary-300 dark:bg-primary-900 rounded-full opacity-10 blur-3xl"></div>
-      </section>
 
+        {/* Floating Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.6 }}
+          className="absolute -bottom-8 -right-8 backdrop-blur-md bg-white/70 dark:bg-black/40 border border-white/10 rounded-2xl shadow-lg p-4 w-48"
+        >
+          <div className="text-center">
+            <div className="text-sm text-gray-700 dark:text-gray-300">Active Users</div>
+            <div className="text-2xl font-bold text-gray-900 dark:text-white mt-1">10,000+</div>
+          </div>
+        </motion.div>
+      </motion.div>
+    </div>
+  </div>
+</section>
       {/* Search Section */}
       <section className="py-12 bg-white dark:bg-dark-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
