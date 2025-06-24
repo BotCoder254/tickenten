@@ -6,6 +6,17 @@ import { FiPlusCircle, FiCalendar, FiUsers, FiTag, FiDollarSign, FiBarChart2, Fi
 import eventService from '../../services/eventService';
 import ticketService from '../../services/ticketService';
 
+// Helper function for consistent image handling
+const getImageUrl = (imagePath) => {
+  if (!imagePath) return 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80';
+  
+  if (imagePath.startsWith('http')) {
+    return imagePath;
+  }
+  
+  return `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}${imagePath}`;
+};
+
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
 
@@ -289,16 +300,12 @@ const EventCard = ({ event, formatDate }) => {
       <div className="h-48 bg-gray-200 dark:bg-gray-700 relative">
         {event.featuredImage ? (
           <img 
-            src={
-              event.featuredImage.startsWith('http') 
-                ? event.featuredImage
-                : `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}${event.featuredImage}`
-            } 
+            src={getImageUrl(event.featuredImage)} 
             alt={event.title} 
             className="w-full h-full object-cover"
             onError={(e) => {
               e.target.onerror = null;
-              e.target.src = 'https://via.placeholder.com/300x200?text=Image+Error';
+              e.target.src = 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80';
             }}
           />
         ) : (
@@ -399,16 +406,12 @@ const TicketCard = ({ ticket, formatDate }) => {
       <div className="md:w-1/4 mb-4 md:mb-0">
         {ticket.event?.featuredImage ? (
           <img 
-            src={
-              ticket.event.featuredImage.startsWith('http') 
-                ? ticket.event.featuredImage
-                : `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}${ticket.event.featuredImage}`
-            } 
+            src={getImageUrl(ticket.event.featuredImage)} 
             alt={ticket.event.title} 
             className="w-full h-32 md:h-full object-cover rounded-lg"
             onError={(e) => {
               e.target.onerror = null;
-              e.target.src = 'https://via.placeholder.com/300x200?text=Image+Error';
+              e.target.src = 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80';
             }}
           />
         ) : (

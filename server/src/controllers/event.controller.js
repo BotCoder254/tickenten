@@ -25,7 +25,23 @@ exports.getEvents = async (req, res) => {
     }
 
     // Filtering
-    const filter = { status: 'published', visibility: 'public' };
+    let filter = {};
+    
+    // If user is authenticated, show their draft events plus all published public events
+    if (req.user) {
+      filter = {
+        $or: [
+          { status: 'published', visibility: 'public' },
+          { creator: req.user.id }
+        ]
+      };
+    } else {
+      // For unauthenticated users, only show published public events
+      filter = { 
+        status: 'published', 
+        visibility: 'public' 
+      };
+    }
     
     if (req.query.category) {
       filter.category = req.query.category;
@@ -164,11 +180,33 @@ exports.searchEvents = async (req, res) => {
       });
     }
 
-    const events = await Event.find({
-      $text: { $search: q },
-      status: 'published',
-      visibility: 'public',
-    })
+    // Prepare the search query
+    let searchQuery;
+    
+    // If user is authenticated, include their draft events in search results
+    if (req.user) {
+      searchQuery = {
+        $and: [
+          {
+            $or: [
+              { status: 'published', visibility: 'public' },
+              { creator: req.user.id } // Include user's own events regardless of status
+            ]
+          },
+          { $text: { $search: q } }
+        ]
+      };
+    } else {
+      // For unauthenticated users, only show published events
+      searchQuery = {
+        $and: [
+          { status: 'published', visibility: 'public' },
+          { $text: { $search: q } }
+        ]
+      };
+    }
+
+    const events = await Event.find(searchQuery)
       .sort({ score: { $meta: 'textScore' } })
       .limit(20)
       .populate('creator', 'name avatar');
@@ -231,7 +269,7 @@ exports.getEventById = async (req, res) => {
 
     const event = await Event.findById(req.params.id).populate(
       'creator',
-      'name avatar'
+      'name avatar email'
     );
 
     if (!event) {
@@ -241,11 +279,13 @@ exports.getEventById = async (req, res) => {
       });
     }
 
-    // Check if event is published or if the user is the creator
-    if (
-      event.status !== 'published' &&
-      (!req.user || event.creator._id.toString() !== req.user.id)
-    ) {
+    // Allow viewing if:
+    // 1. The event is published (public access)
+    // 2. The requester is the creator of the event (regardless of status)
+    const isCreator = req.user && event.creator && 
+                    (event.creator._id.toString() === req.user.id);
+    
+    if (event.status !== 'published' && !isCreator) {
       return res.status(403).json({
         success: false,
         message: 'Not authorized to view this event',

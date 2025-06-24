@@ -2,7 +2,7 @@ const express = require('express');
 const { check } = require('express-validator');
 const router = express.Router();
 const eventController = require('../controllers/event.controller');
-const { protect } = require('../middleware/auth');
+const { protect, optionalProtect } = require('../middleware/auth.middleware');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -43,7 +43,7 @@ const upload = multer({
  * @desc    Get all events
  * @access  Public
  */
-router.get('/', eventController.getEvents);
+router.get('/', optionalProtect, eventController.getEvents);
 
 /**
  * @route   GET /api/events/featured
@@ -64,7 +64,7 @@ router.get('/categories', eventController.getEventCategories);
  * @desc    Search events
  * @access  Public
  */
-router.get('/search', eventController.searchEvents);
+router.get('/search', optionalProtect, eventController.searchEvents);
 
 /**
  * @route   GET /api/events/user
@@ -78,7 +78,7 @@ router.get('/user', protect, eventController.getUserEvents);
  * @desc    Get event by ID
  * @access  Public
  */
-router.get('/:id', eventController.getEventById);
+router.get('/:id', optionalProtect, eventController.getEventById);
 
 /**
  * @route   POST /api/events

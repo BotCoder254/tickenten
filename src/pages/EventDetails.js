@@ -7,6 +7,17 @@ import eventService from '../services/eventService';
 import ticketService from '../services/ticketService';
 import { useAuth } from '../context/AuthContext';
 
+// Add the getImageUrl helper function
+const getImageUrl = (imagePath) => {
+  if (!imagePath) return 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80';
+  
+  if (imagePath.startsWith('http')) {
+    return imagePath;
+  }
+  
+  return `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}${imagePath}`;
+};
+
 const EventDetails = () => {
   const { eventId } = useParams();
   const [isLiked, setIsLiked] = useState(false);
@@ -188,13 +199,7 @@ const EventDetails = () => {
             >
               <div className="rounded-xl overflow-hidden shadow-lg">
                 <img
-                  src={
-                    event.featuredImage 
-                      ? (event.featuredImage.startsWith('http') 
-                        ? event.featuredImage
-                        : `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}${event.featuredImage}`)
-                      : "https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80"
-                  }
+                  src={getImageUrl(event.featuredImage)}
                   alt={event.title}
                   className="w-full h-64 object-cover"
                   onError={(e) => {

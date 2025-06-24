@@ -29,6 +29,17 @@ const categories = [
   { name: 'Other', icon: '✨', color: 'bg-red-100 dark:bg-red-900/30' },
 ];
 
+// Improved image handling function
+const getImageUrl = (imagePath) => {
+  if (!imagePath) return 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80';
+  
+  if (imagePath.startsWith('http')) {
+    return imagePath;
+  }
+  
+  return `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}${imagePath}`;
+};
+
 const Events = () => {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -300,18 +311,12 @@ const Events = () => {
                     >
                       <div className="relative h-48">
                         <img
-                          src={
-                            event.featuredImage 
-                              ? (event.featuredImage.startsWith('http') 
-                                ? event.featuredImage
-                                : `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}${event.featuredImage}`)
-                              : 'https://via.placeholder.com/300x200?text=No+Image'
-                          }
+                          src={getImageUrl(event.featuredImage)}
                           alt={event.title}
                           className="w-full h-full object-cover"
                           onError={(e) => {
                             e.target.onerror = null;
-                            e.target.src = 'https://via.placeholder.com/300x200?text=Image+Error';
+                            e.target.src = 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80';
                           }}
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
@@ -381,19 +386,13 @@ const Events = () => {
                       <div className="sm:w-1/4 mb-4 sm:mb-0">
                         <div className="relative h-48 sm:h-full">
                           <img
-                            src={
-                              event.featuredImage 
-                                ? (event.featuredImage.startsWith('http') 
-                                  ? event.featuredImage
-                                  : `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}${event.featuredImage}`)
-                                : 'https://via.placeholder.com/300x200?text=No+Image'
-                            }
+                            src={getImageUrl(event.featuredImage)}
                             alt={event.title}
                             className="w-full h-full object-cover rounded-lg"
-                            onError={(e) => {
-                              e.target.onerror = null;
-                              e.target.src = 'https://via.placeholder.com/300x200?text=Image+Error';
-                            }}
+                                                      onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80';
+                          }}
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent rounded-lg"></div>
                           <div className="absolute top-3 right-3 bg-white dark:bg-dark-100 rounded-full px-3 py-1 text-xs font-medium text-gray-700 dark:text-gray-300">
