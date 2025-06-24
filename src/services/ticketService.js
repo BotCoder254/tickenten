@@ -74,6 +74,20 @@ const ticketService = {
   },
 
   /**
+   * Delete a ticket
+   * @param {string} ticketId - Ticket ID
+   * @returns {Promise} - API response
+   */
+  deleteTicket: async (ticketId) => {
+    try {
+      const response = await api.delete(`/tickets/${ticketId}`);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
    * Check in a ticket
    * @param {string} ticketId - Ticket ID
    * @returns {Promise} - API response

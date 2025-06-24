@@ -276,14 +276,30 @@ const DashboardCard = ({ title, value, icon }) => {
 
 // Event Card Component
 const EventCard = ({ event, formatDate }) => {
+  // Get lowest price from ticket types
+  const getLowestPrice = () => {
+    if (!event.ticketTypes || event.ticketTypes.length === 0) return 'Free';
+    const prices = event.ticketTypes.map(ticket => ticket.price);
+    const lowestPrice = Math.min(...prices);
+    return lowestPrice > 0 ? `${lowestPrice} ${event.ticketTypes[0].currency || 'USD'}` : 'Free';
+  };
+
   return (
     <div className="card overflow-hidden flex flex-col bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow duration-200">
       <div className="h-48 bg-gray-200 dark:bg-gray-700 relative">
         {event.featuredImage ? (
           <img 
-            src={event.featuredImage} 
+            src={
+              event.featuredImage.startsWith('http') 
+                ? event.featuredImage
+                : `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}${event.featuredImage}`
+            } 
             alt={event.title} 
             className="w-full h-full object-cover"
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = 'https://via.placeholder.com/300x200?text=Image+Error';
+            }}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-gray-400">
@@ -311,7 +327,7 @@ const EventCard = ({ event, formatDate }) => {
           </div>
           <div className="flex items-center text-sm mt-1">
             <FiMapPin className="mr-1" />
-            <span>{event.location?.city || 'Location unavailable'}</span>
+            <span>{event.isVirtual ? 'Virtual Event' : event.location?.city || 'Location unavailable'}</span>
           </div>
         </div>
       </div>
@@ -322,12 +338,23 @@ const EventCard = ({ event, formatDate }) => {
         <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2 mb-3">
           {event.shortDescription}
         </p>
-        <div className="flex justify-between items-center text-sm">
+        <div className="flex justify-between items-center text-sm mb-2">
           <span className="text-gray-500 dark:text-gray-400">
             {(event.ticketTypes || []).reduce((sum, ticket) => sum + (ticket.quantitySold || 0), 0)} tickets sold
           </span>
           <span className="font-medium text-primary-600 dark:text-primary-400">
-            ${(event.ticketTypes || []).reduce((sum, ticket) => sum + ((ticket.price || 0) * (ticket.quantitySold || 0)), 0)}
+            From {getLowestPrice()}
+          </span>
+        </div>
+        <div className="flex justify-between items-center text-sm">
+          <span className="text-gray-500 dark:text-gray-400">
+            {event.status === 'published' ? 'Revenue' : 'Capacity'}
+          </span>
+          <span className="font-medium text-primary-600 dark:text-primary-400">
+            {event.status === 'published' 
+              ? `$${(event.ticketTypes || []).reduce((sum, ticket) => sum + ((ticket.price || 0) * (ticket.quantitySold || 0)), 0)}`
+              : event.capacity ? `${event.capacity} attendees` : 'Unlimited'
+            }
           </span>
         </div>
       </div>
@@ -351,14 +378,38 @@ const EventCard = ({ event, formatDate }) => {
 
 // Ticket Card Component
 const TicketCard = ({ ticket, formatDate }) => {
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDeleteTicket = async () => {
+    if (isDeleting) return;
+    
+    try {
+      setIsDeleting(true);
+      await ticketService.deleteTicket(ticket._id);
+      // Refresh tickets by refetching the query
+      window.location.reload();
+    } catch (error) {
+      console.error('Error deleting ticket:', error);
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <div className="card p-4 flex flex-col md:flex-row">
       <div className="md:w-1/4 mb-4 md:mb-0">
         {ticket.event?.featuredImage ? (
           <img 
-            src={ticket.event.featuredImage} 
+            src={
+              ticket.event.featuredImage.startsWith('http') 
+                ? ticket.event.featuredImage
+                : `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}${ticket.event.featuredImage}`
+            } 
             alt={ticket.event.title} 
             className="w-full h-32 md:h-full object-cover rounded-lg"
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = 'https://via.placeholder.com/300x200?text=Image+Error';
+            }}
           />
         ) : (
           <div className="w-full h-32 bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center">
@@ -382,7 +433,7 @@ const TicketCard = ({ ticket, formatDate }) => {
           </span>
         </div>
         <p className="text-gray-500 dark:text-gray-400 text-sm mb-3">
-          {formatDate(ticket.event?.startDate)} • {ticket.ticketType?.name || 'General Admission'}
+          {formatDate(ticket.event?.startDate)} • {ticket.ticketTypeInfo?.name || 'General Admission'}
         </p>
         <div className="flex flex-wrap gap-4 text-sm">
           <div>
@@ -396,7 +447,7 @@ const TicketCard = ({ ticket, formatDate }) => {
           <div>
             <p className="text-gray-500 dark:text-gray-400">Price</p>
             <p className="font-medium text-gray-900 dark:text-white">
-              {ticket.ticketType?.price || 0} {ticket.ticketType?.currency || 'USD'}
+              {ticket.ticketTypeInfo?.price || 0} {ticket.ticketTypeInfo?.currency || 'USD'}
             </p>
           </div>
         </div>
@@ -408,8 +459,12 @@ const TicketCard = ({ ticket, formatDate }) => {
             View Ticket
           </Link>
           {ticket.status !== 'used' && ticket.status !== 'cancelled' && (
-            <button className="btn btn-outline-danger btn-sm">
-              Cancel Ticket
+            <button 
+              className="btn btn-outline-danger btn-sm"
+              onClick={() => window.confirm("Are you sure you want to cancel this ticket?") && handleDeleteTicket()}
+              disabled={isDeleting}
+            >
+              {isDeleting ? 'Deleting...' : 'Delete Ticket'}
             </button>
           )}
         </div>

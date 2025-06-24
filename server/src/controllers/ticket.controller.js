@@ -638,4 +638,67 @@ exports.shareTicket = async (req, res) => {
       error: error.message,
     });
   }
+};
+
+/**
+ * @desc    Delete a ticket
+ * @route   DELETE /api/tickets/:ticketId
+ * @access  Private
+ */
+exports.deleteTicket = async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.ticketId);
+
+    if (!ticket) {
+      return res.status(404).json({
+        success: false,
+        message: 'Ticket not found',
+      });
+    }
+
+    // Check if user is authorized to delete this ticket
+    // Allow deletion by the ticket owner or event creator
+    const event = await Event.findById(ticket.event);
+    
+    if (!event) {
+      return res.status(404).json({
+        success: false,
+        message: 'Associated event not found',
+      });
+    }
+
+    if (ticket.user.toString() !== req.user.id && event.creator.toString() !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to delete this ticket',
+      });
+    }
+
+    // Update ticket type quantity if needed
+    if (ticket.status === 'valid') {
+      const ticketType = event.ticketTypes.find(
+        (type) => type._id.toString() === ticket.ticketType.toString()
+      );
+
+      if (ticketType) {
+        ticketType.quantitySold -= 1;
+        await event.save();
+      }
+    }
+
+    // Delete the ticket
+    await ticket.remove();
+
+    res.status(200).json({
+      success: true,
+      message: 'Ticket deleted successfully',
+    });
+  } catch (error) {
+    console.error('Delete ticket error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+      error: error.message,
+    });
+  }
 }; 

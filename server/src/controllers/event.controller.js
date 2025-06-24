@@ -388,7 +388,8 @@ exports.deleteEvent = async (req, res) => {
       });
     }
 
-    await event.remove();
+    // Use findByIdAndDelete instead of remove()
+    await Event.findByIdAndDelete(req.params.id);
 
     res.status(200).json({
       success: true,

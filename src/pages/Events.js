@@ -300,15 +300,21 @@ const Events = () => {
                     >
                       <div className="relative h-48">
                         <img
-                          src={event.featuredImage && event.featuredImage.startsWith('http') 
-                            ? event.featuredImage
-                            : event.featuredImage && event.featuredImage.startsWith('/') 
-                              ? `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}${event.featuredImage}`
+                          src={
+                            event.featuredImage 
+                              ? (event.featuredImage.startsWith('http') 
+                                ? event.featuredImage
+                                : `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}${event.featuredImage}`)
                               : 'https://via.placeholder.com/300x200?text=No+Image'
                           }
                           alt={event.title}
                           className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = 'https://via.placeholder.com/300x200?text=Image+Error';
+                          }}
                         />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
                         <div className="absolute top-3 right-3 bg-white dark:bg-dark-100 rounded-full px-3 py-1 text-xs font-medium text-gray-700 dark:text-gray-300">
                           {event.category}
                         </div>
@@ -334,13 +340,13 @@ const Events = () => {
                           </div>
                           <div className="flex items-center mt-1">
                             <FiMapPin className="mr-1" />
-                            {event.isVirtual ? 'Virtual Event' : `${event.location.city}, ${event.location.country}`}
+                            {event.isVirtual ? 'Virtual Event' : `${event.location?.city || 'Unknown'}, ${event.location?.country || ''}`}
                           </div>
                         </div>
                         <div className="mt-4 flex justify-between items-center">
                           <span className="font-bold text-gray-900 dark:text-white">
                             {event.ticketTypes && event.ticketTypes.length > 0
-                              ? `${event.ticketTypes[0].price} ${event.ticketTypes[0].currency}`
+                              ? `${event.ticketTypes[0].price} ${event.ticketTypes[0].currency || 'USD'}`
                               : 'Free'}
                           </span>
                           {event._id && /^[0-9a-fA-F]{24}$/.test(event._id) ? (
@@ -375,15 +381,21 @@ const Events = () => {
                       <div className="sm:w-1/4 mb-4 sm:mb-0">
                         <div className="relative h-48 sm:h-full">
                           <img
-                            src={event.featuredImage && event.featuredImage.startsWith('http') 
-                              ? event.featuredImage
-                              : event.featuredImage && event.featuredImage.startsWith('/') 
-                                ? `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}${event.featuredImage}`
+                            src={
+                              event.featuredImage 
+                                ? (event.featuredImage.startsWith('http') 
+                                  ? event.featuredImage
+                                  : `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}${event.featuredImage}`)
                                 : 'https://via.placeholder.com/300x200?text=No+Image'
                             }
                             alt={event.title}
                             className="w-full h-full object-cover rounded-lg"
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src = 'https://via.placeholder.com/300x200?text=Image+Error';
+                            }}
                           />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent rounded-lg"></div>
                           <div className="absolute top-3 right-3 bg-white dark:bg-dark-100 rounded-full px-3 py-1 text-xs font-medium text-gray-700 dark:text-gray-300">
                             {event.category}
                           </div>
@@ -412,14 +424,14 @@ const Events = () => {
                           <div className="flex items-center">
                             <FiMapPin className="mr-2 text-gray-500" />
                             <span>
-                              {event.isVirtual ? 'Virtual Event' : `${event.location.city}, ${event.location.country}`}
+                              {event.isVirtual ? 'Virtual Event' : `${event.location?.city || 'Unknown'}, ${event.location?.country || ''}`}
                             </span>
                           </div>
                         </div>
                         <div className="mt-6 flex justify-between items-center">
                           <span className="font-bold text-lg text-gray-900 dark:text-white">
                             {event.ticketTypes && event.ticketTypes.length > 0
-                              ? `${event.ticketTypes[0].price} ${event.ticketTypes[0].currency}`
+                              ? `${event.ticketTypes[0].price} ${event.ticketTypes[0].currency || 'USD'}`
                               : 'Free'}
                           </span>
                           {event._id && /^[0-9a-fA-F]{24}$/.test(event._id) ? (

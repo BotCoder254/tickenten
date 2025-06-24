@@ -66,4 +66,9 @@ router.post(
   ticketController.shareTicket
 );
 
+// @route   DELETE /api/tickets/:ticketId
+// @desc    Delete a ticket
+// @access  Private
+router.delete('/:ticketId', protect, ticketController.deleteTicket);
+
 module.exports = router; 

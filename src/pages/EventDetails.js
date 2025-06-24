@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FiCalendar, FiMapPin, FiClock, FiTag, FiShare2, FiHeart } from 'react-icons/fi';
+import { FiCalendar, FiMapPin, FiClock, FiTag, FiShare2, FiHeart, FiTrash2 } from 'react-icons/fi';
 import { useQuery } from '@tanstack/react-query';
 import eventService from '../services/eventService';
 import ticketService from '../services/ticketService';
@@ -12,7 +12,9 @@ const EventDetails = () => {
   const [isLiked, setIsLiked] = useState(false);
   const [selectedTicketType, setSelectedTicketType] = useState(null);
   const [quantity, setQuantity] = useState(1);
+  const [deleting, setDeleting] = useState(false);
   const { isAuthenticated, currentUser } = useAuth();
+  const navigate = useNavigate();
 
   const { data: event, isLoading, error } = useQuery({
     queryKey: ['event', eventId],
@@ -111,6 +113,24 @@ const EventDetails = () => {
     });
   };
 
+  // Check if current user is the event creator
+  const isCreator = event && currentUser && event.creator && 
+                    event.creator._id === currentUser.id;
+
+  // Handle event deletion
+  const handleDeleteEvent = async () => {
+    if (!isCreator) return;
+    
+    try {
+      setDeleting(true);
+      await eventService.deleteEvent(eventId);
+      navigate('/events');
+    } catch (err) {
+      console.error('Error deleting event:', err);
+      setDeleting(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -168,14 +188,19 @@ const EventDetails = () => {
             >
               <div className="rounded-xl overflow-hidden shadow-lg">
                 <img
-                  src={event.featuredImage && event.featuredImage.startsWith('http') 
-                    ? event.featuredImage
-                    : event.featuredImage && event.featuredImage.startsWith('/') 
-                      ? `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}${event.featuredImage}`
+                  src={
+                    event.featuredImage 
+                      ? (event.featuredImage.startsWith('http') 
+                        ? event.featuredImage
+                        : `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}${event.featuredImage}`)
                       : "https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80"
                   }
                   alt={event.title}
                   className="w-full h-64 object-cover"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = "https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80";
+                  }}
                 />
               </div>
             </motion.div>
@@ -191,6 +216,18 @@ const EventDetails = () => {
                 <span className="px-3 py-1 bg-white/20 rounded-full text-sm font-medium">
                   {event.category}
                 </span>
+                {isCreator && (
+                  <div className="ml-auto">
+                    <button
+                      onClick={handleDeleteEvent}
+                      disabled={deleting}
+                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg flex items-center"
+                    >
+                      <FiTrash2 className="mr-2" />
+                      {deleting ? 'Deleting...' : 'Delete Event'}
+                    </button>
+                  </div>
+                )}
               </div>
               <h1 className="text-3xl md:text-4xl font-bold mb-4">{event.title}</h1>
               <p className="text-lg text-white/90 mb-6">{event.shortDescription}</p>
@@ -257,36 +294,125 @@ const EventDetails = () => {
               <div className="prose max-w-none dark:prose-invert prose-headings:text-gray-900 dark:prose-headings:text-white prose-p:text-gray-600 dark:prose-p:text-gray-300">
                 <p className="whitespace-pre-line">{event.description}</p>
               </div>
-            </div>
-
-            {/* Location */}
-            {!event.isVirtual && event.location && (
-              <div className="card p-6 mb-8">
-                <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Location</h2>
-                <div className="mb-4">
-                  <p className="text-gray-700 dark:text-gray-300 font-medium">{event.location.venue}</p>
-                  <p className="text-gray-600 dark:text-gray-400">
-                    {event.location.address}, {event.location.city}, {event.location.state} {event.location.zipCode}
-                  </p>
-                </div>
-                <div className="h-64 bg-gray-200 dark:bg-gray-700 rounded-lg">
-                  {/* Map would go here */}
-                  <div className="w-full h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
-                    Map view unavailable in demo
+              
+              {/* Event Details */}
+              <div className="mt-8 border-t border-gray-200 dark:border-gray-700 pt-6">
+                <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Event Details</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="font-medium text-gray-900 dark:text-white">Date & Time</h4>
+                    <p className="text-gray-600 dark:text-gray-400">
+                      {formatDate(event.startDate)}
+                      <br />
+                      {formatTime(event.startDate)} - {formatTime(event.endDate)}
+                    </p>
                   </div>
+                  
+                  <div>
+                    <h4 className="font-medium text-gray-900 dark:text-white">Category</h4>
+                    <p className="text-gray-600 dark:text-gray-400">{event.category}</p>
+                  </div>
+                  
+                  <div>
+                    <h4 className="font-medium text-gray-900 dark:text-white">Venue</h4>
+                    <p className="text-gray-600 dark:text-gray-400">
+                      {event.isVirtual 
+                        ? 'Virtual Event' 
+                        : event.location?.venue || 'Venue not specified'}
+                    </p>
+                    {!event.isVirtual && event.location && (
+                      <p className="text-gray-600 dark:text-gray-400 mt-1">
+                        {event.location.city}{event.location.country ? `, ${event.location.country}` : ''}
+                      </p>
+                    )}
+                  </div>
+                  
+                  <div>
+                    <h4 className="font-medium text-gray-900 dark:text-white">Status</h4>
+                    <p className="text-gray-600 dark:text-gray-400 capitalize">{event.status}</p>
+                  </div>
+                  
+                  {event.tags && event.tags.length > 0 && (
+                    <div className="md:col-span-2">
+                      <h4 className="font-medium text-gray-900 dark:text-white">Tags</h4>
+                      <div className="flex flex-wrap gap-2 mt-1">
+                        {event.tags.map((tag, index) => (
+                          <span key={index} className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded-full text-xs text-gray-800 dark:text-gray-200">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Social links if available */}
+                  {event.socialLinks && (
+                    <div className="md:col-span-2">
+                      <h4 className="font-medium text-gray-900 dark:text-white">Social Links</h4>
+                      <div className="flex flex-wrap gap-3 mt-2">
+                        {event.socialLinks.website && (
+                          <a href={event.socialLinks.website} target="_blank" rel="noopener noreferrer" 
+                             className="text-primary-600 dark:text-primary-400 hover:underline">Website</a>
+                        )}
+                        {event.socialLinks.facebook && (
+                          <a href={event.socialLinks.facebook} target="_blank" rel="noopener noreferrer" 
+                             className="text-primary-600 dark:text-primary-400 hover:underline">Facebook</a>
+                        )}
+                        {event.socialLinks.twitter && (
+                          <a href={event.socialLinks.twitter} target="_blank" rel="noopener noreferrer" 
+                             className="text-primary-600 dark:text-primary-400 hover:underline">Twitter</a>
+                        )}
+                        {event.socialLinks.instagram && (
+                          <a href={event.socialLinks.instagram} target="_blank" rel="noopener noreferrer" 
+                             className="text-primary-600 dark:text-primary-400 hover:underline">Instagram</a>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
-            )}
+              
+              {/* FAQ section if available */}
+              {event.faq && event.faq.length > 0 && (
+                <div className="mt-8 border-t border-gray-200 dark:border-gray-700 pt-6">
+                  <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Frequently Asked Questions</h3>
+                  <div className="space-y-4">
+                    {event.faq.map((item, index) => (
+                      <div key={index} className="border-b border-gray-200 dark:border-gray-700 pb-4 last:border-0 last:pb-0">
+                        <h4 className="font-medium text-gray-900 dark:text-white mb-2">{item.question}</h4>
+                        <p className="text-gray-600 dark:text-gray-400">{item.answer}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* Organizer */}
             <div className="card p-6">
               <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Organizer</h2>
               <div className="flex items-center">
-                <div className="h-12 w-12 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-400">
-                  <span className="text-lg font-bold">
-                    {event.creator?.name ? event.creator.name.charAt(0) : 'O'}
-                  </span>
-                </div>
+                {event.creator?.avatar ? (
+                  <img 
+                    src={
+                      event.creator.avatar.startsWith('http') 
+                        ? event.creator.avatar
+                        : `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}${event.creator.avatar}`
+                    }
+                    alt={event.creator.name} 
+                    className="h-12 w-12 rounded-full object-cover"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = 'https://via.placeholder.com/40?text=U';
+                    }}
+                  />
+                ) : (
+                  <div className="h-12 w-12 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-400">
+                    <span className="text-lg font-bold">
+                      {event.creator?.name ? event.creator.name.charAt(0) : 'O'}
+                    </span>
+                  </div>
+                )}
                 <div className="ml-4">
                   <p className="font-medium text-gray-900 dark:text-white">
                     {event.creator?.name || 'Event Organizer'}
@@ -294,6 +420,9 @@ const EventDetails = () => {
                   <p className="text-sm text-gray-600 dark:text-gray-400">
                     {event.creator?.email || 'Contact information unavailable'}
                   </p>
+                  {isCreator && (
+                    <p className="text-xs text-primary-600 dark:text-primary-400 mt-1">You are the organizer</p>
+                  )}
                 </div>
               </div>
             </div>
