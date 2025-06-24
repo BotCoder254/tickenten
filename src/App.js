@@ -19,6 +19,11 @@ import TicketDetails from './pages/TicketDetails';
 import UserProfile from './pages/UserProfile';
 import NotFound from './pages/NotFound';
 import Events from './pages/Events';
+import About from './pages/About';
+import Contact from './pages/Contact';
+import Privacy from './pages/Privacy';
+import Terms from './pages/Terms';
+import FAQ from './pages/FAQ';
 
 // Components
 import ProtectedRoute from './components/ProtectedRoute';
@@ -74,6 +79,11 @@ function App() {
                 <Route path="forgot-password" element={<ForgotPassword />} />
                 <Route path="reset-password/:token" element={<ResetPassword />} />
                 <Route path="verify-email/:token" element={<VerifyEmail />} />
+                <Route path="about" element={<About />} />
+                <Route path="contact" element={<Contact />} />
+                <Route path="privacy" element={<Privacy />} />
+                <Route path="terms" element={<Terms />} />
+                <Route path="faq" element={<FAQ />} />
               
                 {/* Protected routes */}
                 <Route element={<ProtectedRoute />}>

@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { useQuery } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Link, useLocation } from 'react-router-dom';
 import { FiPlusCircle, FiCalendar, FiUsers, FiTag, FiDollarSign, FiBarChart2, FiPieChart, FiMapPin } from 'react-icons/fi';
 import eventService from '../../services/eventService';
 import ticketService from '../../services/ticketService';
@@ -18,7 +18,18 @@ const getImageUrl = (imagePath) => {
 };
 
 const Dashboard = () => {
-  const [activeTab, setActiveTab] = useState('overview');
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const tabFromUrl = queryParams.get('tab');
+  
+  const [activeTab, setActiveTab] = useState(tabFromUrl || 'overview');
+
+  // Update URL when tab changes
+  useEffect(() => {
+    const newUrl = new URL(window.location);
+    newUrl.searchParams.set('tab', activeTab);
+    window.history.replaceState({}, '', newUrl);
+  }, [activeTab]);
 
   // Get user events
   const { 
@@ -386,17 +397,27 @@ const EventCard = ({ event, formatDate }) => {
 // Ticket Card Component
 const TicketCard = ({ ticket, formatDate }) => {
   const [isDeleting, setIsDeleting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const queryClient = useQueryClient();
 
   const handleDeleteTicket = async () => {
     if (isDeleting) return;
     
+    if (!window.confirm("Are you sure you want to delete this ticket? This action cannot be undone.")) {
+      return;
+    }
+    
     try {
       setIsDeleting(true);
+      setErrorMessage('');
       await ticketService.deleteTicket(ticket._id);
-      // Refresh tickets by refetching the query
-      window.location.reload();
+      // Refresh tickets by invalidating the query
+      queryClient.invalidateQueries(['userTickets']);
+      setIsDeleting(false);
     } catch (error) {
       console.error('Error deleting ticket:', error);
+      const message = error.message || 'Failed to delete ticket. Please try again.';
+      setErrorMessage(message);
       setIsDeleting(false);
     }
   };
@@ -454,6 +475,11 @@ const TicketCard = ({ ticket, formatDate }) => {
             </p>
           </div>
         </div>
+        {errorMessage && (
+          <div className="mt-2 text-sm text-red-600 dark:text-red-400">
+            {errorMessage}
+          </div>
+        )}
         <div className="mt-4 flex space-x-3">
           <Link 
             to={`/tickets/${ticket._id}`}
@@ -464,7 +490,7 @@ const TicketCard = ({ ticket, formatDate }) => {
           {ticket.status !== 'used' && ticket.status !== 'cancelled' && (
             <button 
               className="btn btn-outline-danger btn-sm"
-              onClick={() => window.confirm("Are you sure you want to cancel this ticket?") && handleDeleteTicket()}
+              onClick={handleDeleteTicket}
               disabled={isDeleting}
             >
               {isDeleting ? 'Deleting...' : 'Delete Ticket'}

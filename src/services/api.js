@@ -31,16 +31,31 @@ const publicRoutes = [
 
 // Check if a URL is a public route that doesn't require authentication
 const isPublicRoute = (url) => {
-  return publicRoutes.some(route => url.includes(route));
+  // For exact matches
+  if (publicRoutes.includes(url)) {
+    return true;
+  }
+  
+  // For pattern matches
+  return publicRoutes.some(route => {
+    // Skip exact routes for pattern matching
+    if (!route.endsWith('/')) return false;
+    
+    // Check if URL starts with the route pattern
+    return url.startsWith(route);
+  });
 };
 
 // Add request interceptor for adding auth token
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
+    
+    // Always add token if it exists, regardless of route
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    
     return config;
   },
   (error) => Promise.reject(error)

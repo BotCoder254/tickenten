@@ -137,9 +137,28 @@ const ticketService = {
    */
   deleteTicket: async (ticketId) => {
     try {
+      // Verify token exists before attempting deletion
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Authentication required. Please log in to delete tickets.');
+      }
+      
       const response = await api.delete(`/tickets/${ticketId}`);
       return response.data;
     } catch (error) {
+      console.error('Delete ticket error:', error);
+      // Provide more specific error messages based on response
+      if (error.response) {
+        if (error.response.status === 401) {
+          throw new Error('Authentication required. Please log in again to delete this ticket.');
+        } else if (error.response.status === 403) {
+          throw new Error('You are not authorized to delete this ticket.');
+        } else if (error.response.status === 404) {
+          throw new Error('Ticket not found. It may have been already deleted.');
+        } else {
+          throw new Error(error.response.data?.message || 'Failed to delete ticket. Please try again.');
+        }
+      }
       throw error;
     }
   },

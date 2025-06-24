@@ -1,21 +1,23 @@
 import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FiCalendar, FiMapPin, FiClock, FiDownload, FiShare2 } from 'react-icons/fi';
+import { FiCalendar, FiMapPin, FiClock, FiDownload, FiShare2, FiTrash2 } from 'react-icons/fi';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import QRCode from 'react-qr-code';
 import ticketService from '../services/ticketService';
 
 const TicketDetails = () => {
   const { ticketId } = useParams();
+  const navigate = useNavigate();
   const [showShareOptions, setShowShareOptions] = useState(false);
   const [shareEmail, setShareEmail] = useState('');
   const [shareError, setShareError] = useState('');
   const [shareSuccess, setShareSuccess] = useState('');
   const queryClient = useQueryClient();
+  const [isLoading, setIsLoading] = useState(false);
 
   // Get ticket details
-  const { data: ticket, isLoading, error } = useQuery({
+  const { data: ticket, isLoading: ticketLoading, error } = useQuery({
     queryKey: ['ticket', ticketId],
     queryFn: () => ticketService.getTicketById(ticketId),
     select: (data) => data.data,
@@ -27,6 +29,14 @@ const TicketDetails = () => {
     onSuccess: () => {
       // Refetch ticket data after cancellation
       queryClient.invalidateQueries(['ticket', ticketId]);
+    },
+  });
+
+  // Delete ticket mutation
+  const deleteMutation = useMutation({
+    mutationFn: () => ticketService.deleteTicket(ticketId),
+    onSuccess: () => {
+      navigate('/dashboard?tab=tickets');
     },
   });
 
@@ -111,7 +121,23 @@ const TicketDetails = () => {
     }
   };
 
-  if (isLoading) {
+  // Handle ticket deletion
+  const handleDeleteTicket = async () => {
+    if (window.confirm('Are you sure you want to delete this ticket? This action cannot be undone.')) {
+      try {
+        setIsLoading(true);
+        await deleteMutation.mutateAsync();
+        // No need for alert here as we'll navigate away on success
+      } catch (err) {
+        console.error('Error deleting ticket:', err);
+        const errorMessage = err.message || 'Failed to delete ticket. Please try again.';
+        alert(errorMessage);
+        setIsLoading(false);
+      }
+    }
+  };
+
+  if (ticketLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
@@ -220,7 +246,7 @@ const TicketDetails = () => {
               </div>
             </div>
             <h2 className="text-xl font-bold mt-2">{ticket.event?.title}</h2>
-            <p className="opacity-90">{ticket.ticketType?.name}</p>
+            <p className="opacity-90">{ticket.ticketTypeInfo?.name || 'General Admission'}</p>
           </div>
 
           {/* Ticket Body */}
@@ -300,7 +326,7 @@ const TicketDetails = () => {
                   <div>
                     <p className="text-sm text-gray-500 dark:text-gray-400">Price</p>
                     <p className="text-gray-900 dark:text-white mt-1 font-medium">
-                      {ticket.ticketType?.price} {ticket.ticketType?.currency}
+                      {ticket.ticketTypeInfo?.price} {ticket.ticketTypeInfo?.currency}
                     </p>
                   </div>
                 </div>
@@ -313,12 +339,32 @@ const TicketDetails = () => {
                 View Event
               </Link>
               {ticket.status !== 'used' && ticket.status !== 'cancelled' && (
+                <>
+                  <button 
+                    className="btn btn-outline-danger"
+                    onClick={handleCancelTicket}
+                    disabled={cancelMutation.isLoading}
+                  >
+                    {cancelMutation.isLoading ? 'Cancelling...' : 'Cancel Ticket'}
+                  </button>
+                  <button 
+                    className="btn btn-outline-danger flex items-center"
+                    onClick={handleDeleteTicket}
+                    disabled={isLoading}
+                  >
+                    <FiTrash2 className="mr-1" />
+                    {isLoading ? 'Deleting...' : 'Delete Ticket'}
+                  </button>
+                </>
+              )}
+              {(ticket.status === 'cancelled') && (
                 <button 
-                  className="btn btn-outline-danger"
-                  onClick={handleCancelTicket}
-                  disabled={cancelMutation.isLoading}
+                  className="btn btn-outline-danger flex items-center"
+                  onClick={handleDeleteTicket}
+                  disabled={isLoading}
                 >
-                  {cancelMutation.isLoading ? 'Cancelling...' : 'Cancel Ticket'}
+                  <FiTrash2 className="mr-1" />
+                  {isLoading ? 'Deleting...' : 'Delete Ticket'}
                 </button>
               )}
             </div>

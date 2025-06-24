@@ -8,9 +8,9 @@ const Footer = () => {
   return (
     <footer className="bg-white dark:bg-dark-100 pt-12 pb-8 border-t border-gray-200 dark:border-gray-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Logo and description */}
-          <div className="col-span-1 md:col-span-1">
+          <div className="col-span-1">
             <Link to="/" className="text-xl font-display font-bold bg-gradient-to-r from-primary-500 to-secondary-500 bg-clip-text text-transparent">
               TickenTen
             </Link>
@@ -62,35 +62,6 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* Resources */}
-          <div className="col-span-1">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
-              Resources
-            </h3>
-            <ul className="mt-4 space-y-2">
-              <li>
-                <Link to="/help" className="text-sm text-gray-600 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400 transition-colors duration-200">
-                  Help Center
-                </Link>
-              </li>
-              <li>
-                <Link to="/guides" className="text-sm text-gray-600 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400 transition-colors duration-200">
-                  Guides
-                </Link>
-              </li>
-              <li>
-                <Link to="/api" className="text-sm text-gray-600 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400 transition-colors duration-200">
-                  API Documentation
-                </Link>
-              </li>
-              <li>
-                <Link to="/blog" className="text-sm text-gray-600 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400 transition-colors duration-200">
-                  Blog
-                </Link>
-              </li>
-            </ul>
-          </div>
-
           {/* Company */}
           <div className="col-span-1">
             <h3 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
@@ -103,8 +74,8 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/careers" className="text-sm text-gray-600 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400 transition-colors duration-200">
-                  Careers
+                <Link to="/contact" className="text-sm text-gray-600 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400 transition-colors duration-200">
+                  Contact Us
                 </Link>
               </li>
               <li>
@@ -115,6 +86,11 @@ const Footer = () => {
               <li>
                 <Link to="/terms" className="text-sm text-gray-600 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400 transition-colors duration-200">
                   Terms of Service
+                </Link>
+              </li>
+              <li>
+                <Link to="/faq" className="text-sm text-gray-600 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400 transition-colors duration-200">
+                  FAQ
                 </Link>
               </li>
             </ul>

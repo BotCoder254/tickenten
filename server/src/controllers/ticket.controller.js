@@ -761,6 +761,7 @@ exports.shareTicket = async (req, res) => {
  */
 exports.deleteTicket = async (req, res) => {
   try {
+    // First check if the ticket exists
     const ticket = await Ticket.findById(req.params.ticketId);
 
     if (!ticket) {
@@ -781,7 +782,7 @@ exports.deleteTicket = async (req, res) => {
       });
     }
 
-    if (ticket.user.toString() !== req.user.id && event.creator.toString() !== req.user.id) {
+    if (ticket.user && ticket.user.toString() !== req.user.id && event.creator.toString() !== req.user.id) {
       return res.status(403).json({
         success: false,
         message: 'Not authorized to delete this ticket',
@@ -800,8 +801,15 @@ exports.deleteTicket = async (req, res) => {
       }
     }
 
-    // Delete the ticket
-    await ticket.remove();
+    // Delete the ticket using findByIdAndDelete
+    const deletedTicket = await Ticket.findByIdAndDelete(ticket._id);
+    
+    if (!deletedTicket) {
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to delete ticket',
+      });
+    }
 
     res.status(200).json({
       success: true,

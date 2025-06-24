@@ -2,6 +2,7 @@ const { validationResult } = require('express-validator');
 const bcrypt = require('bcryptjs');
 const User = require('../models/user.model');
 const Event = require('../models/event.model');
+const Ticket = require('../models/ticket.model');
 
 /**
  * @desc    Get current user profile
@@ -254,26 +255,38 @@ exports.uploadAvatar = async (req, res) => {
  */
 exports.deleteAccount = async (req, res) => {
   try {
-    // Check if user has any published events
-    const publishedEvents = await Event.countDocuments({
-      creator: req.user.id,
-      status: 'published',
-      endDate: { $gt: new Date() },
-    });
+    // Get user ID for reference
+    const userId = req.user.id;
 
-    if (publishedEvents > 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'Cannot delete account with active published events',
-      });
+    // Find all events created by the user
+    const Event = require('../models/event.model');
+    const Ticket = require('../models/ticket.model');
+
+    // 1. Find all events created by this user
+    const userEvents = await Event.find({ creator: userId });
+    const eventIds = userEvents.map(event => event._id);
+    
+    // 2. Delete all tickets associated with the user's events
+    if (eventIds.length > 0) {
+      await Ticket.deleteMany({ event: { $in: eventIds } });
+      console.log(`Deleted tickets for ${eventIds.length} events created by user ${userId}`);
     }
-
-    // Delete user
-    await User.findByIdAndDelete(req.user.id);
+    
+    // 3. Delete all tickets purchased by the user
+    await Ticket.deleteMany({ user: userId });
+    console.log(`Deleted tickets purchased by user ${userId}`);
+    
+    // 4. Delete all events created by the user
+    await Event.deleteMany({ creator: userId });
+    console.log(`Deleted ${userEvents.length} events created by user ${userId}`);
+    
+    // 5. Finally, delete the user account
+    await User.findByIdAndDelete(userId);
+    console.log(`User account ${userId} deleted successfully`);
 
     res.status(200).json({
       success: true,
-      message: 'Account deleted successfully',
+      message: 'Account and all associated data deleted successfully',
     });
   } catch (error) {
     console.error('Delete account error:', error);
