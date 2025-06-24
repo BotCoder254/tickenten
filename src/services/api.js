@@ -21,7 +21,12 @@ const publicRoutes = [
   '/tickets/purchase',
   '/api/tickets/purchase',
   '/tickets/verify',
-  '/api/tickets/verify'
+  '/api/tickets/verify',
+  '/events/categories',
+  '/api/events/categories',
+  // Add specific event route pattern
+  '/events/',
+  '/api/events/'
 ];
 
 // Check if a URL is a public route that doesn't require authentication

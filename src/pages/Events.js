@@ -136,6 +136,12 @@ const Events = () => {
           filterParams.sortBy = 'attendees:desc';
         }
 
+        // For non-authenticated users, always ensure we're getting published, public events
+        if (!isAuthenticated) {
+          filterParams.status = 'published';
+          filterParams.visibility = 'public';
+        }
+
         // If there's a search query, use the search endpoint instead
         if (searchQuery) {
           response = await eventService.searchEvents(searchQuery);
@@ -167,7 +173,9 @@ const Events = () => {
         try {
           const fallbackResponse = await eventService.getEvents({ 
             page: 1,
-            limit: 10
+            limit: 10,
+            status: 'published',
+            visibility: 'public'
           });
           
           if (fallbackResponse && fallbackResponse.success && fallbackResponse.data) {
@@ -188,7 +196,7 @@ const Events = () => {
     };
 
     fetchEvents();
-  }, [searchQuery, selectedCategory, filters, pagination.page, pagination.limit]);
+  }, [searchQuery, selectedCategory, filters, pagination.page, pagination.limit, isAuthenticated]);
 
   // Handle search
   const handleSearch = (e) => {

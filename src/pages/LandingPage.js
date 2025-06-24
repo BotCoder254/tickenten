@@ -118,9 +118,15 @@ const LandingPage = () => {
         console.error('Error fetching featured events:', err);
         // Try to get regular events as a final fallback
         try {
-          const allEventsResponse = await eventService.getEvents({ limit: 4 });
-          if (allEventsResponse && allEventsResponse.success) {
-            setFeaturedEvents(allEventsResponse.data);
+          const fallbackResponse = await eventService.getEvents({ 
+            limit: 4,
+            // Ensure we're only requesting published events
+            status: 'published',
+            visibility: 'public'
+          });
+          
+          if (fallbackResponse && fallbackResponse.success) {
+            setFeaturedEvents(fallbackResponse.data);
           } else {
             setError('Failed to load events');
           }

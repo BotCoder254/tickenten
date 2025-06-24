@@ -11,6 +11,12 @@ const eventService = {
    */
   getEvents: async (filters = {}) => {
     try {
+      // Always ensure public visibility for unauthenticated users
+      if (!localStorage.getItem('token')) {
+        filters.visibility = 'public';
+        filters.status = 'published';
+      }
+      
       const response = await api.get('/events', { params: filters });
       
       // Handle empty response data
@@ -59,6 +65,18 @@ const eventService = {
       return response.data;
     } catch (error) {
       console.error('Error in getFeaturedEvents:', error);
+      
+      // Try to get regular events as a fallback
+      try {
+        console.log('Falling back to getEvents due to featured events error');
+        return await eventService.getEvents({ 
+          limit, 
+          status: 'published',
+          visibility: 'public'
+        });
+      } catch (fallbackError) {
+        console.error('Fallback to getEvents also failed:', fallbackError);
+      }
       
       // Return a standardized error response instead of throwing
       return {
