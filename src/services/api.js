@@ -17,7 +17,11 @@ const publicRoutes = [
   '/events/featured',
   '/api/events/featured',
   '/events/search',
-  '/api/events/search'
+  '/api/events/search',
+  '/tickets/purchase',
+  '/api/tickets/purchase',
+  '/tickets/verify',
+  '/api/tickets/verify'
 ];
 
 // Check if a URL is a public route that doesn't require authentication

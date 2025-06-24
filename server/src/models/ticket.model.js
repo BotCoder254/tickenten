@@ -11,7 +11,7 @@ const TicketSchema = new mongoose.Schema(
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: true,
+      required: false,
     },
     ticketType: {
       type: mongoose.Schema.Types.ObjectId,
@@ -39,6 +39,12 @@ const TicketSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    attendeeEmail: {
+      type: String,
+      required: function() {
+        return this.user === null || this.user === undefined;
+      },
+    },
     additionalInfo: {
       type: Object,
     },
@@ -65,5 +71,6 @@ TicketSchema.pre('save', function (next) {
 // Add index for faster queries
 TicketSchema.index({ event: 1, user: 1 });
 TicketSchema.index({ ticketNumber: 1 });
+TicketSchema.index({ attendeeEmail: 1 }, { sparse: true });
 
 module.exports = mongoose.model('Ticket', TicketSchema); 

@@ -38,6 +38,26 @@ const ticketService = {
    */
   purchaseTickets: async (ticketData) => {
     try {
+      // Ensure the ticketData contains all required fields for guest purchases if user is not authenticated
+      const response = await api.post('/tickets/purchase', ticketData);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Purchase tickets as a guest (without authentication)
+   * @param {Object} ticketData - Ticket purchase data including attendee information
+   * @returns {Promise} - API response with purchase confirmation
+   */
+  guestPurchaseTickets: async (ticketData) => {
+    // Make sure attendee info is provided for guest purchases
+    if (!ticketData.attendeeInfo || !ticketData.attendeeInfo.name || !ticketData.attendeeInfo.email) {
+      throw new Error('Name and email are required for guest ticket purchases');
+    }
+
+    try {
       const response = await api.post('/tickets/purchase', ticketData);
       return response.data;
     } catch (error) {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FiCalendar, FiMapPin, FiClock, FiTag, FiShare2, FiHeart, FiTrash2 } from 'react-icons/fi';
+import { FiCalendar, FiMapPin, FiClock, FiTag, FiShare2, FiHeart, FiTrash2, FiMail, FiUser } from 'react-icons/fi';
 import { useQuery } from '@tanstack/react-query';
 import eventService from '../services/eventService';
 import ticketService from '../services/ticketService';
@@ -24,6 +24,10 @@ const EventDetails = () => {
   const [selectedTicketType, setSelectedTicketType] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [deleting, setDeleting] = useState(false);
+  const [guestInfo, setGuestInfo] = useState({ name: '', email: '' });
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [purchaseSuccess, setPurchaseSuccess] = useState(false);
+  const [purchaseError, setPurchaseError] = useState(null);
   const { isAuthenticated, currentUser } = useAuth();
   const navigate = useNavigate();
 
@@ -57,6 +61,7 @@ const EventDetails = () => {
   const toggleLike = async () => {
     if (!isAuthenticated) {
       // Redirect to login if not authenticated
+      navigate('/login', { state: { from: `/events/${eventId}` } });
       return;
     }
 
@@ -88,19 +93,63 @@ const EventDetails = () => {
     }
   };
 
+  // Handle guest info change
+  const handleGuestInfoChange = (e) => {
+    const { name, value } = e.target;
+    setGuestInfo(prev => ({ ...prev, [name]: value }));
+  };
+
   // Handle ticket purchase
   const handlePurchaseTicket = async () => {
-    if (!isAuthenticated || !selectedTicketType) return;
-
+    if (!selectedTicketType) return;
+    
+    setIsProcessing(true);
+    setPurchaseError(null);
+    
     try {
-      await ticketService.purchaseTickets({
-        eventId,
-        ticketTypeId: selectedTicketType._id,
-        quantity
-      });
-      // Redirect to tickets page or show success message
+      if (isAuthenticated) {
+        // Authenticated user purchase
+        await ticketService.purchaseTickets({
+          eventId,
+          ticketTypeId: selectedTicketType._id,
+          quantity
+        });
+      } else {
+        // Guest purchase
+        if (!guestInfo.name || !guestInfo.email) {
+          setPurchaseError('Please provide your name and email to purchase tickets');
+          setIsProcessing(false);
+          return;
+        }
+        
+        await ticketService.guestPurchaseTickets({
+          eventId,
+          ticketTypeId: selectedTicketType._id,
+          quantity,
+          attendeeInfo: guestInfo
+        });
+      }
+      
+      // Show success message
+      setPurchaseSuccess(true);
+      
+      // Reset form
+      setTimeout(() => {
+        if (isAuthenticated) {
+          navigate('/tickets'); // Redirect authenticated users to tickets page
+        } else {
+          // For guests, just reset the form
+          setSelectedTicketType(null);
+          setQuantity(1);
+          setGuestInfo({ name: '', email: '' });
+          setPurchaseSuccess(false);
+        }
+      }, 3000);
     } catch (err) {
       console.error('Error purchasing ticket:', err);
+      setPurchaseError(err.response?.data?.message || 'Failed to purchase tickets. Please try again.');
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -334,7 +383,11 @@ const EventDetails = () => {
                   
                   <div>
                     <h4 className="font-medium text-gray-900 dark:text-white">Status</h4>
-                    <p className="text-gray-600 dark:text-gray-400 capitalize">{event.status}</p>
+                    <p className="text-gray-600 dark:text-gray-400 capitalize">
+                      {event.hasEnded ? 'Ended' : 
+                       event.isSoldOut ? 'Sold Out' : 
+                       'Open'}
+                    </p>
                   </div>
                   
                   {event.tags && event.tags.length > 0 && (
@@ -443,6 +496,23 @@ const EventDetails = () => {
             <div className="card p-6 sticky top-24">
               <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Tickets</h2>
               
+              {purchaseSuccess && (
+                <div className="mb-4 p-3 bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 rounded-lg">
+                  <p className="font-medium">Tickets purchased successfully!</p>
+                  {isAuthenticated ? (
+                    <p className="text-sm mt-1">You can view your tickets in your account.</p>
+                  ) : (
+                    <p className="text-sm mt-1">A confirmation email has been sent to your email address.</p>
+                  )}
+                </div>
+              )}
+              
+              {purchaseError && (
+                <div className="mb-4 p-3 bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 rounded-lg">
+                  <p>{purchaseError}</p>
+                </div>
+              )}
+              
               {event.ticketTypes && event.ticketTypes.length > 0 ? (
                 <div>
                   <div className="space-y-4 mb-6">
@@ -540,17 +610,69 @@ const EventDetails = () => {
                         </span>
                       </div>
                       
-                      {isAuthenticated ? (
-                        <button 
-                          className="btn btn-primary w-full"
-                          onClick={handlePurchaseTicket}
-                        >
-                          Get Tickets
-                        </button>
-                      ) : (
-                        <Link to="/login" className="btn btn-primary w-full text-center">
-                          Login to Purchase
-                        </Link>
+                      {!isAuthenticated && (
+                        <div className="mb-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                          <h3 className="font-medium text-gray-900 dark:text-white mb-2">Your Information</h3>
+                          <div className="space-y-3">
+                            <div>
+                              <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">
+                                Name
+                              </label>
+                              <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                  <FiUser className="text-gray-400" />
+                                </div>
+                                <input
+                                  type="text"
+                                  name="name"
+                                  value={guestInfo.name}
+                                  onChange={handleGuestInfoChange}
+                                  className="input pl-10 w-full"
+                                  placeholder="Your full name"
+                                  required
+                                />
+                              </div>
+                            </div>
+                            <div>
+                              <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">
+                                Email
+                              </label>
+                              <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                  <FiMail className="text-gray-400" />
+                                </div>
+                                <input
+                                  type="email"
+                                  name="email"
+                                  value={guestInfo.email}
+                                  onChange={handleGuestInfoChange}
+                                  className="input pl-10 w-full"
+                                  placeholder="Your email address"
+                                  required
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      <button 
+                        className="btn btn-primary w-full"
+                        onClick={handlePurchaseTicket}
+                        disabled={isProcessing || (!isAuthenticated && (!guestInfo.name || !guestInfo.email))}
+                      >
+                        {isProcessing ? 'Processing...' : 'Get Tickets'}
+                      </button>
+                      
+                      {!isAuthenticated && (
+                        <div className="mt-3 text-center">
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            Already have an account?{' '}
+                            <Link to="/login" className="text-primary-600 dark:text-primary-400 hover:underline">
+                              Log in
+                            </Link>
+                          </p>
+                        </div>
                       )}
                     </div>
                   )}

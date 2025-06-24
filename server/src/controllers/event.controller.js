@@ -26,33 +26,44 @@ exports.getEvents = async (req, res) => {
 
     // Filtering
     let filter = {};
+    const now = new Date();
     
-    // If user is authenticated, show their draft events plus all published public events
+    // If user is authenticated, show their draft events plus all published public events that haven't ended
     if (req.user) {
       filter = {
         $or: [
-          { status: 'published', visibility: 'public' },
+          { status: 'published', visibility: 'public', endDate: { $gte: now } },
           { creator: req.user.id }
         ]
       };
     } else {
-      // For unauthenticated users, only show published public events
+      // For unauthenticated users, only show published public events (without date filtering by default)
       filter = { 
         status: 'published', 
-        visibility: 'public' 
+        visibility: 'public'
       };
     }
     
-    if (req.query.category) {
-      filter.category = req.query.category;
-    }
-
+    // Allow explicit date filtering to override the default filters
     if (req.query.startDate) {
       filter.startDate = { $gte: new Date(req.query.startDate) };
+      // If explicitly filtering by start date, remove the default end date filter
+      if (filter.endDate) {
+        delete filter.endDate;
+      }
     }
 
     if (req.query.endDate) {
       filter.endDate = { $lte: new Date(req.query.endDate) };
+    }
+
+    // Filter out past events only if specifically requested
+    if (req.query.hidePast === 'true') {
+      filter.endDate = { $gte: now };
+    }
+    
+    if (req.query.category) {
+      filter.category = req.query.category;
     }
 
     // Location filtering
@@ -118,11 +129,17 @@ exports.getEvents = async (req, res) => {
  */
 exports.getFeaturedEvents = async (req, res) => {
   try {
-    const featuredEvents = await Event.find({
+    // Base filter for featured events
+    const filter = {
       isFeatured: true,
       status: 'published',
       visibility: 'public',
-    })
+    };
+
+    // We're removing the date check to show all featured events regardless of date
+    // This will ensure unauthenticated users see featured events
+
+    const featuredEvents = await Event.find(filter)
       .sort({ createdAt: -1 })
       .limit(6)
       .populate('creator', 'name avatar');
@@ -203,13 +220,14 @@ exports.searchEvents = async (req, res) => {
               { shortDescription: searchRegex },
               { 'location.city': searchRegex },
               { 'location.country': searchRegex },
-              { tags: searchRegex }
+              { tags: searchRegex },
+              { category: searchRegex }
             ]
           }
         ]
       };
     } else {
-      // For unauthenticated users, only show published events
+      // For unauthenticated users, only show published events with public visibility
       searchQuery = {
         $and: [
           { status: 'published', visibility: 'public' },
@@ -220,7 +238,8 @@ exports.searchEvents = async (req, res) => {
               { shortDescription: searchRegex },
               { 'location.city': searchRegex },
               { 'location.country': searchRegex },
-              { tags: searchRegex }
+              { tags: searchRegex },
+              { category: searchRegex }
             ]
           }
         ]
@@ -305,7 +324,8 @@ exports.getEventById = async (req, res) => {
 
     // For non-creators, only show published events
     if (
-      event.status !== 'published' &&
+      event.status !== 'published' && 
+      event.visibility !== 'public' &&
       (!req.user || event.creator._id.toString() !== req.user.id)
     ) {
       return res.status(404).json({

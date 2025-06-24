@@ -188,7 +188,7 @@ exports.purchaseTickets = async (req, res) => {
     });
   }
 
-  const { eventId, ticketTypeId, quantity } = req.body;
+  const { eventId, ticketTypeId, quantity, attendeeInfo } = req.body;
 
   try {
     // Find event and check if it exists
@@ -215,8 +215,8 @@ exports.purchaseTickets = async (req, res) => {
       });
     }
 
-    // Prevent event creators from buying their own tickets
-    if (event.creator.toString() === req.user.id) {
+    // Only check for event creators if user is authenticated
+    if (req.user && event.creator.toString() === req.user.id) {
       return res.status(400).json({
         success: false,
         message: 'Event creators cannot purchase tickets for their own events',
@@ -244,17 +244,27 @@ exports.purchaseTickets = async (req, res) => {
       });
     }
 
+    // For unauthenticated users, check if attendee info is provided
+    if (!req.user && !attendeeInfo) {
+      return res.status(400).json({
+        success: false,
+        message: 'Attendee information is required for non-authenticated users',
+      });
+    }
+
     // Create tickets
     const tickets = [];
     for (let i = 0; i < quantity; i++) {
       const ticket = new Ticket({
         event: eventId,
-        user: req.user.id,
+        user: req.user ? req.user.id : null, // Allow null for unauthenticated users
         ticketType: ticketTypeId,
         ticketNumber: `${event.title.substring(0, 3).toUpperCase()}${Date.now()}${Math.floor(Math.random() * 1000)}`,
         purchaseDate: Date.now(),
         status: 'valid',
-        attendeeName: req.user.name,
+        attendeeName: req.user ? req.user.name : (attendeeInfo ? attendeeInfo.name : 'Guest'),
+        attendeeEmail: req.user ? req.user.email : (attendeeInfo ? attendeeInfo.email : null),
+        guestPurchase: !req.user,
       });
 
       await ticket.save();
@@ -269,12 +279,12 @@ exports.purchaseTickets = async (req, res) => {
     event.revenue = (event.revenue || 0) + (ticketType.price * quantity);
     await event.save();
 
-    // Send confirmation email
-    const user = await User.findById(req.user.id);
-    if (user.email) {
+    // Send confirmation email if email is available
+    const emailToSend = req.user ? req.user.email : (attendeeInfo ? attendeeInfo.email : null);
+    if (emailToSend) {
       try {
         await sendEmail({
-          to: user.email,
+          to: emailToSend,
           subject: `Your Tickets for ${event.title}`,
           html: `
             <h1>Ticket Confirmation</h1>
@@ -283,7 +293,8 @@ exports.purchaseTickets = async (req, res) => {
             <p>Ticket Type: ${ticketType.name}</p>
             <p>Quantity: ${quantity}</p>
             <p>Total: ${ticketType.price * quantity} ${ticketType.currency}</p>
-            <p>You can view your tickets in your account dashboard.</p>
+            <p>Your ticket numbers: ${tickets.map(t => t.ticketNumber).join(', ')}</p>
+            ${req.user ? '<p>You can view your tickets in your account dashboard.</p>' : ''}
           `,
         });
       } catch (err) {

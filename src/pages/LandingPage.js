@@ -45,6 +45,48 @@ const formatDate = (dateString) => {
   return new Date(dateString).toLocaleDateString(undefined, options);
 };
 
+// Add helper function to get display status for the event
+const getEventStatus = (event) => {
+  if (!event) return '';
+  
+  const now = new Date();
+  const hasEnded = event.endDate && new Date(event.endDate) < now;
+  
+  if (hasEnded) {
+    return 'Ended';
+  }
+  
+  const isSoldOut = event.ticketTypes && event.ticketTypes.length > 0 && 
+    event.ticketTypes.every(ticket => ticket.quantitySold >= ticket.quantity);
+  
+  if (isSoldOut) {
+    return 'Sold Out';
+  }
+  
+  // Only show 'Open' for all events on public pages
+  return 'Open';
+};
+
+// Add helper function to get status color class
+const getStatusColorClass = (event) => {
+  const now = new Date();
+  const hasEnded = event.endDate && new Date(event.endDate) < now;
+  
+  if (hasEnded) {
+    return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300';
+  }
+  
+  const isSoldOut = event.ticketTypes && event.ticketTypes.length > 0 && 
+    event.ticketTypes.every(ticket => ticket.quantitySold >= ticket.quantity);
+  
+  if (isSoldOut) {
+    return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300';
+  }
+  
+  // Always show green for open events
+  return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300';
+};
+
 const LandingPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [featuredEvents, setFeaturedEvents] = useState([]);
@@ -96,11 +138,8 @@ const LandingPage = () => {
 
   // Handle view details with authentication check
   const handleViewDetails = (eventId) => {
-    if (!isAuthenticated) {
-      navigate('/login', { state: { from: `/events/${eventId}` } });
-    } else {
-      navigate(`/events/${eventId}`);
-    }
+    // Direct navigation without authentication check
+    navigate(`/events/${eventId}`);
   };
 
   // Handle search form submission
@@ -314,6 +353,12 @@ const LandingPage = () => {
                       }}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                    <div className="absolute top-3 right-3 bg-white dark:bg-dark-100 rounded-full px-3 py-1 text-xs font-medium text-gray-700 dark:text-gray-300">
+                      {event.category}
+                    </div>
+                    <div className={`absolute top-3 left-3 rounded-full px-3 py-1 text-xs font-medium capitalize ${getStatusColorClass(event)}`}>
+                      {getEventStatus(event)}
+                    </div>
                     <div className="absolute bottom-0 left-0 p-4 text-white">
                       <div className="flex items-center text-sm">
                         <FiCalendar className="mr-1" />
@@ -341,21 +386,12 @@ const LandingPage = () => {
                           ? `From ${event.ticketTypes[0].price} ${event.ticketTypes[0].currency}`
                           : 'Free'}
                       </span>
-                      {isAuthenticated ? (
-                        <Link
-                          to={`/events/${event._id}`}
-                          className="text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400"
-                        >
-                          View details
-                        </Link>
-                      ) : (
-                        <button
-                          onClick={() => handleViewDetails(event._id)}
-                          className="text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400"
-                        >
-                          View details
-                        </button>
-                      )}
+                      <Link
+                        to={`/events/${event._id}`}
+                        className="text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400"
+                      >
+                        View details
+                      </Link>
                     </div>
                   </div>
                 </motion.div>

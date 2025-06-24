@@ -50,7 +50,7 @@ router.get('/', optionalProtect, eventController.getEvents);
  * @desc    Get featured events
  * @access  Public
  */
-router.get('/featured', eventController.getFeaturedEvents);
+router.get('/featured', optionalProtect, eventController.getFeaturedEvents);
 
 /**
  * @route   GET /api/events/categories

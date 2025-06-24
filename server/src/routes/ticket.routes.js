@@ -22,15 +22,16 @@ router.get('/:ticketId', protect, ticketController.getTicketById);
 
 // @route   POST /api/tickets/purchase
 // @desc    Purchase tickets for an event
-// @access  Private
+// @access  Public (with optional authentication)
 router.post(
   '/purchase',
   [
     body('eventId').not().isEmpty().withMessage('Event ID is required'),
     body('ticketTypeId').not().isEmpty().withMessage('Ticket type ID is required'),
     body('quantity').isInt({ min: 1 }).withMessage('Quantity must be at least 1'),
+    body('attendeeInfo').optional().isObject().withMessage('Attendee info must be an object'),
   ],
-  protect,
+  optionalProtect,
   ticketController.purchaseTickets
 );
 

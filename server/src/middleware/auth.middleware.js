@@ -90,46 +90,6 @@ exports.protect = async (req, res, next) => {
 };
 
 /**
- * Optional auth middleware - adds user to request if token is valid
- * but allows request to continue even without authentication
- */
-exports.optionalProtect = async (req, res, next) => {
-  let token;
-
-  // Check if token exists in headers
-  if (
-    req.headers.authorization &&
-    req.headers.authorization.startsWith('Bearer')
-  ) {
-    // Get token from header
-    token = req.headers.authorization.split(' ')[1];
-  }
-
-  // If no token, continue to the next middleware
-  if (!token) {
-    return next();
-  }
-
-  try {
-    // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');
-
-    // Get user from token
-    const user = await User.findById(decoded.id);
-
-    if (user) {
-      // Add user to request object
-      req.user = user;
-    }
-    
-    next();
-  } catch (error) {
-    // Even if token verification fails, continue to next middleware
-    next();
-  }
-};
-
-/**
  * Middleware to restrict access to specific roles
  */
 exports.authorize = (...roles) => {

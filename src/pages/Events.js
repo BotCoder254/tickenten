@@ -59,7 +59,9 @@ const getEventStatus = (event) => {
     return 'Sold Out';
   }
   
-  return event.status === 'published' ? 'Open' : event.status;
+  // Only show 'Open' for published events to all users
+  // Other statuses like 'draft' should not be visible on public pages
+  return event.status === 'published' ? 'Open' : 'Open';
 };
 
 // Add a helper function to get status color class
@@ -78,11 +80,8 @@ const getStatusColorClass = (event) => {
     return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300';
   }
   
-  if (event.status === 'published') {
-    return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300';
-  }
-  
-  return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300';
+  // Always show the 'Open' (published) color, regardless of actual status
+  return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300';
 };
 
 const Events = () => {
@@ -218,11 +217,8 @@ const Events = () => {
 
   // Handle view details with authentication check
   const handleViewDetails = (eventId) => {
-    if (!isAuthenticated) {
-      navigate('/login', { state: { from: `/events/${eventId}` } });
-    } else {
-      navigate(`/events/${eventId}`);
-    }
+    // Direct navigation without authentication check
+    navigate(`/events/${eventId}`);
   };
 
   return (
@@ -441,21 +437,12 @@ const Events = () => {
                               : 'Free'}
                           </span>
                           {event._id && /^[0-9a-fA-F]{24}$/.test(event._id) ? (
-                            isAuthenticated ? (
-                              <Link
-                                to={`/events/${event._id}`}
-                                className="text-sm font-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
-                              >
-                                View Details
-                              </Link>
-                            ) : (
-                              <button
-                                onClick={() => handleViewDetails(event._id)}
-                                className="text-sm font-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
-                              >
-                                View Details
-                              </button>
-                            )
+                            <Link
+                              to={`/events/${event._id}`}
+                              className="text-sm font-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
+                            >
+                              View Details
+                            </Link>
                           ) : (
                             <span className="text-sm font-medium text-gray-400">Details Unavailable</span>
                           )}
@@ -532,21 +519,12 @@ const Events = () => {
                               : 'Free'}
                           </span>
                           {event._id && /^[0-9a-fA-F]{24}$/.test(event._id) ? (
-                            isAuthenticated ? (
-                              <Link
-                                to={`/events/${event._id}`}
-                                className="btn btn-primary"
-                              >
-                                View Details
-                              </Link>
-                            ) : (
-                              <button
-                                onClick={() => handleViewDetails(event._id)}
-                                className="btn btn-primary"
-                              >
-                                View Details
-                              </button>
-                            )
+                            <Link
+                              to={`/events/${event._id}`}
+                              className="btn btn-primary"
+                            >
+                              View Details
+                            </Link>
                           ) : (
                             <span className="text-sm font-medium text-gray-400">Details Unavailable</span>
                           )}
