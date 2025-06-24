@@ -206,24 +206,34 @@ exports.getUserEvents = async (req, res) => {
  */
 exports.uploadAvatar = async (req, res) => {
   try {
-    // In a real application, you would handle file upload here
-    // For now, we'll just update the avatar URL
-    if (!req.body.avatarUrl) {
+    // Check if file exists in request
+    if (!req.file) {
       return res.status(400).json({
         success: false,
-        message: 'Avatar URL is required',
+        message: 'Please upload an image file',
       });
     }
 
-    const user = await User.findByIdAndUpdate(
-      req.user.id,
-      { $set: { avatar: req.body.avatarUrl } },
-      { new: true }
-    ).select('-password');
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    // Update user with avatar URL
+    const avatarUrl = `/uploads/${req.file.filename}`;
+    
+    user.avatar = avatarUrl;
+    await user.save();
 
     res.status(200).json({
       success: true,
-      data: user,
+      data: {
+        avatarUrl,
+      },
     });
   } catch (error) {
     console.error('Upload avatar error:', error);

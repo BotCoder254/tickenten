@@ -300,7 +300,12 @@ const Events = () => {
                     >
                       <div className="relative h-48">
                         <img
-                          src={event.featuredImage || 'https://via.placeholder.com/300x200?text=No+Image'}
+                          src={event.featuredImage && event.featuredImage.startsWith('http') 
+                            ? event.featuredImage
+                            : event.featuredImage && event.featuredImage.startsWith('/') 
+                              ? `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}${event.featuredImage}`
+                              : 'https://via.placeholder.com/300x200?text=No+Image'
+                          }
                           alt={event.title}
                           className="w-full h-full object-cover"
                         />
@@ -370,7 +375,12 @@ const Events = () => {
                       <div className="sm:w-1/4 mb-4 sm:mb-0">
                         <div className="relative h-48 sm:h-full">
                           <img
-                            src={event.featuredImage || 'https://via.placeholder.com/300x200?text=No+Image'}
+                            src={event.featuredImage && event.featuredImage.startsWith('http') 
+                              ? event.featuredImage
+                              : event.featuredImage && event.featuredImage.startsWith('/') 
+                                ? `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}${event.featuredImage}`
+                                : 'https://via.placeholder.com/300x200?text=No+Image'
+                            }
                             alt={event.title}
                             className="w-full h-full object-cover rounded-lg"
                           />

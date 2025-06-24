@@ -140,6 +140,12 @@ const EventSchema = new mongoose.Schema(
     ],
     stripeProductId: String,
     stripePriceId: String,
+    likedBy: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
   },
   {
     timestamps: true,

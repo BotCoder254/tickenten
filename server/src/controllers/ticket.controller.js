@@ -14,13 +14,34 @@ exports.getUserTickets = async (req, res) => {
     const tickets = await Ticket.find({ user: req.user.id })
       .populate({
         path: 'event',
-        select: 'title startDate endDate location isVirtual featuredImage',
+        select: 'title startDate endDate location isVirtual featuredImage ticketTypes',
       })
-      .populate('ticketType');
+      .populate({
+        path: 'ticketType',
+        select: '_id',
+      });
+
+    // Process tickets to include ticket type information from the event
+    const processedTickets = tickets.map(ticket => {
+      const ticketData = ticket.toObject();
+      
+      // Find the ticket type in the event's ticketTypes array using the ticketType ID reference
+      if (ticketData.event && ticketData.event.ticketTypes && ticketData.ticketType) {
+        const foundTicketType = ticketData.event.ticketTypes.find(
+          type => type._id.toString() === ticketData.ticketType._id.toString()
+        );
+        
+        if (foundTicketType) {
+          ticketData.ticketTypeInfo = foundTicketType;
+        }
+      }
+      
+      return ticketData;
+    });
 
     res.status(200).json({
       success: true,
-      data: tickets,
+      data: processedTickets,
     });
   } catch (error) {
     console.error('Get user tickets error:', error);
@@ -58,11 +79,32 @@ exports.getEventTickets = async (req, res) => {
 
     const tickets = await Ticket.find({ event: req.params.eventId })
       .populate('user', 'name email')
-      .populate('ticketType');
+      .populate({
+        path: 'ticketType',
+        select: '_id',
+      });
+
+    // Process tickets to include ticket type information from the event
+    const processedTickets = tickets.map(ticket => {
+      const ticketData = ticket.toObject();
+      
+      // Find the ticket type in the event's ticketTypes array using the ticketType ID reference
+      if (event.ticketTypes && ticketData.ticketType) {
+        const foundTicketType = event.ticketTypes.find(
+          type => type._id.toString() === ticketData.ticketType._id.toString()
+        );
+        
+        if (foundTicketType) {
+          ticketData.ticketTypeInfo = foundTicketType;
+        }
+      }
+      
+      return ticketData;
+    });
 
     res.status(200).json({
       success: true,
-      data: tickets,
+      data: processedTickets,
     });
   } catch (error) {
     console.error('Get event tickets error:', error);
@@ -84,9 +126,12 @@ exports.getTicketById = async (req, res) => {
     const ticket = await Ticket.findById(req.params.ticketId)
       .populate({
         path: 'event',
-        select: 'title startDate endDate location isVirtual featuredImage',
+        select: 'title startDate endDate location isVirtual featuredImage ticketTypes creator',
       })
-      .populate('ticketType');
+      .populate({
+        path: 'ticketType',
+        select: '_id',
+      });
 
     if (!ticket) {
       return res.status(404).json({
@@ -103,9 +148,21 @@ exports.getTicketById = async (req, res) => {
       });
     }
 
+    // Process ticket to include ticket type information
+    const ticketData = ticket.toObject();
+    if (ticketData.event && ticketData.event.ticketTypes && ticketData.ticketType) {
+      const foundTicketType = ticketData.event.ticketTypes.find(
+        type => type._id.toString() === ticketData.ticketType._id.toString()
+      );
+      
+      if (foundTicketType) {
+        ticketData.ticketTypeInfo = foundTicketType;
+      }
+    }
+
     res.status(200).json({
       success: true,
-      data: ticket,
+      data: ticketData,
     });
   } catch (error) {
     console.error('Get ticket by ID error:', error);
@@ -390,9 +447,12 @@ exports.verifyTicket = async (req, res) => {
     const ticket = await Ticket.findOne({ ticketNumber: req.params.ticketNumber })
       .populate({
         path: 'event',
-        select: 'title startDate endDate',
+        select: 'title startDate endDate ticketTypes',
       })
-      .populate('ticketType', 'name');
+      .populate({
+        path: 'ticketType',
+        select: '_id',
+      });
 
     if (!ticket) {
       return res.status(404).json({
@@ -403,6 +463,18 @@ exports.verifyTicket = async (req, res) => {
     }
 
     const isValid = ticket.status === 'valid';
+    
+    // Find ticket type info
+    let ticketTypeName = 'Unknown';
+    if (ticket.event && ticket.event.ticketTypes && ticket.ticketType) {
+      const foundTicketType = ticket.event.ticketTypes.find(
+        type => type._id.toString() === ticket.ticketType._id.toString()
+      );
+      
+      if (foundTicketType) {
+        ticketTypeName = foundTicketType.name;
+      }
+    }
 
     res.status(200).json({
       success: true,
@@ -411,7 +483,7 @@ exports.verifyTicket = async (req, res) => {
       data: {
         ticketNumber: ticket.ticketNumber,
         eventTitle: ticket.event.title,
-        ticketType: ticket.ticketType.name,
+        ticketType: ticketTypeName,
         status: ticket.status,
       },
     });
@@ -435,9 +507,12 @@ exports.downloadTicket = async (req, res) => {
     const ticket = await Ticket.findById(req.params.ticketId)
       .populate({
         path: 'event',
-        select: 'title startDate endDate location isVirtual',
+        select: 'title startDate endDate location isVirtual ticketTypes',
       })
-      .populate('ticketType');
+      .populate({
+        path: 'ticketType',
+        select: '_id',
+      });
 
     if (!ticket) {
       return res.status(404).json({
@@ -453,12 +528,25 @@ exports.downloadTicket = async (req, res) => {
         message: 'Not authorized to download this ticket',
       });
     }
+    
+    // Process ticket to include ticket type information
+    const ticketData = ticket.toObject();
+    if (ticketData.event && ticketData.event.ticketTypes && ticketData.ticketType) {
+      const foundTicketType = ticketData.event.ticketTypes.find(
+        type => type._id.toString() === ticketData.ticketType._id.toString()
+      );
+      
+      if (foundTicketType) {
+        ticketData.ticketTypeInfo = foundTicketType;
+      }
+    }
 
     // In a real application, you would generate a PDF here
     // For now, we'll just send a success message
     res.status(200).json({
       success: true,
       message: 'Ticket downloaded successfully',
+      data: ticketData
     });
   } catch (error) {
     console.error('Download ticket error:', error);
@@ -488,9 +576,12 @@ exports.shareTicket = async (req, res) => {
     const ticket = await Ticket.findById(req.params.ticketId)
       .populate({
         path: 'event',
-        select: 'title startDate endDate location isVirtual',
+        select: 'title startDate endDate location isVirtual ticketTypes',
       })
-      .populate('ticketType');
+      .populate({
+        path: 'ticketType',
+        select: '_id',
+      });
 
     if (!ticket) {
       return res.status(404).json({
@@ -506,6 +597,18 @@ exports.shareTicket = async (req, res) => {
         message: 'Not authorized to share this ticket',
       });
     }
+    
+    // Find ticket type info
+    let ticketTypeName = 'Standard Ticket';
+    if (ticket.event && ticket.event.ticketTypes && ticket.ticketType) {
+      const foundTicketType = ticket.event.ticketTypes.find(
+        type => type._id.toString() === ticket.ticketType._id.toString()
+      );
+      
+      if (foundTicketType) {
+        ticketTypeName = foundTicketType.name;
+      }
+    }
 
     // Send email
     await sendEmail({
@@ -515,7 +618,7 @@ exports.shareTicket = async (req, res) => {
         <h1>Ticket Information</h1>
         <p>${req.user.name} has shared a ticket with you for ${ticket.event.title}!</p>
         <p>Event Date: ${new Date(ticket.event.startDate).toLocaleDateString()}</p>
-        <p>Ticket Type: ${ticket.ticketType.name}</p>
+        <p>Ticket Type: ${ticketTypeName}</p>
         <p>Ticket Number: ${ticket.ticketNumber}</p>
         <p>Status: ${ticket.status}</p>
         <p>You can view the ticket by clicking the link below:</p>

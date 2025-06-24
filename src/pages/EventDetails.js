@@ -26,9 +26,13 @@ const EventDetails = () => {
       if (isAuthenticated && eventId) {
         try {
           const response = await eventService.checkLiked(eventId);
-          setIsLiked(response.isLiked);
+          if (response && response.success) {
+            setIsLiked(response.isLiked);
+          }
         } catch (err) {
           console.error('Error checking if event is liked:', err);
+          // Don't show error to user, just set to not liked
+          setIsLiked(false);
         }
       }
     };
@@ -46,12 +50,14 @@ const EventDetails = () => {
     try {
       if (isLiked) {
         await eventService.unlikeEvent(eventId);
+        setIsLiked(false);
       } else {
         await eventService.likeEvent(eventId);
+        setIsLiked(true);
       }
-      setIsLiked(!isLiked);
     } catch (err) {
       console.error('Error toggling like status:', err);
+      // No UI indication needed for like/unlike errors
     }
   };
 
@@ -162,7 +168,12 @@ const EventDetails = () => {
             >
               <div className="rounded-xl overflow-hidden shadow-lg">
                 <img
-                  src={event.featuredImage || "https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80"}
+                  src={event.featuredImage && event.featuredImage.startsWith('http') 
+                    ? event.featuredImage
+                    : event.featuredImage && event.featuredImage.startsWith('/') 
+                      ? `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}${event.featuredImage}`
+                      : "https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80"
+                  }
                   alt={event.title}
                   className="w-full h-64 object-cover"
                 />

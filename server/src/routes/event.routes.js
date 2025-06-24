@@ -172,4 +172,25 @@ router.post(
   eventController.uploadEventImage
 );
 
+/**
+ * @route   GET /api/events/:id/like
+ * @desc    Check if user has liked an event
+ * @access  Private
+ */
+router.get('/:id/like', protect, eventController.checkEventLiked);
+
+/**
+ * @route   POST /api/events/:id/like
+ * @desc    Like an event
+ * @access  Private
+ */
+router.post('/:id/like', protect, eventController.likeEvent);
+
+/**
+ * @route   DELETE /api/events/:id/like
+ * @desc    Unlike an event
+ * @access  Private
+ */
+router.delete('/:id/like', protect, eventController.unlikeEvent);
+
 module.exports = router; 

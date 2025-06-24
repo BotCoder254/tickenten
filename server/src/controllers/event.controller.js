@@ -741,3 +741,136 @@ exports.uploadEventImage = async (req, res) => {
     });
   }
 };
+
+/**
+ * @desc    Check if user has liked an event
+ * @route   GET /api/events/:id/like
+ * @access  Private
+ */
+exports.checkEventLiked = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const eventId = req.params.id;
+
+    const event = await Event.findById(eventId);
+    if (!event) {
+      return res.status(404).json({
+        success: false,
+        message: 'Event not found',
+      });
+    }
+
+    // Check if user has liked this event (requires a likedBy array on the Event model)
+    const isLiked = event.likedBy && event.likedBy.includes(userId);
+
+    res.status(200).json({
+      success: true,
+      isLiked,
+    });
+  } catch (error) {
+    console.error('Check event liked error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * @desc    Like an event
+ * @route   POST /api/events/:id/like
+ * @access  Private
+ */
+exports.likeEvent = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const eventId = req.params.id;
+
+    let event = await Event.findById(eventId);
+    if (!event) {
+      return res.status(404).json({
+        success: false,
+        message: 'Event not found',
+      });
+    }
+
+    // Initialize likedBy array if it doesn't exist
+    if (!event.likedBy) {
+      event.likedBy = [];
+    }
+
+    // Check if user already liked the event
+    if (event.likedBy.includes(userId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Event already liked',
+      });
+    }
+
+    // Add user to likedBy array
+    event.likedBy.push(userId);
+    await event.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Event liked successfully',
+    });
+  } catch (error) {
+    console.error('Like event error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * @desc    Unlike an event
+ * @route   DELETE /api/events/:id/like
+ * @access  Private
+ */
+exports.unlikeEvent = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const eventId = req.params.id;
+
+    let event = await Event.findById(eventId);
+    if (!event) {
+      return res.status(404).json({
+        success: false,
+        message: 'Event not found',
+      });
+    }
+
+    // Initialize likedBy array if it doesn't exist
+    if (!event.likedBy) {
+      event.likedBy = [];
+    }
+
+    // Check if user has liked the event
+    if (!event.likedBy.includes(userId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Event not liked yet',
+      });
+    }
+
+    // Remove user from likedBy array
+    event.likedBy = event.likedBy.filter(id => id.toString() !== userId);
+    await event.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Event unliked successfully',
+    });
+  } catch (error) {
+    console.error('Unlike event error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+      error: error.message,
+    });
+  }
+};
