@@ -262,59 +262,67 @@ useEffect(() => {
     </div>
   </div>
 </section>
-      {/* Search Section */}
-      <section className="py-12 bg-white dark:bg-dark-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+{/* Search Section */}
+<section className="relative z-10 py-20 bg-white dark:bg-dark-100 overflow-hidden">
+  {/* Blurred Blobs */}
+  <div className="absolute -top-32 -left-32 w-96 h-96 bg-primary-500 opacity-20 rounded-full blur-3xl animate-pulse"></div>
+  <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-secondary-600 opacity-20 rounded-full blur-3xl animate-pulse delay-100"></div>
+
+  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.6 }}
+      className="relative -mt-24 rounded-3xl bg-white/80 dark:bg-dark-200/80 shadow-2xl backdrop-blur-md p-8 border border-white/10"
+    >
+      {/* Search Form */}
+      <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-4 items-center">
+        <div className="flex-grow relative w-full group">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <FiSearch className="h-5 w-5 text-gray-400 group-hover:text-primary-500 transition-all" />
+          </div>
+          <input
+            type="text"
+            className="w-full py-3 pl-10 pr-4 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-dark-100 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all duration-300"
+            placeholder="Search concerts, meetups, tech talks..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+
+        <div className="flex-shrink-0 w-full md:w-auto">
+          <button
+            type="submit"
+            className="w-full md:w-auto px-6 py-3 bg-gradient-to-r from-primary-500 to-secondary-500 text-white font-semibold rounded-xl shadow-md hover:shadow-lg hover:scale-105 transition-all duration-300"
+          >
+            🔍 Search Events
+          </button>
+        </div>
+      </form>
+
+      {/* Category Tags */}
+      <div className="mt-8 flex flex-wrap gap-4 justify-start">
+        {categories.map((category, index) => (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            key={category.name}
+            initial={{ opacity: 0, y: 10 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="relative -mt-24 bg-white dark:bg-dark-100 rounded-xl shadow-xl p-6"
+            transition={{ duration: 0.3, delay: index * 0.1 }}
+            whileHover={{ scale: 1.08 }}
+            whileTap={{ scale: 0.95 }}
+            className={`flex items-center px-4 py-2 rounded-full ${category.color} shadow-sm cursor-pointer transition-all hover:shadow-md hover:brightness-110`}
+            onClick={() => navigate(`/events?category=${encodeURIComponent(category.name)}`)}
           >
-            <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-4">
-              <div className="flex-grow relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FiSearch className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  type="text"
-                  className="input pl-10"
-                  placeholder="Search for events, concerts, conferences..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-              <div className="flex-shrink-0">
-                <button type="submit" className="btn btn-primary w-full md:w-auto">
-                  Search Events
-                </button>
-              </div>
-            </form>
-            
-            <div className="mt-6 flex flex-wrap gap-3">
-              {categories.map((category, index) => (
-                <motion.div
-                  key={category.name}
-                  custom={index}
-                  initial="hidden"
-                  whileInView="visible"
-                  viewport={{ once: true }}
-                  variants={fadeIn}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className={`${category.color} px-4 py-2 rounded-full cursor-pointer transition-all duration-200`}
-                  onClick={() => navigate(`/events?category=${encodeURIComponent(category.name)}`)}
-                >
-                  <span className="mr-2">{category.icon}</span>
-                  <span className="text-sm font-medium text-gray-800 dark:text-gray-200">{category.name}</span>
-                </motion.div>
-              ))}
-            </div>
+            <span className="mr-2 text-lg">{category.icon}</span>
+            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{category.name}</span>
           </motion.div>
-        </div>
-      </section>
-
+        ))}
+      </div>
+    </motion.div>
+  </div>
+</section>
       {/* Featured Events */}
       <section className="py-16 bg-gray-50 dark:bg-dark-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
