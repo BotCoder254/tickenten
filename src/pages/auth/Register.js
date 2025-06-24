@@ -77,6 +77,7 @@ const Register = () => {
         transition={{ duration: 0.5 }}
         className="max-w-md w-full space-y-8 bg-white dark:bg-dark-100 p-8 rounded-xl shadow-lg"
       >
+          <div style="height:100px;"></div>
         <div>
           <Link to="/" className="flex items-center text-gray-600 dark:text-gray-400 mb-8 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
             <FiArrowLeft className="mr-2" />
