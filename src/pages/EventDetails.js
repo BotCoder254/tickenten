@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FiCalendar, FiMapPin, FiClock, FiTag, FiShare2, FiHeart, FiTrash2, FiMail, FiUser } from 'react-icons/fi';
@@ -115,8 +115,70 @@ const EventDetails = () => {
     };
   }, []);
 
+  // Define the payment success callback outside the handlePurchaseTicket function
+  const handlePaymentSuccess = useCallback(async (response, ticketTypeId) => {
+    try {
+      if (response.status === 'success') {
+        // Prepare payment info from Paystack
+        const paymentInfo = {
+          method: "Paystack",
+          currency: selectedTicketType?.currency || "USD",
+          reference: response.reference,
+          trans: response.trans
+        };
+        
+        // Process the actual ticket purchase with payment info
+        if (isAuthenticated) {
+          // Authenticated user purchase
+          await ticketService.purchaseTickets({
+            eventId,
+            ticketTypeId,
+            quantity
+          }, paymentInfo);
+        } else {
+          // Guest purchase
+          if (!guestInfo.name || !guestInfo.email) {
+            setPurchaseError('Please provide your name and email to purchase tickets');
+            setIsProcessing(false);
+            return;
+          }
+          
+          await ticketService.guestPurchaseTickets({
+            eventId,
+            ticketTypeId,
+            quantity,
+            attendeeInfo: guestInfo
+          }, paymentInfo);
+        }
+        
+        // Show success message
+        setPurchaseSuccess(true);
+        
+        // Reset form
+        setTimeout(() => {
+          if (isAuthenticated) {
+            navigate('/tickets'); // Redirect authenticated users to tickets page
+          } else {
+            // For guests, just reset the form
+            setSelectedTicketType(null);
+            setQuantity(1);
+            setGuestInfo({ name: '', email: '' });
+            setPurchaseSuccess(false);
+          }
+        }, 3000);
+      } else {
+        setPurchaseError('Payment was not successful. Please try again.');
+      }
+    } catch (err) {
+      console.error('Error completing ticket purchase after payment:', err);
+      setPurchaseError(err.response?.data?.message || 'Payment was successful, but we could not complete your ticket purchase. Please contact support with your payment reference: ' + response.reference);
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [eventId, guestInfo, isAuthenticated, navigate, quantity, selectedTicketType]);
+
   // Handle ticket purchase
-  const handlePurchaseTicket = async () => {
+  const handlePurchaseTicket = () => {
     if (!selectedTicketType) return;
     
     setIsProcessing(true);
@@ -128,6 +190,7 @@ const EventDetails = () => {
       
       // Determine the email to use for Paystack
       const userEmail = isAuthenticated ? currentUser.email : guestInfo.email;
+      const ticketTypeId = selectedTicketType._id;
       
       // Check if all required data is available
       if (!userEmail) {
@@ -142,74 +205,16 @@ const EventDetails = () => {
         return;
       }
       
-      // Initialize Paystack payment
+      // Initialize Paystack payment with proper function definitions
       const handler = window.PaystackPop.setup({
         key: 'pk_live_f75e7fc5c652583410d16789fc9955853373fc8c', // Paystack public key
         email: userEmail,
         amount: totalAmount,
         currency: selectedTicketType.currency || "USD",
-        callback: async function(response) {
-          if (response.status === 'success') {
-            // Prepare payment info from Paystack
-            const paymentInfo = {
-              method: "Paystack",
-              currency: selectedTicketType.currency || "USD",
-              reference: response.reference,
-              trans: response.trans
-            };
-            
-            try {
-              // Process the actual ticket purchase with payment info
-              if (isAuthenticated) {
-                // Authenticated user purchase
-                await ticketService.purchaseTickets({
-                  eventId,
-                  ticketTypeId: selectedTicketType._id,
-                  quantity
-                }, paymentInfo);
-              } else {
-                // Guest purchase
-                if (!guestInfo.name || !guestInfo.email) {
-                  setPurchaseError('Please provide your name and email to purchase tickets');
-                  setIsProcessing(false);
-                  return;
-                }
-                
-                await ticketService.guestPurchaseTickets({
-                  eventId,
-                  ticketTypeId: selectedTicketType._id,
-                  quantity,
-                  attendeeInfo: guestInfo
-                }, paymentInfo);
-              }
-              
-              // Show success message
-              setPurchaseSuccess(true);
-              
-              // Reset form
-              setTimeout(() => {
-                if (isAuthenticated) {
-                  navigate('/tickets'); // Redirect authenticated users to tickets page
-                } else {
-                  // For guests, just reset the form
-                  setSelectedTicketType(null);
-                  setQuantity(1);
-                  setGuestInfo({ name: '', email: '' });
-                  setPurchaseSuccess(false);
-                }
-              }, 3000);
-            } catch (err) {
-              console.error('Error completing ticket purchase after payment:', err);
-              setPurchaseError(err.response?.data?.message || 'Payment was successful, but we could not complete your ticket purchase. Please contact support with your payment reference: ' + response.reference);
-            } finally {
-              setIsProcessing(false);
-            }
-          } else {
-            setPurchaseError('Payment was not successful. Please try again.');
-            setIsProcessing(false);
-          }
+        callback: (response) => {
+          handlePaymentSuccess(response, ticketTypeId);
         },
-        onClose: function() {
+        onClose: () => {
           // Handle payment cancellation
           setPurchaseError('Payment was cancelled. Please try again to complete your purchase.');
           setIsProcessing(false);
