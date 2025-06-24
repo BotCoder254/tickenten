@@ -40,6 +40,50 @@ const getImageUrl = (imagePath) => {
   return `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}${imagePath}`;
 };
 
+// Add a helper function to get display status for the event
+const getEventStatus = (event) => {
+  if (!event) return '';
+  
+  const now = new Date();
+  const hasEnded = event.endDate && new Date(event.endDate) < now;
+  
+  if (hasEnded) {
+    return 'Ended';
+  }
+  
+  const isSoldOut = event.ticketTypes && event.ticketTypes.length > 0 && 
+    event.ticketTypes.every(ticket => ticket.quantitySold >= ticket.quantity);
+  
+  if (isSoldOut) {
+    return 'Sold Out';
+  }
+  
+  return event.status === 'published' ? 'Open' : event.status;
+};
+
+// Add a helper function to get status color class
+const getStatusColorClass = (event) => {
+  const now = new Date();
+  const hasEnded = event.endDate && new Date(event.endDate) < now;
+  
+  if (hasEnded) {
+    return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300';
+  }
+  
+  const isSoldOut = event.ticketTypes && event.ticketTypes.length > 0 && 
+    event.ticketTypes.every(ticket => ticket.quantitySold >= ticket.quantity);
+  
+  if (isSoldOut) {
+    return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300';
+  }
+  
+  if (event.status === 'published') {
+    return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300';
+  }
+  
+  return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300';
+};
+
 const Events = () => {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -323,6 +367,19 @@ const Events = () => {
                         <div className="absolute top-3 right-3 bg-white dark:bg-dark-100 rounded-full px-3 py-1 text-xs font-medium text-gray-700 dark:text-gray-300">
                           {event.category}
                         </div>
+                        <div className={`absolute top-3 left-3 rounded-full px-3 py-1 text-xs font-medium capitalize ${getStatusColorClass(event)}`}>
+                          {getEventStatus(event)}
+                        </div>
+                        <div className="absolute bottom-2 left-2 right-2 text-white">
+                          <div className="flex items-center text-sm">
+                            <FiCalendar className="mr-1" />
+                            {formatDate(event.startDate)}
+                          </div>
+                          <div className="flex items-center text-sm mt-1">
+                            <FiMapPin className="mr-1" />
+                            {event.isVirtual ? 'Virtual Event' : `${event.location?.city || 'Unknown'}, ${event.location?.country || ''}`}
+                          </div>
+                        </div>
                       </div>
                       <div className="p-4">
                         <div className="flex justify-between items-start">
@@ -338,16 +395,6 @@ const Events = () => {
                         <p className="mt-1 text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
                           {event.shortDescription}
                         </p>
-                        <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                          <div className="flex items-center">
-                            <FiCalendar className="mr-1" />
-                            {formatDate(event.startDate)}
-                          </div>
-                          <div className="flex items-center mt-1">
-                            <FiMapPin className="mr-1" />
-                            {event.isVirtual ? 'Virtual Event' : `${event.location?.city || 'Unknown'}, ${event.location?.country || ''}`}
-                          </div>
-                        </div>
                         <div className="mt-4 flex justify-between items-center">
                           <span className="font-bold text-gray-900 dark:text-white">
                             {event.ticketTypes && event.ticketTypes.length > 0
@@ -389,14 +436,17 @@ const Events = () => {
                             src={getImageUrl(event.featuredImage)}
                             alt={event.title}
                             className="w-full h-full object-cover rounded-lg"
-                                                      onError={(e) => {
-                            e.target.onerror = null;
-                            e.target.src = 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80';
-                          }}
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src = 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80';
+                            }}
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent rounded-lg"></div>
                           <div className="absolute top-3 right-3 bg-white dark:bg-dark-100 rounded-full px-3 py-1 text-xs font-medium text-gray-700 dark:text-gray-300">
                             {event.category}
+                          </div>
+                          <div className={`absolute top-3 left-3 rounded-full px-3 py-1 text-xs font-medium capitalize ${getStatusColorClass(event)}`}>
+                            {getEventStatus(event)}
                           </div>
                         </div>
                       </div>

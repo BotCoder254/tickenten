@@ -1,51 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FiSearch, FiCalendar, FiMapPin, FiArrowRight, FiStar } from 'react-icons/fi';
-
-// Mock data for featured events
-const featuredEvents = [
-  {
-    id: 1,
-    title: 'Tech Conference 2023',
-    image: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60',
-    date: 'Oct 15, 2023',
-    location: 'San Francisco, CA',
-    price: '$99',
-    category: 'Technology',
-    rating: 4.8,
-  },
-  {
-    id: 2,
-    title: 'Music Festival Weekend',
-    image: 'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60',
-    date: 'Nov 5-7, 2023',
-    location: 'Austin, TX',
-    price: '$149',
-    category: 'Music',
-    rating: 4.9,
-  },
-  {
-    id: 3,
-    title: 'Food & Wine Expo',
-    image: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60',
-    date: 'Sep 22, 2023',
-    location: 'New York, NY',
-    price: '$75',
-    category: 'Food',
-    rating: 4.7,
-  },
-  {
-    id: 4,
-    title: 'Art Gallery Opening',
-    image: 'https://images.unsplash.com/photo-1531058020387-3be344556be6?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60',
-    date: 'Oct 3, 2023',
-    location: 'Chicago, IL',
-    price: '$25',
-    category: 'Art',
-    rating: 4.5,
-  },
-];
+import eventService from '../services/eventService';
 
 // Categories
 const categories = [
@@ -70,8 +27,50 @@ const fadeIn = {
   }),
 };
 
+// Helper function to get image URL
+const getImageUrl = (imagePath) => {
+  if (!imagePath) return 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60';
+  
+  if (imagePath.startsWith('http')) {
+    return imagePath;
+  }
+  
+  return `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}${imagePath}`;
+};
+
+// Format date helper function
+const formatDate = (dateString) => {
+  const options = { year: 'numeric', month: 'short', day: 'numeric' };
+  return new Date(dateString).toLocaleDateString(undefined, options);
+};
+
 const LandingPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [featuredEvents, setFeaturedEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Fetch featured events
+  useEffect(() => {
+    const fetchFeaturedEvents = async () => {
+      setLoading(true);
+      try {
+        const response = await eventService.getFeaturedEvents(4);
+        if (response && response.success) {
+          setFeaturedEvents(response.data);
+        } else {
+          throw new Error('Failed to fetch featured events');
+        }
+      } catch (err) {
+        console.error('Error fetching featured events:', err);
+        setError('Failed to load featured events');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFeaturedEvents();
+  }, []);
 
   return (
     <div className="min-h-screen">
@@ -175,9 +174,9 @@ const LandingPage = () => {
                 />
               </div>
               <div className="flex-shrink-0">
-                <button className="btn btn-primary w-full md:w-auto">
+                <Link to={`/events${searchQuery ? `?q=${encodeURIComponent(searchQuery)}` : ''}`} className="btn btn-primary w-full md:w-auto">
                   Search Events
-                </button>
+                </Link>
               </div>
             </div>
             
@@ -232,65 +231,81 @@ const LandingPage = () => {
             </motion.div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {featuredEvents.map((event, index) => (
-              <motion.div
-                key={event.id}
-                custom={index}
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true }}
-                variants={fadeIn}
-                whileHover={{ y: -5 }}
-                className="card overflow-hidden"
-              >
-                <div className="relative h-48">
-                  <img
-                    src={event.image}
-                    alt={event.title}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute top-3 right-3 bg-white dark:bg-dark-100 rounded-full px-3 py-1 text-xs font-medium text-gray-700 dark:text-gray-300">
-                    {event.category}
-                  </div>
-                </div>
-                <div className="p-4">
-                  <div className="flex justify-between items-start">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                      {event.title}
-                    </h3>
-                    <div className="flex items-center text-yellow-500">
-                      <FiStar className="fill-current" />
-                      <span className="ml-1 text-sm text-gray-700 dark:text-gray-300">{event.rating}</span>
+          {loading ? (
+            <div className="flex justify-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
+            </div>
+          ) : error ? (
+            <div className="text-center py-12">
+              <p className="text-red-500">{error}</p>
+            </div>
+          ) : featuredEvents.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-gray-500">No featured events available at the moment.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {featuredEvents.map((event, index) => (
+                <motion.div
+                  key={event._id}
+                  custom={index}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true }}
+                  variants={fadeIn}
+                  whileHover={{ y: -5 }}
+                  className="card overflow-hidden"
+                >
+                  <div className="relative h-48">
+                    <img
+                      src={getImageUrl(event.featuredImage)}
+                      alt={event.title}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = "https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80";
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                    <div className="absolute bottom-0 left-0 p-4 text-white">
+                      <div className="flex items-center text-sm">
+                        <FiCalendar className="mr-1" />
+                        <span>{formatDate(event.startDate)}</span>
+                      </div>
+                      <div className="flex items-center text-sm mt-1">
+                        <FiMapPin className="mr-1" />
+                        <span>{event.isVirtual ? 'Virtual Event' : `${event.location?.city || 'Unknown location'}`}</span>
+                      </div>
                     </div>
                   </div>
-                  <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                    <div className="flex items-center">
-                      <FiCalendar className="mr-1" />
-                      {event.date}
+                  <div className="p-4">
+                    <div className="flex items-start justify-between">
+                      <h3 className="font-bold text-gray-900 dark:text-white line-clamp-1">{event.title}</h3>
+                      {event.isFeatured && (
+                        <FiStar className="text-yellow-500 fill-current" />
+                      )}
                     </div>
-                    <div className="flex items-center mt-1">
-                      <FiMapPin className="mr-1" />
-                      {event.location}
-                    </div>
-                  </div>
-                  <div className="mt-4 flex justify-between items-center">
-                    <span className="font-bold text-gray-900 dark:text-white">{event.price}</span>
-                    {event.id && /^[0-9a-fA-F]{24}$/.test(event.id) ? (
+                    <p className="mt-2 text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
+                      {event.shortDescription}
+                    </p>
+                    <div className="mt-4 flex justify-between items-center">
+                      <span className="text-sm font-medium text-primary-600 dark:text-primary-400">
+                        {event.ticketTypes && event.ticketTypes.length > 0
+                          ? `From ${event.ticketTypes[0].price} ${event.ticketTypes[0].currency}`
+                          : 'Free'}
+                      </span>
                       <Link
-                        to={`/events/${event.id}`}
-                        className="text-sm font-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
+                        to={`/events/${event._id}`}
+                        className="text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400"
                       >
-                        View Details
+                        View details
                       </Link>
-                    ) : (
-                      <span className="text-sm font-medium text-gray-400">Details Unavailable</span>
-                    )}
+                    </div>
                   </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 

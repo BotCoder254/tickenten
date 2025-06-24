@@ -215,6 +215,14 @@ exports.purchaseTickets = async (req, res) => {
       });
     }
 
+    // Prevent event creators from buying their own tickets
+    if (event.creator.toString() === req.user.id) {
+      return res.status(400).json({
+        success: false,
+        message: 'Event creators cannot purchase tickets for their own events',
+      });
+    }
+
     // Find ticket type
     const ticketType = event.ticketTypes.find(
       (type) => type._id.toString() === ticketTypeId

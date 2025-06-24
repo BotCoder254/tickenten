@@ -259,17 +259,9 @@ exports.getUserEvents = async (req, res) => {
  */
 exports.getEventById = async (req, res) => {
   try {
-    // Check if the ID is a valid MongoDB ObjectId
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid event ID format',
-      });
-    }
-
     const event = await Event.findById(req.params.id).populate(
       'creator',
-      'name avatar email'
+      'name email avatar'
     );
 
     if (!event) {
@@ -279,22 +271,42 @@ exports.getEventById = async (req, res) => {
       });
     }
 
-    // Allow viewing if:
-    // 1. The event is published (public access)
-    // 2. The requester is the creator of the event (regardless of status)
-    const isCreator = req.user && event.creator && 
-                    (event.creator._id.toString() === req.user.id);
-    
-    if (event.status !== 'published' && !isCreator) {
-      return res.status(403).json({
+    // Check if event has ended and update status if needed
+    const now = new Date();
+    if (event.status === 'published' && new Date(event.endDate) < now) {
+      event.status = 'completed';
+      await event.save();
+    }
+
+    // Check if all tickets are sold out
+    const allTicketsSoldOut = event.ticketTypes.length > 0 && 
+      event.ticketTypes.every(ticket => ticket.quantitySold >= ticket.quantity);
+
+    // For non-creators, only show published events
+    if (
+      event.status !== 'published' &&
+      (!req.user || event.creator._id.toString() !== req.user.id)
+    ) {
+      return res.status(404).json({
         success: false,
-        message: 'Not authorized to view this event',
+        message: 'Event not found',
       });
     }
 
+    // Determine if this user is the creator
+    const isCreator = req.user && event.creator._id.toString() === req.user.id;
+
+    // Include additional info for the response
+    const eventWithExtras = {
+      ...event.toObject(),
+      hasEnded: new Date(event.endDate) < now,
+      isSoldOut: allTicketsSoldOut,
+      isCreator: isCreator
+    };
+
     res.status(200).json({
       success: true,
-      data: event,
+      data: eventWithExtras,
     });
   } catch (error) {
     console.error('Get event by ID error:', error);

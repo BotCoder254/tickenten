@@ -28,8 +28,15 @@ api.interceptors.response.use(
   (error) => {
     // Handle 401 Unauthorized errors (token expired)
     if (error.response && error.response.status === 401) {
-      // Clear token and redirect to login if not already there
-      if (localStorage.getItem('token')) {
+      // Only redirect to login for protected routes, not for public browsing
+      const isPublicRoute = [
+        '/events',
+        '/api/events',
+        '/api/events/featured'
+      ].some(route => error.config.url.includes(route));
+      
+      // Clear token and redirect to login if not already there and not a public route
+      if (localStorage.getItem('token') && !isPublicRoute) {
         localStorage.removeItem('token');
         if (window.location.pathname !== '/login') {
           window.location.href = '/login';
