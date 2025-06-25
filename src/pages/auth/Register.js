@@ -90,15 +90,32 @@ const Register = () => {
             className="text-center"
           >
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Create an account</h2>
-           <motion.p
-  className="mt-2 text-sm text-gray-600 dark:text-gray-400 overflow-hidden whitespace-nowrap border-r border-gray-400 dark:border-gray-500 max-w-xs"
-  initial={{ width: 0 }}
-  animate={{ width: "100%" }}
-  transition={{ duration: 3, ease: "easeInOut" }}
+  <motion.div
+  className="mt-2 text-sm text-gray-600 dark:text-gray-400 leading-relaxed break-words whitespace-normal"
+  initial={{ opacity: 0 }}
+  animate={{ opacity: 1 }}
+  transition={{
+    delay: 0.2,
+    staggerChildren: 0.04,
+    when: "beforeChildren",
+  }}
 >
-  Sign up to start creating and managing events
-</motion.p>
-          </motion.div>
+  {
+    [..."Sign up to start creating and managing events"].map((char, index) => (
+      <motion.span
+        key={index}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: index * 0.04 }}
+        className="inline-block"
+      >
+        {char}
+      </motion.span>
+    ))
+  }
+  <span className="inline-block animate-pulse text-gray-500 dark:text-gray-300">|</span>
+</motion.div>
+              </motion.div>
         </div>
         
         {error && (
