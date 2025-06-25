@@ -261,65 +261,69 @@ useEffect(() => {
       </motion.div>
     </div>
   </div>
-</section>
+</section> 
 {/* Search Section */}
-<section className="relative z-9999 py-12 bg-white dark:bg-dark-100 overflow-hidden">
-  {/* Decorative Blobs */}
-  <div className="absolute -top-32 -left-32 w-96 h-96 bg-primary-500 opacity-20 rounded-full blur-3xl animate-pulse pointer-events-none"></div>
-  <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-secondary-600 opacity-20 rounded-full blur-3xl animate-pulse pointer-events-none"></div>
-
-  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+<section className="py-16 bg-white dark:bg-dark-100">
+  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.5 }}
-      className="relative -mt-24 bg-white/90 dark:bg-dark-200/80 backdrop-blur-md border border-white/10 shadow-xl rounded-2xl p-6 transition-all"
+      className="relative -mt-24 bg-white dark:bg-dark-100 rounded-2xl shadow-lg dark:shadow-gray-800/50 p-8 md:p-10 border border-gray-100 dark:border-gray-800"
     >
-      {/* Search Form */}
-      <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-4 items-center">
-        <div className="flex-grow relative w-full group">
+      <h2 className="text-2xl md:text-3xl font-bold text-center mb-6 text-gray-900 dark:text-white">
+        Discover Amazing Events
+      </h2>
+      
+      <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-4">
+        <div className="flex-grow relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <FiSearch className="h-5 w-5 text-gray-400 group-hover:text-primary-500 transition-all" />
+            <FiSearch className="h-5 w-5 text-gray-400 dark:text-gray-500" />
           </div>
           <input
             type="text"
-            className="input pl-10 w-full py-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-dark-100 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all duration-300"
+            className="input pl-10 w-full h-12 md:h-14 text-base"
             placeholder="Search for events, concerts, conferences..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <div className="flex-shrink-0 w-full md:w-auto">
-          <button
-            type="submit"
-            className="btn btn-primary w-full md:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-primary-500 to-secondary-500 text-white font-semibold shadow-md hover:shadow-lg hover:scale-105 transition-all duration-300"
+        <div className="flex-shrink-0">
+          <button 
+            type="submit" 
+            className="btn btn-primary w-full md:w-auto h-12 md:h-14 px-6 text-base font-medium hover:shadow-lg transition-shadow duration-200"
           >
-            🔍 Search Events
+            Search Events
           </button>
         </div>
       </form>
-
-      {/* Category Tags */}
-      <div className="mt-6 flex flex-wrap gap-3">
-        {categories.map((category, index) => (
-          <motion.div
-            key={category.name}
-            initial={{ opacity: 0, y: 10 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.3, delay: index * 0.1 }}
-            whileHover={{ scale: 1.08 }}
-            whileTap={{ scale: 0.95 }}
-            className={`${category.color} px-4 py-2 rounded-full cursor-pointer transition-all duration-200 shadow-sm hover:brightness-110`}
-            onClick={() => navigate(`/events?category=${encodeURIComponent(category.name)}`)}
-          >
-            <span className="mr-2">{category.icon}</span>
-            <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
-              {category.name}
-            </span>
-          </motion.div>
-        ))}
+      
+      <div className="mt-8">
+        <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">
+          Popular Categories
+        </h3>
+        <div className="flex flex-wrap gap-3">
+          {categories.map((category, index) => (
+            <motion.div
+              key={category.name}
+              custom={index}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              variants={fadeIn}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className={`${category.color} px-4 py-2 rounded-full cursor-pointer transition-all duration-200 flex items-center hover:shadow-md dark:hover:shadow-gray-900/30`}
+              onClick={() => navigate(`/events?category=${encodeURIComponent(category.name)}`)}
+            >
+              <span className="mr-2 text-lg">{category.icon}</span>
+              <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                {category.name}
+              </span>
+            </motion.div>
+          ))}
+        </div>
       </div>
     </motion.div>
   </div>
