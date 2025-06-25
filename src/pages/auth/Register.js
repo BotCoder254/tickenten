@@ -77,7 +77,6 @@ const Register = () => {
         transition={{ duration: 0.5 }}
         className="max-w-md w-full space-y-8 bg-white dark:bg-dark-100 p-8 rounded-xl shadow-lg"
       >
-          <div style="height:100px;"></div>
         <div>
           <Link to="/" className="flex items-center text-gray-600 dark:text-gray-400 mb-8 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
             <FiArrowLeft className="mr-2" />
@@ -91,9 +90,14 @@ const Register = () => {
             className="text-center"
           >
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Create an account</h2>
-            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-              Sign up to start creating and managing events
-            </p>
+           <motion.p
+  className="mt-2 text-sm text-gray-600 dark:text-gray-400 overflow-hidden whitespace-nowrap border-r border-gray-400 dark:border-gray-500 max-w-xs"
+  initial={{ width: 0 }}
+  animate={{ width: "100%" }}
+  transition={{ duration: 3, ease: "easeInOut" }}
+>
+  Sign up to start creating and managing events
+</motion.p>
           </motion.div>
         </div>
         
