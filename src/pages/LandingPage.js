@@ -263,7 +263,7 @@ useEffect(() => {
   </div>
 </section>
 {/* Search Section */}
-<section className="relative z-20 py-12 bg-white dark:bg-dark-100 overflow-hidden">
+<section className="relative z-9999 py-12 bg-white dark:bg-dark-100 overflow-hidden">
   {/* Decorative Blobs */}
   <div className="absolute -top-32 -left-32 w-96 h-96 bg-primary-500 opacity-20 rounded-full blur-3xl animate-pulse pointer-events-none"></div>
   <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-secondary-600 opacity-20 rounded-full blur-3xl animate-pulse pointer-events-none"></div>
