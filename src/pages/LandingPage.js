@@ -261,19 +261,20 @@ useEffect(() => {
       </motion.div>
     </div>
   </div>
-</section>{/* Search Section */}
-<section className="relative z-30 -mt-48 pb-24 bg-transparent">
+</section>
+{/* Search Section */}
+<section className="relative z-20 py-12 bg-white dark:bg-dark-100 overflow-hidden">
   {/* Decorative Blobs */}
-  <div className="absolute -top-32 -left-32 w-96 h-96 bg-primary-500 opacity-20 rounded-full blur-3xl animate-pulse"></div>
-  <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-secondary-600 opacity-20 rounded-full blur-3xl animate-pulse delay-100"></div>
+  <div className="absolute -top-32 -left-32 w-96 h-96 bg-primary-500 opacity-20 rounded-full blur-3xl animate-pulse pointer-events-none"></div>
+  <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-secondary-600 opacity-20 rounded-full blur-3xl animate-pulse pointer-events-none"></div>
 
   <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
     <motion.div
-      initial={{ opacity: 0, y: 40 }}
+      initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
-      transition={{ duration: 0.6 }}
-      className="relative bg-white/80 dark:bg-dark-200/90 backdrop-blur-lg border border-white/20 dark:border-white/10 shadow-2xl hover:shadow-[0_10px_60px_rgba(0,0,0,0.3)] rounded-3xl p-8 md:p-10 transition-all duration-500 -mt-10"
+      transition={{ duration: 0.5 }}
+      className="relative -mt-24 bg-white/90 dark:bg-dark-200/80 backdrop-blur-md border border-white/10 shadow-xl rounded-2xl p-6 transition-all"
     >
       {/* Search Form */}
       <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-4 items-center">
@@ -283,17 +284,16 @@ useEffect(() => {
           </div>
           <input
             type="text"
-            className="w-full py-3 pl-10 pr-4 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-dark-100 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all duration-300 shadow-inner"
-            placeholder="Search concerts, meetups, tech talks..."
+            className="input pl-10 w-full py-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-dark-100 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all duration-300"
+            placeholder="Search for events, concerts, conferences..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-
         <div className="flex-shrink-0 w-full md:w-auto">
           <button
             type="submit"
-            className="w-full md:w-auto px-6 py-3 bg-gradient-to-r from-primary-500 to-secondary-500 text-white font-semibold rounded-xl shadow-md hover:shadow-lg hover:scale-105 transition-all duration-300"
+            className="btn btn-primary w-full md:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-primary-500 to-secondary-500 text-white font-semibold shadow-md hover:shadow-lg hover:scale-105 transition-all duration-300"
           >
             🔍 Search Events
           </button>
@@ -301,21 +301,23 @@ useEffect(() => {
       </form>
 
       {/* Category Tags */}
-      <div className="mt-6 flex flex-wrap gap-3 justify-start">
+      <div className="mt-6 flex flex-wrap gap-3">
         {categories.map((category, index) => (
           <motion.div
             key={category.name}
             initial={{ opacity: 0, y: 10 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.4, delay: index * 0.1 }}
+            transition={{ duration: 0.3, delay: index * 0.1 }}
             whileHover={{ scale: 1.08 }}
             whileTap={{ scale: 0.95 }}
-            className={`flex items-center px-4 py-2 rounded-full ${category.color} bg-opacity-80 shadow-md cursor-pointer transition-all hover:brightness-110`}
+            className={`${category.color} px-4 py-2 rounded-full cursor-pointer transition-all duration-200 shadow-sm hover:brightness-110`}
             onClick={() => navigate(`/events?category=${encodeURIComponent(category.name)}`)}
           >
-            <span className="mr-2 text-lg">{category.icon}</span>
-            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{category.name}</span>
+            <span className="mr-2">{category.icon}</span>
+            <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
+              {category.name}
+            </span>
           </motion.div>
         ))}
       </div>
