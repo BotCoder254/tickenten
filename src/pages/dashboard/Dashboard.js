@@ -218,7 +218,7 @@ const Dashboard = () => {
 const tabs = [
   { id: "overview", label: "Overview", icon: <FiGrid /> },
   { id: "events", label: "My Events", icon: <FiCalendar /> },
-  { id: "tickets", label: "My Tickets", icon: <FiTicket /> },
+  { id: "tickets", label: "My Tickets", icon: <FiTag /> },
   { id: "analytics", label: "Analytics", icon: <FiBarChart2 /> },
 ];
                 
