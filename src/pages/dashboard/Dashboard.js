@@ -236,34 +236,47 @@ const tabs = [
             Manage your events and tickets
           </p>
         </motion.div>
-<div className="relative mb-8">
-  <div className="flex overflow-x-auto space-x-2 pb-2 px-1 relative rounded-xl bg-white/50 dark:bg-dark-300/30 backdrop-blur-md border border-gray-200 dark:border-gray-700 shadow-inner dark:shadow-lg">
+<div className="relative mb-8 group">
+  <div className="flex overflow-x-auto space-x-2 pb-2 px-1 relative rounded-xl bg-white/50 dark:bg-dark-300/30 backdrop-blur-xl border border-gray-200/80 dark:border-gray-700/60 shadow-inner dark:shadow-2xl transition-all duration-500 hover:shadow-md hover:dark:shadow-lg hover:border-gray-300/90 hover:dark:border-gray-600/80">
     {tabs.map((tab, index) => (
       <button
         key={tab.id}
         onClick={() => setActiveTab(tab.id)}
-        className={`relative z-10 flex items-center gap-2 px-5 py-2 font-semibold rounded-lg whitespace-nowrap transition-all duration-300 
+        className={`relative z-10 flex items-center gap-2 px-5 py-2 font-semibold rounded-lg whitespace-nowrap transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]
           ${
             activeTab === tab.id
-              ? "text-white dark:text-white"
-              : "text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white"
+              ? "text-white dark:text-white drop-shadow-lg"
+              : "text-gray-600/90 dark:text-gray-400/90 hover:text-black/90 dark:hover:text-white/90"
           }`}
       >
-        {tab.icon}
-        {tab.label}
+        <span className="transition-transform duration-300 group-hover:scale-110">
+          {tab.icon}
+        </span>
+        <span className="transition-all duration-500">
+          {tab.label}
+        </span>
       </button>
     ))}
 
-    {/* 🔥 Sliding Tab Indicator */}
+    {/* 🔥🔥🔥 Ultra Smooth Sliding Tab Indicator */}
     <motion.div
       layoutId="dashboard-tab"
-      className="absolute top-1 bottom-1 z-0 rounded-lg bg-gradient-to-r from-primary-500 to-secondary-500 shadow-md"
-      transition={{ type: "spring", stiffness: 400, damping: 30 }}
+      className="absolute top-1 bottom-1 z-0 rounded-lg bg-gradient-to-r from-primary-500 via-primary-400 to-secondary-500 shadow-lg"
+      transition={{ 
+        type: "spring", 
+        stiffness: 500, 
+        damping: 30,
+        mass: 0.5
+      }}
       style={{
         width: `calc(100% / ${tabs.length} - 0.5rem)`,
         left: `calc(${tabs.findIndex(t => t.id === activeTab)} * (100% / ${tabs.length}) + 0.25rem)`,
+        filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.15))'
       }}
     />
+    
+    {/* ✨ Subtle hover effect for the entire container */}
+    <div className="absolute inset-0 rounded-xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br from-white/10 to-transparent dark:from-white/5" />
   </div>
 </div>
         {/* Dashboard Content */}
