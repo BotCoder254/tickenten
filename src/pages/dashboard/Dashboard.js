@@ -655,7 +655,6 @@ const TicketSalesChart = ({ events }) => {
     </div>
   );
 };
-
 const CategoryChart = ({ events }) => {
   if (!events.length) {
     return (
@@ -666,7 +665,6 @@ const CategoryChart = ({ events }) => {
     );
   }
 
-  // Aggregate category data
   const categories = events.reduce((acc, event) => {
     const category = event.category?.toLowerCase() || 'other';
     acc[category] = (acc[category] || 0) + 1;
@@ -674,90 +672,83 @@ const CategoryChart = ({ events }) => {
   }, {});
 
   const total = events.length;
-
+  const radius = 60;
+  const center = 75;
   const colors = [
-    '#f87171', // red
-    '#60a5fa', // blue
-    '#34d399', // green
-    '#fbbf24', // yellow
-    '#c084fc', // purple
-    '#f472b6', // pink
+    '#f87171', '#60a5fa', '#34d399',
+    '#fbbf24', '#c084fc', '#f472b6',
   ];
 
-  const radius = 60;
-  const circumference = 2 * Math.PI * radius;
+  let cumulativeAngle = 0;
 
-  let offset = 0;
   const categoryData = Object.entries(categories).map(([label, count], index) => {
     const percentage = count / total;
-    const length = percentage * circumference;
-    const dashOffset = circumference - offset - length;
+    const angle = percentage * 360;
+    const startAngle = cumulativeAngle;
+    const endAngle = cumulativeAngle + angle;
     const color = colors[index % colors.length];
-    offset += length;
+    cumulativeAngle += angle;
 
-    return {
-      label,
-      count,
-      percentage,
-      length,
-      dashOffset,
-      color,
-    };
+    return { label, count, percentage, startAngle, endAngle, color };
   });
 
+  const polarToCartesian = (cx, cy, r, angleInDegrees) => {
+    const angleInRadians = ((angleInDegrees - 90) * Math.PI) / 180.0;
+    return {
+      x: cx + r * Math.cos(angleInRadians),
+      y: cy + r * Math.sin(angleInRadians),
+    };
+  };
+
+  const describeArc = (x, y, radius, startAngle, endAngle) => {
+    const start = polarToCartesian(x, y, radius, endAngle);
+    const end = polarToCartesian(x, y, radius, startAngle);
+    const largeArcFlag = endAngle - startAngle <= 180 ? '0' : '1';
+
+    return [
+      `M ${start.x} ${start.y}`,
+      `A ${radius} ${radius} 0 ${largeArcFlag} 0 ${end.x} ${end.y}`,
+      `L ${x} ${y}`,
+      `Z`,
+    ].join(' ');
+  };
+
   return (
-    <div className="flex flex-col md:flex-row w-full h-full items-center justify-center gap-6">
-      {/* Donut Chart */}
+    <div className="flex flex-col md:flex-row w-full h-full items-center justify-center gap-8">
       <motion.svg
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ duration: 0.8, ease: 'easeOut' }}
         width={150}
         height={150}
         viewBox="0 0 150 150"
-        className="rotate-[-90deg]"
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ duration: 1 }}
       >
-        <circle
-          cx="75"
-          cy="75"
-          r={radius}
-          fill="transparent"
-          stroke="#e5e7eb"
-          strokeWidth={14}
-        />
         {categoryData.map((cat, i) => (
-          <motion.circle
+          <motion.path
             key={cat.label}
-            cx="75"
-            cy="75"
-            r={radius}
-            fill="transparent"
-            stroke={cat.color}
-            strokeWidth={14}
-            strokeDasharray={circumference}
-            strokeDashoffset={cat.dashOffset}
-            strokeLinecap="round"
-            animate={{ strokeDashoffset: cat.dashOffset }}
+            d={describeArc(center, center, radius, cat.startAngle, cat.endAngle)}
+            fill={cat.color}
+            initial={{ pathLength: 0 }}
+            animate={{ pathLength: 1 }}
             transition={{ duration: 1, delay: i * 0.2 }}
           />
         ))}
+        {/* Inner circle for donut effect */}
+        <circle cx={center} cy={center} r={radius - 20} fill="white" className="dark:fill-dark-700" />
       </motion.svg>
 
       {/* Legend */}
-      <div className="flex flex-col space-y-3">
+      <div className="flex flex-col space-y-2">
         {categoryData.map((cat, i) => (
           <motion.div
             key={cat.label}
             initial={{ x: -10, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
-            transition={{ delay: i * 0.2 + 0.5 }}
+            transition={{ delay: i * 0.2 + 0.6 }}
             className="flex items-center space-x-2"
           >
-            <span
-              className="w-3 h-3 rounded-full"
-              style={{ backgroundColor: cat.color }}
-            ></span>
-            <span className="capitalize text-sm text-gray-800 dark:text-gray-200">
+            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: cat.color }}></div>
+            <span className="text-sm text-gray-800 dark:text-gray-200 capitalize">
               {cat.label} — {cat.count} ({Math.round(cat.percentage * 100)}%)
             </span>
           </motion.div>
@@ -766,5 +757,4 @@ const CategoryChart = ({ events }) => {
     </div>
   );
 };
-
 export default Dashboard; 
