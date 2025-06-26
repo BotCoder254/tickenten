@@ -279,11 +279,11 @@ useEffect(() => {
       <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-4">
         <div className="flex-grow relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <FiSearch className="h-5 w-5 text-gray-400 dark:text-gray-500"
+            <FiSearch className="h-5 w-5 text-gray-400 dark:text-gray-500" />
         <div className="flex-shrink-0">
           <button
             type="submit" 
-            className="btn btn-primary w-full md:w-auto h-12 md:h-14 px-6 text-base font-medium hover:shadow-lg transition-shadow durat
+            className="btn btn-primary w-full md:w-auto h-12 md:h-14 px-6 text-base font-medium hover:shadow-lg transition-shadow duration-300">
               <motion.div
   initial={{ opacity: 0, y: 30, scale: 0.95 }}
   animate={{ opacity: 1, y: 0, scale: 1 }}
