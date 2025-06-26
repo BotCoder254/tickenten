@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-
+import { Link } from 'react-router-dom';
 const About = () => {
   return (
     <div className="pt-20 pb-16">
@@ -78,12 +78,12 @@ const About = () => {
             <p className="text-gray-700 dark:text-gray-300 mb-4">
               Join thousands of creators using TickenTen to power impactful experiences.
             </p>
-            <a
-              href="/register"
-              className="inline-block px-6 py-2 rounded-full bg-primary-600 text-white font-medium hover:bg-primary-700 transition"
-            >
-              Get Started for Free
-            </a>
+            <Link
+  to="/register"
+  className="inline-block px-6 py-2 rounded-full bg-primary-600 text-white font-medium hover:bg-primary-700 transition"
+>
+  Get Started for Free
+</Link>
           </div>
         </motion.div>
       </div>
