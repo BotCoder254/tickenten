@@ -2,10 +2,22 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useLocation } from 'react-router-dom';
-import { FiPlusCircle, FiCalendar, FiUsers, FiTag, FiDollarSign, FiBarChart2, FiPieChart, FiMapPin } from 'react-icons/fi';
+
+import {
+  FiPlusCircle,
+  FiCalendar,
+  FiUsers,
+  FiTag,
+  FiDollarSign,
+  FiBarChart2,
+  FiPieChart,
+  FiMapPin,
+  FiGrid,
+  FiTicket
+} from 'react-icons/fi';
+
 import eventService from '../../services/eventService';
 import ticketService from '../../services/ticketService';
-
 // Helper function for consistent image handling
 const getImageUrl = (imagePath) => {
   if (!imagePath) return 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80';
@@ -218,53 +230,44 @@ const Dashboard = () => {
             Manage your events and tickets
           </p>
         </motion.div>
+const tabs = [
+  { id: "overview", label: "Overview", icon: <FiGrid /> },
+  { id: "events", label: "My Events", icon: <FiCalendar /> },
+  { id: "tickets", label: "My Tickets", icon: <FiTicket /> },
+  { id: "analytics", label: "Analytics", icon: <FiBarChart2 /> },
+];
 
-        {/* Dashboard Tabs */}
-        <div className="mb-8">
-          <nav className="flex space-x-4 overflow-x-auto pb-2">
-            <button
-              className={`px-4 py-2 font-medium rounded-md transition-colors ${
-                activeTab === 'overview'
-                  ? 'bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300'
-                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-              }`}
-              onClick={() => setActiveTab('overview')}
-            >
-              Overview
-            </button>
-            <button
-              className={`px-4 py-2 font-medium rounded-md transition-colors ${
-                activeTab === 'events'
-                  ? 'bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300'
-                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-              }`}
-              onClick={() => setActiveTab('events')}
-            >
-              My Events
-            </button>
-            <button
-              className={`px-4 py-2 font-medium rounded-md transition-colors ${
-                activeTab === 'tickets'
-                  ? 'bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300'
-                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-              }`}
-              onClick={() => setActiveTab('tickets')}
-            >
-              My Tickets
-            </button>
-            <button
-              className={`px-4 py-2 font-medium rounded-md transition-colors ${
-                activeTab === 'analytics'
-                  ? 'bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300'
-                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-              }`}
-              onClick={() => setActiveTab('analytics')}
-            >
-              Analytics
-            </button>
-          </nav>
-        </div>
+// 👇 Your tab UI
+<div className="relative mb-8">
+  <div className="flex overflow-x-auto space-x-2 pb-2 px-1 relative rounded-xl bg-white/50 dark:bg-dark-300/30 backdrop-blur-md border border-gray-200 dark:border-gray-700 shadow-inner dark:shadow-lg">
+    {tabs.map((tab, index) => (
+      <button
+        key={tab.id}
+        onClick={() => setActiveTab(tab.id)}
+        className={`relative z-10 flex items-center gap-2 px-5 py-2 font-semibold rounded-lg whitespace-nowrap transition-all duration-300 
+          ${
+            activeTab === tab.id
+              ? "text-white dark:text-white"
+              : "text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white"
+          }`}
+      >
+        {tab.icon}
+        {tab.label}
+      </button>
+    ))}
 
+    {/* 🔥 Sliding Tab Indicator */}
+    <motion.div
+      layoutId="dashboard-tab"
+      className="absolute top-1 bottom-1 z-0 rounded-lg bg-gradient-to-r from-primary-500 to-secondary-500 shadow-md"
+      transition={{ type: "spring", stiffness: 400, damping: 30 }}
+      style={{
+        width: `calc(100% / ${tabs.length} - 0.5rem)`,
+        left: `calc(${tabs.findIndex(t => t.id === activeTab)} * (100% / ${tabs.length}) + 0.25rem)`,
+      }}
+    />
+  </div>
+</div>
         {/* Dashboard Content */}
         <motion.div
           key={activeTab}
