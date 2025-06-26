@@ -236,7 +236,7 @@ const tabs = [
             Manage your events and tickets
           </p>
         </motion.div>
-<div className="relative mb-8 group">
+<div className="relative mb-8 group scrollbar-hide">
   {/* 🌌 Floating Glass Panel with Dynamic Border */}
   <div className="flex overflow-x-auto scrollbar-hide space-x-1 p-1 relative rounded-2xl bg-white/20 dark:bg-gray-900/50 backdrop-blur-2xl border border-white/30 dark:border-gray-600/30 shadow-[0_8px_32px_rgba(0,0,0,0.1)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.3)] transition-all duration-500 hover:shadow-lg hover:dark:shadow-xl">
     {tabs.map((tab) => (
@@ -264,23 +264,26 @@ const tabs = [
         </span>
       </button>
     ))}
-
-    {/* 🌀 Floating Bubble Indicator (3D Depth Effect) */}
-    <motion.div
-      layoutId="ultra-tab-indicator"
-      className="absolute -bottom-1 h-[3px] z-0 rounded-full bg-gradient-to-r from-cyan-400 to-purple-500 shadow-lg"
-      transition={{ 
-        type: "spring", 
-        stiffness: 500, 
-        damping: 30,
-        bounce: 0.3
-      }}
-      style={{
-        width: `calc(100% / ${tabs.length} - 0.5rem)`,
-        left: `calc(${tabs.findIndex(t => t.id === activeTab)} * (100% / ${tabs.length}) + 0.25rem)`,
-        filter: 'drop-shadow(0 0 8px rgba(124, 58, 237, 0.6))'
-      }}
-    />
+{/* 🌊 Liquid Metal Indicator (SMOOTH AF) */}
+<motion.div
+  layoutId="god-tier-tab-indicator"
+  className="absolute -bottom-[3px] h-[4px] z-0 rounded-full bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 shadow-xl"
+  transition={{
+    type: "spring",
+    stiffness: 600,
+    damping: 25,
+    bounce: 0.4,
+  }}
+  style={{
+    width: `calc(100% / ${tabs.length} - 0.5rem)`,
+    left: `calc(${tabs.findIndex(t => t.id === activeTab)} * (100% / ${tabs.length}) + 0.25rem)`,
+    filter: `
+      drop-shadow(0 0 6px rgba(34, 211, 238, 0.7))
+      drop-shadow(0 0 10px rgba(124, 58, 237, 0.5))
+      drop-shadow(0 0 15px rgba(236, 72, 153, 0.3))
+    `,
+  }}
+/>
     
     {/* 💫 Hover-Activated Particle Effect (Subtle) */}
     <div className="absolute inset-0 rounded-2xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-700 bg-[radial-gradient(circle_at_center,_rgba(124,58,237,0.1)_0%,_transparent_70%)]" />
