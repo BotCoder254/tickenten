@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { FiChevronDown, FiChevronUp } from 'react-icons/fi';
-
+import { Link } from 'react-router-dom';
 const FAQ = () => {
-  const [openIndex, setOpenIndex] = useState(0);
+  const [openIndex, setOpenIndex] = useState(null);
 
   const faqs = [
     {
@@ -53,66 +53,74 @@ const FAQ = () => {
   };
 
   return (
-    <div className="pt-20 pb-16">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="pt-24 pb-20 min-h-screen bg-gradient-to-br from-white via-slate-100 to-white dark:from-[#0f0f0f] dark:via-[#111] dark:to-[#0f0f0f] transition-colors duration-300">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 25 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+          transition={{ duration: 0.6 }}
         >
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6 text-center">Frequently Asked Questions</h1>
-          <p className="text-center text-gray-600 dark:text-gray-400 mb-12 max-w-2xl mx-auto">
-            Find answers to common questions about using TickenTen for event management and ticket purchasing.
-          </p>
-          
+          <div className="text-center mb-12">
+            <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white mb-3">
+              Frequently Asked Questions
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+              Find answers to common questions about using TickenTen for event management and ticket purchasing.
+            </p>
+          </div>
+
           <div className="space-y-4">
             {faqs.map((faq, index) => (
-              <div 
+              <div
                 key={index}
-                className="card overflow-hidden"
+                className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white/60 dark:bg-white/5 backdrop-blur-sm shadow-sm transition hover:shadow-md"
               >
                 <button
-                  className="flex justify-between items-center w-full p-6 text-left"
                   onClick={() => toggleFAQ(index)}
+                  className="flex items-center justify-between w-full px-6 py-4 text-left"
                 >
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                     {faq.question}
                   </h3>
                   {openIndex === index ? (
-                    <FiChevronUp className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+                    <FiChevronUp className="w-5 h-5 text-gray-500 dark:text-gray-400" />
                   ) : (
-                    <FiChevronDown className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+                    <FiChevronDown className="w-5 h-5 text-gray-500 dark:text-gray-400" />
                   )}
                 </button>
-                
-                {openIndex === index && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="px-6 pb-6"
-                  >
-                    <p className="text-gray-600 dark:text-gray-400">
-                      {faq.answer}
-                    </p>
-                  </motion.div>
-                )}
+
+                <AnimatePresence>
+                  {openIndex === index && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="px-6 pb-4"
+                    >
+                      <p className="text-gray-600 dark:text-gray-400">
+                        {faq.answer}
+                      </p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             ))}
           </div>
-          
-          <div className="mt-12 text-center">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Still have questions?</h2>
+
+          <div className="mt-16 text-center">
+            <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-3">
+              Still have questions?
+            </h2>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
-              Our support team is here to help you with any other questions you might have.
+              Our support team is ready to help you out.
             </p>
-            <a 
-              href="/contact" 
-              className="btn btn-primary"
+            <Link
+              to="/contact"
+              className="inline-block px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-md transition"
             >
               Contact Support
-            </a>
+            </Link>
           </div>
         </motion.div>
       </div>
@@ -120,4 +128,4 @@ const FAQ = () => {
   );
 };
 
-export default FAQ; 
+export default FAQ;
