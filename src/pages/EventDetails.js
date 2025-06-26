@@ -879,19 +879,51 @@ const EventDetails = () => {
                                 Phone
                               </label>
                               <div className="relative">
-                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                  <FiPhone className="text-gray-400" />
-                                </div>
-                                <input
-                                  type="text"
-                                  name="phoneNumber"
-                                  value={guestInfo.phoneNumber}
-                                  onChange={handleGuestInfoChange}
-                                  className="input pl-10 w-full"
-                                  placeholder="Your phone number"
-                                  required
-                                />
-                              </div>
+  {/* Country code dropdown with flags */}
+  <div className="absolute inset-y-0 left-0 flex items-center pl-2">
+    <select
+      className="bg-transparent text-sm pr-6 pl-1 focus:outline-none h-full"
+      onChange={(e) => {
+        const countryCode = e.target.value;
+        const localNumber = guestInfo.phoneNumber.replace(/^\+\d+\s?/, '');
+        handleGuestInfoChange({
+          target: {
+            name: 'phoneNumber',
+            value: `${countryCode} ${localNumber}`
+          }
+        });
+      }}
+    >
+      <option value="+1">🇺🇸 +1</option>
+      <option value="+44">🇬🇧 +44</option>
+      <option value="+91">🇮🇳 +91</option>
+    </select>
+  </div>
+
+  {/* Phone icon */}
+  <div className="absolute inset-y-0 left-20 pl-3 flex items-center pointer-events-none">
+    <FiPhone className="text-gray-400" />
+  </div>
+
+  {/* Phone input */}
+  <input
+    type="tel"
+    className="input pl-32 w-full"
+    placeholder="Phone number"
+    value={guestInfo.phoneNumber.split(' ').slice(1).join(' ')}
+    onChange={(e) => {
+      const numbers = e.target.value.replace(/\D/g, '');
+      const countryCode = guestInfo.phoneNumber.split(' ')[0] || '+1';
+      handleGuestInfoChange({
+        target: {
+          name: 'phoneNumber',
+          value: `${countryCode} ${numbers}`
+        }
+      });
+    }}
+    required
+  />
+</div>
                             </div>
                           </div>
                         </div>
