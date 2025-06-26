@@ -99,6 +99,16 @@ const Navbar = () => {
               >
                 Events
               </Link>
+              <Link
+                to="/tickets/resale"
+                className={`px-3 py-2 rounded-md text-sm font-medium ${
+                  location.pathname.includes('/tickets/resale')
+                    ? 'text-primary-600 dark:text-primary-400'
+                    : 'text-gray-700 hover:text-primary-600 dark:text-gray-300 dark:hover:text-primary-400'
+                } transition-colors duration-200`}
+              >
+                Resale Tickets
+              </Link>
               {isAuthenticated ? (
                 <>
                   <Link
@@ -253,23 +263,21 @@ const Navbar = () => {
               </Link>
               <Link
                 to="/events"
-                className={`block px-3 py-2 rounded-md text-base font-medium ${
-                  location.pathname.includes('/events')
-                    ? 'text-primary-600 dark:text-primary-400'
-                    : 'text-gray-700 hover:text-primary-600 dark:text-gray-300 dark:hover:text-primary-400'
-                } transition-colors duration-200`}
+                className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-dark-200"
               >
                 Events
+              </Link>
+              <Link
+                to="/tickets/resale"
+                className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-dark-200"
+              >
+                Resale Tickets
               </Link>
               {isAuthenticated ? (
                 <>
                   <Link
                     to="/dashboard"
-                    className={`block px-3 py-2 rounded-md text-base font-medium ${
-                      location.pathname.includes('/dashboard')
-                        ? 'text-primary-600 dark:text-primary-400'
-                        : 'text-gray-700 hover:text-primary-600 dark:text-gray-300 dark:hover:text-primary-400'
-                    } transition-colors duration-200`}
+                    className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-dark-200"
                   >
                     Dashboard
                   </Link>

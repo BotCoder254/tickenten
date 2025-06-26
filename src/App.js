@@ -16,6 +16,8 @@ import Dashboard from './pages/dashboard/Dashboard';
 import EventForm from './pages/dashboard/EventForm';
 import EventDetails from './pages/EventDetails';
 import TicketDetails from './pages/TicketDetails';
+import TicketSuccess from './pages/TicketSuccess';
+import ResaleTickets from './pages/ResaleTickets';
 import UserProfile from './pages/UserProfile';
 import NotFound from './pages/NotFound';
 import Events from './pages/Events';
@@ -75,6 +77,8 @@ function App() {
                 <Route index element={<LandingPage />} />
                 <Route path="events" element={<Events />} />
                 <Route path="events/:eventId" element={<EventDetails />} />
+                <Route path="tickets/resale" element={<ResaleTickets />} />
+                <Route path="ticket-success" element={<TicketSuccess />} />
                 <Route path="login" element={<Login />} />
                 <Route path="register" element={<Register />} />
                 <Route path="forgot-password" element={<ForgotPassword />} />
