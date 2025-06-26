@@ -261,6 +261,50 @@ useEffect(() => {
       </motion.div>
     </div>
   </div>
+</section> 
+{/* Search Section */}
+<section className="py-16 bg-white dark:bg-dark-100">
+  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.5 }}
+      className="relative -mt-24 bg-white dark:bg-dark-100 rounded-2xl shadow-lg dark:shadow-gray-800/50 p-8 md:p-10 border border-gray-100 dark:border-gray-800"
+    >
+      <h2 className="text-2xl md:text-3xl font-bold text-center mb-6 text-gray-900 dark:text-white">
+        Discover Amazing Events
+      </h2>
+      
+      <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-4">
+        <div className="flex-grow relative">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <FiSearch className="h-5 w-5 text-gray-400 dark:text-gray-500"
+        <div className="flex-shrink-0">
+          <button
+            type="submit" 
+            className="btn btn-primary w-full md:w-auto h-12 md:h-14 px-6 text-base font-medium hover:shadow-lg transition-shadow durat
+              <motion.div
+  initial={{ opacity: 0, y: 30, scale: 0.95 }}
+  animate={{ opacity: 1, y: 0, scale: 1 }}
+  transition={{ duration: 0.6, delay: 0.6 }}
+  className="absolute -bottom-8 -right-8 backdrop-blur-md bg-white/80 dark:bg-black/40 border border-white/10 rounded-2xl shadow-2xl p-5 w-56 hover:scale-105 transition-transform"
+>
+  <div className="text-center space-y-1">
+    <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
+      Active Users
+    </div>
+    <span
+      className="text-2xl font-bold text-gray-900 dark:text-white mt-1"
+      id="active-user-counter"
+    >
+      0
+    </span>
+  </div>
+</motion.div>
+      </motion.div>
+    </div>
+  </div>
 </section>
       {/* Search Section */}
       <section className="py-12 bg-white dark:bg-dark-100">
@@ -272,49 +316,40 @@ useEffect(() => {
             transition={{ duration: 0.5 }}
             className="relative -mt-24 bg-white dark:bg-dark-100 rounded-xl shadow-xl p-6"
           >
-            <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-4">
-              <div className="flex-grow relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FiSearch className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  type="text"
-                  className="input pl-10"
-                  placeholder="Search for events, concerts, conferences..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-              <div className="flex-shrink-0">
-                <button type="submit" className="btn btn-primary w-full md:w-auto">
-                  Search Events
-                </button>
-              </div>
-            </form>
-            
-            <div className="mt-6 flex flex-wrap gap-3">
-              {categories.map((category, index) => (
-                <motion.div
-                  key={category.name}
-                  custom={index}
-                  initial="hidden"
-                  whileInView="visible"
-                  viewport={{ once: true }}
-                  variants={fadeIn}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className={`${category.color} px-4 py-2 rounded-full cursor-pointer transition-all duration-200`}
-                  onClick={() => navigate(`/events?category=${encodeURIComponent(category.name)}`)}
-                >
-                  <span className="mr-2">{category.icon}</span>
-                  <span className="text-sm font-medium text-gray-800 dark:text-gray-200">{category.name}</span>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
+            Search Events
+          </button>
         </div>
-      </section>
-
+      </form>
+      
+      <div className="mt-8">
+        <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">
+          Popular Categories
+        </h3>
+        <div className="flex flex-wrap gap-3">
+          {categories.map((category, index) => (
+            <motion.div
+              key={category.name}
+              custom={index}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              variants={fadeIn}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className={`${category.color} px-4 py-2 rounded-full cursor-pointer transition-all duration-200 flex items-center hover:shadow-md dark:hover:shadow-gray-900/30`}
+              onClick={() => navigate(`/events?category=${encodeURIComponent(category.name)}`)}
+            >
+              <span className="mr-2 text-lg">{category.icon}</span>
+              <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                {category.name}
+              </span>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </motion.div>
+  </div>
+</section>
       {/* Featured Events */}
       <section className="py-16 bg-gray-50 dark:bg-dark-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -434,92 +469,118 @@ useEffect(() => {
         </div>
       </section>
 
-      {/* How It Works */}
-      <section className="py-16 bg-white dark:bg-dark-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="text-center mb-12"
-          >
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white">How TickenTen Works</h2>
-            <p className="mt-4 text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-              Simple and powerful. Create and discover events in just a few steps.
-            </p>
-          </motion.div>
+     {/* How It Works */}
+<section className="py-20 relative overflow-hidden bg-white dark:bg-dark-100">
+  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.6 }}
+      className="text-center mb-16"
+    >
+      <h2 className="text-4xl font-extrabold text-gray-900 dark:text-white">How TickenTen Works</h2>
+      <p className="mt-4 text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+        Simple, seamless, and powerful. Start hosting events with ease.
+      </p>
+    </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              {
-                title: 'Create an Account',
-                description: 'Sign up as an event creator to start managing your events.',
-                icon: '👤',
-                delay: 0,
-              },
-              {
-                title: 'Create Your Event',
-                description: 'Set up your event details, pricing, and publish it to our platform.',
-                icon: '🎟️',
-                delay: 0.1,
-              },
-              {
-                title: 'Start Selling',
-                description: 'Watch as attendees discover and purchase tickets to your events.',
-                icon: '💰',
-                delay: 0.2,
-              },
-            ].map((step, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: step.delay }}
-                className="flex flex-col items-center text-center p-6 rounded-xl bg-gray-50 dark:bg-dark-200"
-              >
-                <div className="text-4xl mb-4">{step.icon}</div>
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{step.title}</h3>
-                <p className="text-gray-600 dark:text-gray-400">{step.description}</p>
-              </motion.div>
-            ))}
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+      {[
+        {
+          title: 'Create an Account',
+          description: 'Sign up to begin managing and hosting your own events.',
+          icon: (
+            <svg className="w-12 h-12 text-primary-500 dark:text-primary-400" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.5 20.25v-.75A6.75 6.75 0 0111.25 12.75h1.5A6.75 6.75 0 0119.5 19.5v.75" />
+            </svg>
+          ),
+          delay: 0,
+        },
+        {
+          title: 'Create Your Event',
+          description: 'Add event info, set prices, and publish it for the world to see.',
+          icon: (
+            <svg className="w-12 h-12 text-primary-500 dark:text-primary-400" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3.75V5.25M17.25 3.75V5.25M4.5 9.75h15M4.5 20.25h15M4.5 5.25a2.25 2.25 0 012.25-2.25h10.5a2.25 2.25 0 012.25 2.25v15a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 20.25V5.25z" />
+            </svg>
+          ),
+          delay: 0.15,
+        },
+        {
+          title: 'Start Selling',
+          description: 'Users discover and buy tickets easily. Track your attendees effortlessly.',
+          icon: (
+            <svg className="w-12 h-12 text-primary-500 dark:text-primary-400" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 10.5v-1.5a.75.75 0 01.75-.75H7.5M21 13.5v1.5a.75.75 0 01-.75.75H16.5M14.25 3.75v1.5a.75.75 0 01-.75.75H10.5M7.5 21v-1.5a.75.75 0 01.75-.75h3.75" />
+            </svg>
+          ),
+          delay: 0.3,
+        },
+      ].map((step, index) => (
+        <motion.div
+          key={index}
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, delay: step.delay }}
+          className="group bg-white/80 dark:bg-dark-200 backdrop-blur-lg border border-gray-200 dark:border-gray-800 p-8 rounded-2xl text-center shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-2"
+        >
+          <div className="mb-6">
+            {step.icon}
           </div>
-        </div>
-      </section>
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white">{step.title}</h3>
+          <p className="mt-3 text-gray-600 dark:text-gray-400">{step.description}</p>
+        </motion.div>
+      ))}
+    </div>
+  </div>
 
-      {/* CTA Section */}
-      <section className="py-16 bg-gradient-to-r from-primary-600 to-secondary-600 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5 }}
-            >
-              <h2 className="text-3xl font-bold">Ready to create your first event?</h2>
-              <p className="mt-4 text-lg text-white/90 max-w-lg">
-                Join thousands of event creators who trust TickenTen to manage their events and ticket sales.
-              </p>
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5 }}
-              className="flex justify-center lg:justify-end"
-            >
-              <Link
-                to="/register"
-                className="btn bg-white text-primary-600 hover:bg-gray-100 focus:ring-white"
-              >
-                Get Started for Free
-              </Link>
-            </motion.div>
-          </div>
-        </div>
-      </section>
+  {/* Fluid animated background glow */}
+  <div className="absolute top-10 -left-10 w-72 h-72 bg-gradient-to-br from-primary-400 to-purple-400 dark:from-primary-600 dark:to-purple-800 opacity-10 blur-[100px] rounded-full animate-pulse"></div>
+  <div className="absolute bottom-10 -right-10 w-72 h-72 bg-gradient-to-br from-secondary-400 to-pink-500 dark:from-secondary-600 dark:to-pink-800 opacity-10 blur-[100px] rounded-full animate-pulse delay-300"></div>
+</section>
+  {/* CTA Section */}
+<section className="relative py-24 bg-gradient-to-br from-primary-600 to-secondary-700 text-white overflow-hidden">
+  <div className="absolute top-0 left-0 w-72 h-72 bg-white/10 rounded-full blur-[120px] opacity-10 animate-pulse"></div>
+  <div className="absolute bottom-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-[120px] opacity-10 animate-pulse delay-200"></div>
+
+  <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+      <motion.div
+        initial={{ opacity: 0, x: -30 }}
+        whileInView={{ opacity: 1, x: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.6 }}
+      >
+        <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight leading-snug">
+          Ready to launch your first event?
+        </h2>
+        <p className="mt-4 text-lg text-white/90 max-w-xl">
+          Join thousands of successful event creators who trust <span className="font-semibold underline decoration-white/30">TickenTen</span> to host, promote, and sell tickets with ease.
+        </p>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, x: 30 }}
+        whileInView={{ opacity: 1, x: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.6, delay: 0.2 }}
+        className="flex justify-center lg:justify-end"
+      >
+        <Link
+          to="/register"
+          className="inline-flex items-center gap-3 px-6 py-3 bg-white text-primary-700 font-semibold rounded-xl shadow-lg hover:bg-gray-100 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-white/30"
+        >
+          <svg className="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+          </svg>
+          Get Started for Free
+        </Link>
+      </motion.div>
+    </div>
+  </div>
+</section>
     </div>
   );
 };

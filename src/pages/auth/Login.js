@@ -68,9 +68,41 @@ const Login = () => {
             className="text-center"
           >
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Welcome back</h2>
-            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-              Sign in to your account to continue
-            </p>
+            <motion.div
+  className="mt-2 text-sm text-gray-600 dark:text-gray-400 leading-relaxed"
+  initial={{ opacity: 0 }}
+  animate={{ opacity: 1 }}
+  transition={{ delay: 0.2 }}
+>
+  {"Sign in to continue".split("").map((char, index) => (
+    <motion.span
+      key={index}
+      initial={{ opacity: 0, y: 5 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ 
+        delay: 0.2 + index * 0.03,
+        type: "spring",
+        stiffness: 100
+      }}
+      className="inline-block"
+    >
+      {char === " " ? "\u00A0" : char}
+    </motion.span>
+  ))}
+  <motion.span 
+    className="inline-block ml-1"
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    transition={{ 
+      delay: 0.2 + "Sign in to continue".length * 0.03 + 0.3,
+      repeat: Infinity,
+      repeatType: "reverse",
+      duration: 0.8
+    }}
+  >
+    |
+  </motion.span>
+</motion.div>
           </motion.div>
         </div>
         

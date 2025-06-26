@@ -21,7 +21,7 @@ const About = () => {
             
             <h2>Our Story</h2>
             <p>
-              Founded in 2023, TickenTen was born from a simple observation: event management should be straightforward 
+              Founded in 2025, TickenTen was born from a simple observation: event management should be straightforward 
               and stress-free. Our founders, having organized numerous events themselves, understood the challenges that 
               come with ticketing, attendee management, and promotion.
             </p>
