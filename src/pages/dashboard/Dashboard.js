@@ -656,7 +656,6 @@ const TicketSalesChart = ({ events }) => {
   );
 };
 
-// Category Chart Component
 const CategoryChart = ({ events }) => {
   if (!events.length) {
     return (
@@ -667,46 +666,105 @@ const CategoryChart = ({ events }) => {
     );
   }
 
-  // Create a simple pie chart
+  // Aggregate category data
   const categories = events.reduce((acc, event) => {
-    const category = event.category || 'other';
+    const category = event.category?.toLowerCase() || 'other';
     acc[category] = (acc[category] || 0) + 1;
     return acc;
   }, {});
 
+  const total = events.length;
+
   const colors = [
-    'bg-red-500', 'bg-blue-500', 'bg-green-500', 
-    'bg-yellow-500', 'bg-purple-500', 'bg-pink-500'
+    '#f87171', // red
+    '#60a5fa', // blue
+    '#34d399', // green
+    '#fbbf24', // yellow
+    '#c084fc', // purple
+    '#f472b6', // pink
   ];
-<div className="w-full max-w-md mx-auto">
-  <h3 className="text-lg font-bold mb-4 text-center">Event Categories</h3>
-  <div className="relative w-64 h-64 mx-auto">
-    <svg viewBox="0 0 100 100" className="w-full h-full">
-      {Object.keys(categories).map((category, index) => {
-        const percentage = (categories[category] / events.length) * 100;
-        const angle = (index * 360) / Object.keys(categories).length;
-        const strokeDasharray = `${percentage} 100`;
-        
-        return (
-          <circle
-            key={category}
-            cx="50"
-            cy="50"
-            r="40"
+
+  const radius = 60;
+  const circumference = 2 * Math.PI * radius;
+
+  let offset = 0;
+  const categoryData = Object.entries(categories).map(([label, count], index) => {
+    const percentage = count / total;
+    const length = percentage * circumference;
+    const dashOffset = circumference - offset - length;
+    const color = colors[index % colors.length];
+    offset += length;
+
+    return {
+      label,
+      count,
+      percentage,
+      length,
+      dashOffset,
+      color,
+    };
+  });
+
+  return (
+    <div className="flex flex-col md:flex-row w-full h-full items-center justify-center gap-6">
+      {/* Donut Chart */}
+      <motion.svg
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ duration: 0.8, ease: 'easeOut' }}
+        width={150}
+        height={150}
+        viewBox="0 0 150 150"
+        className="rotate-[-90deg]"
+      >
+        <circle
+          cx="75"
+          cy="75"
+          r={radius}
+          fill="transparent"
+          stroke="#e5e7eb"
+          strokeWidth={14}
+        />
+        {categoryData.map((cat, i) => (
+          <motion.circle
+            key={cat.label}
+            cx="75"
+            cy="75"
+            r={radius}
             fill="transparent"
-            stroke={colors[index % colors.length]}
-            strokeWidth="20"
-            strokeDasharray={strokeDasharray}
-            strokeDashoffset="-25"
-            transform={`rotate(${angle} 50 50)`}
-            className="transition-all duration-1000 ease-out"
+            stroke={cat.color}
+            strokeWidth={14}
+            strokeDasharray={circumference}
+            strokeDashoffset={cat.dashOffset}
+            strokeLinecap="round"
+            animate={{ strokeDashoffset: cat.dashOffset }}
+            transition={{ duration: 1, delay: i * 0.2 }}
           />
-        );
-      })}
-      <text x="50" y="50" textAnchor="middle" dy=".3em" className="text-sm font-bold fill-current text-gray-800 dark:text-white">
-        {events.length} Events
-      </text>
-    </svg>
-  </div>
-</div>
+        ))}
+      </motion.svg>
+
+      {/* Legend */}
+      <div className="flex flex-col space-y-3">
+        {categoryData.map((cat, i) => (
+          <motion.div
+            key={cat.label}
+            initial={{ x: -10, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ delay: i * 0.2 + 0.5 }}
+            className="flex items-center space-x-2"
+          >
+            <span
+              className="w-3 h-3 rounded-full"
+              style={{ backgroundColor: cat.color }}
+            ></span>
+            <span className="capitalize text-sm text-gray-800 dark:text-gray-200">
+              {cat.label} — {cat.count} ({Math.round(cat.percentage * 100)}%)
+            </span>
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 export default Dashboard; 
