@@ -237,46 +237,53 @@ const tabs = [
           </p>
         </motion.div>
 <div className="relative mb-8 group">
-  <div className="flex overflow-x-auto space-x-2 pb-2 px-1 relative rounded-xl bg-white/50 dark:bg-dark-300/30 backdrop-blur-xl border border-gray-200/80 dark:border-gray-700/60 shadow-inner dark:shadow-2xl transition-all duration-500 hover:shadow-md hover:dark:shadow-lg hover:border-gray-300/90 hover:dark:border-gray-600/80">
-    {tabs.map((tab, index) => (
+  {/* 🌌 Floating Glass Panel with Dynamic Border */}
+  <div className="flex overflow-x-auto scrollbar-hide space-x-1 p-1 relative rounded-2xl bg-white/20 dark:bg-gray-900/50 backdrop-blur-2xl border border-white/30 dark:border-gray-600/30 shadow-[0_8px_32px_rgba(0,0,0,0.1)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.3)] transition-all duration-500 hover:shadow-lg hover:dark:shadow-xl">
+    {tabs.map((tab) => (
       <button
         key={tab.id}
         onClick={() => setActiveTab(tab.id)}
-        className={`relative z-10 flex items-center gap-2 px-5 py-2 font-semibold rounded-lg whitespace-nowrap transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]
+        className={`relative z-10 flex flex-col items-center px-4 py-2.5 rounded-xl whitespace-nowrap transition-all duration-500 ease-out-expo 
           ${
             activeTab === tab.id
-              ? "text-white dark:text-white drop-shadow-lg"
-              : "text-gray-600/90 dark:text-gray-400/90 hover:text-black/90 dark:hover:text-white/90"
+              ? "text-white bg-gradient-to-br from-primary-400/20 to-primary-600/20 shadow-[inset_0_1px_1px_rgba(255,255,255,0.3)]"
+              : "text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-white/10 dark:hover:bg-white/5"
           }`}
       >
-        <span className="transition-transform duration-300 group-hover:scale-110">
+        {/* ✨ Floating Icon with Glow */}
+        <span className={`relative transition-all duration-500 ${activeTab === tab.id ? "scale-110 drop-shadow-glow" : "scale-100"}`}>
           {tab.icon}
+          {/* 🌟 Subtle Neon Ring (Only on Active) */}
+          {activeTab === tab.id && (
+            <span className="absolute inset-0 rounded-full opacity-70 bg-primary-500/10 blur-[6px] -z-10" />
+          )}
         </span>
-        <span className="transition-all duration-500">
+        {/* 📛 Label with Smooth Slide-Up */}
+        <span className={`text-xs font-medium mt-1 transition-all duration-300 ${activeTab === tab.id ? "translate-y-0 opacity-100" : "translate-y-1 opacity-70"}`}>
           {tab.label}
         </span>
       </button>
     ))}
 
-    {/* 🔥🔥🔥 Ultra Smooth Sliding Tab Indicator */}
+    {/* 🌀 Floating Bubble Indicator (3D Depth Effect) */}
     <motion.div
-      layoutId="dashboard-tab"
-      className="absolute top-1 bottom-1 z-0 rounded-lg bg-gradient-to-r from-primary-500 via-primary-400 to-secondary-500 shadow-lg"
+      layoutId="ultra-tab-indicator"
+      className="absolute -bottom-1 h-[3px] z-0 rounded-full bg-gradient-to-r from-cyan-400 to-purple-500 shadow-lg"
       transition={{ 
         type: "spring", 
         stiffness: 500, 
         damping: 30,
-        mass: 0.5
+        bounce: 0.3
       }}
       style={{
         width: `calc(100% / ${tabs.length} - 0.5rem)`,
         left: `calc(${tabs.findIndex(t => t.id === activeTab)} * (100% / ${tabs.length}) + 0.25rem)`,
-        filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.15))'
+        filter: 'drop-shadow(0 0 8px rgba(124, 58, 237, 0.6))'
       }}
     />
     
-    {/* ✨ Subtle hover effect for the entire container */}
-    <div className="absolute inset-0 rounded-xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br from-white/10 to-transparent dark:from-white/5" />
+    {/* 💫 Hover-Activated Particle Effect (Subtle) */}
+    <div className="absolute inset-0 rounded-2xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-700 bg-[radial-gradient(circle_at_center,_rgba(124,58,237,0.1)_0%,_transparent_70%)]" />
   </div>
 </div>
         {/* Dashboard Content */}
