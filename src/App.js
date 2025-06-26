@@ -64,9 +64,9 @@ function App() {
   };
 
   return (
-        <ScrollToTop />
     <QueryProvider>
       <Router>
+        <ScrollToTop />
         <ThemeContext.Provider value={{ darkMode, toggleDarkMode }}>
           <AuthProvider>
             <Routes>
