@@ -248,150 +248,153 @@ const ResaleTickets = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <PageHeader
-        title="Resale Tickets"
-        subtitle="Find great deals on tickets from other users"
-        icon={<FaTicketAlt className="text-primary-500" />}
-      />
+  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+  <PageHeader
+    title="🔥 Resale Tickets 🔥"
+    subtitle="Score insane deals on tickets from real fans"
+    icon={<FaTicketAlt className="text-purple-500 animate-pulse" />}
+  />
 
-      <div className="mb-6">
-        <div className="flex flex-col md:flex-row gap-4 items-center mb-4">
-          <div className="relative flex-grow">
-            <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search events, venues, or ticket types..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-dark-200 dark:border-dark-100 dark:text-white"
-            />
-          </div>
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-dark-200 dark:hover:bg-dark-300 rounded-lg transition-colors"
-          >
-            <FaFilter />
-            <span>{showFilters ? 'Hide Filters' : 'Show Filters'}</span>
-          </button>
-        </div>
+  <div className="mb-10">
+    <div className="flex flex-col md:flex-row gap-4 items-center mb-6">
+      <div className="relative flex-grow">
+        <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-purple-400" />
+        <input
+          type="text"
+          placeholder="Search concerts, sports, festivals..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-12 pr-6 py-3 w-full rounded-xl border-2 border-purple-300 focus:ring-4 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-900 dark:border-gray-700 dark:text-white shadow-lg transition-all duration-300"
+        />
+      </div>
+      <button
+        onClick={() => setShowFilters(!showFilters)}
+        className="flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg"
+      >
+        <FaFilter className="text-lg" />
+        <span className="text-lg">{showFilters ? 'Hide Filters' : 'Show Filters'}</span>
+      </button>
+    </div>
 
-        {showFilters && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="bg-white dark:bg-dark-100 p-4 rounded-lg shadow mb-4"
-          >
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex-grow">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Price Range
-                </label>
-                <div className="flex items-center gap-2">
-                  <div className="relative">
-                    <FaDollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                    <input
-                      type="number"
-                      placeholder="Min"
-                      value={priceRange.min}
-                      onChange={(e) => setPriceRange({ ...priceRange, min: e.target.value })}
-                      className="pl-10 pr-4 py-2 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-dark-200 dark:border-dark-100 dark:text-white"
-                    />
-                  </div>
-                  <span className="text-gray-500 dark:text-gray-400">to</span>
-                  <div className="relative">
-                    <FaDollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                    <input
-                      type="number"
-                      placeholder="Max"
-                      value={priceRange.max}
-                      onChange={(e) => setPriceRange({ ...priceRange, max: e.target.value })}
-                      className="pl-10 pr-4 py-2 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-dark-200 dark:border-dark-100 dark:text-white"
-                    />
-                  </div>
-                </div>
+    {showFilters && (
+      <motion.div
+        initial={{ height: 0, opacity: 0 }}
+        animate={{ height: 'auto', opacity: 1 }}
+        exit={{ height: 0, opacity: 0 }}
+        transition={{ duration: 0.3 }}
+        className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-2xl mb-6 border-2 border-purple-200 dark:border-gray-700"
+      >
+        <div className="flex flex-col md:flex-row gap-6">
+          <div className="flex-grow">
+            <label className="block text-lg font-bold text-purple-700 dark:text-purple-300 mb-3">
+              💰 Price Range
+            </label>
+            <div className="flex items-center gap-4">
+              <div className="relative flex-grow">
+                <FaDollarSign className="absolute left-4 top-1/2 transform -translate-y-1/2 text-purple-400" />
+                <input
+                  type="number"
+                  placeholder="Min"
+                  value={priceRange.min}
+                  onChange={(e) => setPriceRange({ ...priceRange, min: e.target.value })}
+                  className="pl-12 pr-6 py-3 w-full rounded-xl border-2 border-purple-300 focus:ring-4 focus:ring-purple-500 focus:border-transparent dark:bg-gray-900 dark:border-gray-700 dark:text-white"
+                />
               </div>
-              <div className="self-end">
-                <button
-                  onClick={() => {
-                    setSearchTerm('');
-                    setPriceRange({ min: '', max: '' });
-                  }}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white"
-                >
-                  Clear Filters
-                </button>
+              <span className="text-xl font-bold text-purple-500 dark:text-purple-300">→</span>
+              <div className="relative flex-grow">
+                <FaDollarSign className="absolute left-4 top-1/2 transform -translate-y-1/2 text-purple-400" />
+                <input
+                  type="number"
+                  placeholder="Max"
+                  value={priceRange.max}
+                  onChange={(e) => setPriceRange({ ...priceRange, max: e.target.value })}
+                  className="pl-12 pr-6 py-3 w-full rounded-xl border-2 border-purple-300 focus:ring-4 focus:ring-purple-500 focus:border-transparent dark:bg-gray-900 dark:border-gray-700 dark:text-white"
+                />
               </div>
             </div>
-          </motion.div>
-        )}
-      </div>
-
-      {filteredTickets.length === 0 ? (
-        <EmptyState
-          title="No resale tickets found"
-          message="There are no tickets currently available for resale. Check back later or adjust your search filters."
-          icon={<FaTicketAlt className="w-12 h-12" />}
-        />
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredTickets.map((ticket) => (
-            <motion.div
-              key={ticket._id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-white dark:bg-dark-100 rounded-lg shadow-md overflow-hidden border border-gray-200 dark:border-dark-300"
+          </div>
+          <div className="self-end">
+            <button
+              onClick={() => {
+                setSearchTerm('');
+                setPriceRange({ min: '', max: '' });
+              }}
+              className="px-6 py-3 text-purple-600 hover:text-purple-800 dark:text-purple-300 dark:hover:text-white font-bold rounded-xl transition-all duration-300 hover:bg-purple-100 dark:hover:bg-gray-700"
             >
-              <div className="p-4">
-                <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-2 line-clamp-1">
-                  {ticket.event?.title || 'Untitled Event'}
-                </h3>
-                <div className="flex items-center text-sm text-gray-600 dark:text-gray-300 mb-1">
-                  <FaCalendarAlt className="mr-2" />
-                  <span>
-                    {formatDate(ticket.event?.startDate)} at {formatTime(ticket.event?.startTime || ticket.event?.startDate)}
-                  </span>
-                </div>
-                <div className="flex items-center text-sm text-gray-600 dark:text-gray-300 mb-3">
-                  <FaMapMarkerAlt className="mr-2" />
-                  <span>{getVenue(ticket)}</span>
-                </div>
-                <div className="flex items-center justify-between mb-4">
-                  <span className="bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-200 text-xs font-semibold px-2.5 py-0.5 rounded">
-                    {getTicketTypeName(ticket)}
-                  </span>
-                  <span className="text-lg font-bold text-primary-600 dark:text-primary-400">
-                    ${ticket.resalePrice?.toFixed(2) || 'N/A'}
-                  </span>
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                  <p className="line-clamp-2">{ticket.resaleDescription || 'No description provided.'}</p>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-xs text-gray-500 dark:text-gray-400">
-                    Listed by {ticket.user?.firstName || ticket.user?.name?.split(' ')[0] || 'Anonymous'}
-                  </span>
-                  <button
-                    onClick={() => handlePurchaseTicket(ticket._id)}
-                    disabled={purchaseInProgress || (isAuthenticated && ticket.user?._id === user?._id)}
-                    className={`px-4 py-2 rounded-md text-white text-sm font-medium transition-colors ${
-                      purchaseInProgress || (isAuthenticated && ticket.user?._id === user?._id)
-                        ? 'bg-gray-400 cursor-not-allowed'
-                        : 'bg-primary-600 hover:bg-primary-700'
-                    }`}
-                  >
-                    {isAuthenticated && ticket.user?._id === user?._id
-                      ? 'Your Ticket'
-                      : 'Purchase'}
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          ))}
+              🗑️ Clear All
+            </button>
+          </div>
         </div>
-      )}
+      </motion.div>
+    )}
+  </div>
+
+  {filteredTickets.length === 0 ? (
+    <EmptyState
+      title="🚫 No Tickets Found"
+      message="Damn! No tickets match your search. Try different filters or check back soon for fresh drops!"
+      icon={<FaTicketAlt className="w-16 h-16 text-purple-500 animate-bounce" />}
+    />
+  ) : (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+      {filteredTickets.map((ticket) => (
+        <motion.div
+          key={ticket._id}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          whileHover={{ y: -5 }}
+          transition={{ duration: 0.3 }}
+          className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden border-2 border-purple-200 dark:border-gray-700 hover:shadow-2xl transition-all duration-300"
+        >
+          <div className="p-6">
+            <h3 className="text-xl font-extrabold text-gray-900 dark:text-white mb-3 line-clamp-1">
+              🎟️ {ticket.event?.title || 'Mystery Event'}
+            </h3>
+            <div className="flex items-center text-base text-gray-700 dark:text-gray-300 mb-2">
+              <FaCalendarAlt className="mr-3 text-purple-500" />
+              <span>
+                {formatDate(ticket.event?.startDate)} @ {formatTime(ticket.event?.startTime || ticket.event?.startDate)}
+              </span>
+            </div>
+            <div className="flex items-center text-base text-gray-700 dark:text-gray-300 mb-4">
+              <FaMapMarkerAlt className="mr-3 text-purple-500" />
+              <span className="font-medium">{getVenue(ticket)}</span>
+            </div>
+            <div className="flex items-center justify-between mb-5">
+              <span className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 text-sm font-bold px-3 py-1 rounded-full">
+                {getTicketTypeName(ticket)}
+              </span>
+              <span className="text-2xl font-black text-purple-600 dark:text-purple-400">
+                ${ticket.resalePrice?.toFixed(2) || '???'}
+              </span>
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400 mb-5 bg-gray-100 dark:bg-gray-700 p-3 rounded-lg">
+              <p className="line-clamp-2 italic">{ticket.resaleDescription || 'No description... probably fire though 🔥'}</p>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-500 dark:text-gray-400 font-medium">
+                👤 {ticket.user?.firstName || ticket.user?.name?.split(' ')[0] || 'Secret Seller'}
+              </span>
+              <button
+                onClick={() => handlePurchaseTicket(ticket._id)}
+                disabled={purchaseInProgress || (isAuthenticated && ticket.user?._id === user?._id)}
+                className={`px-5 py-2.5 rounded-xl text-white font-bold transition-all duration-300 transform hover:scale-105 ${
+                  purchaseInProgress || (isAuthenticated && ticket.user?._id === user?._id)
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg'
+                }`}
+              >
+                {isAuthenticated && ticket.user?._id === user?._id
+                  ? 'Your Ticket 👑'
+                  : 'BUY NOW'}
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      ))}
     </div>
+  )}
+</div>
   );
 };
 
