@@ -214,7 +214,13 @@ const Dashboard = () => {
         return null;
     }
   };
-
+const tabs = [
+  { id: "overview", label: "Overview", icon: <FiGrid /> },
+  { id: "events", label: "My Events", icon: <FiCalendar /> },
+  { id: "tickets", label: "My Tickets", icon: <FiTag /> },
+  { id: "analytics", label: "Analytics", icon: <FiBarChart2 /> },
+];
+                
   return (
     <div className="pt-20 pb-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -229,38 +235,44 @@ const Dashboard = () => {
             Manage your events and tickets
           </p>
         </motion.div>
-        
-        {/* Define tabs array */}
-        {(() => {
-          const tabs = [
-            { id: "overview", label: "Overview", icon: <FiGrid /> },
-            { id: "events", label: "My Events", icon: <FiCalendar /> },
-            { id: "tickets", label: "My Tickets", icon: <FiTag /> },
-            { id: "analytics", label: "Analytics", icon: <FiBarChart2 /> },
-          ];
-          
-          return (
-            <div className="relative mb-8">
-              <div className="flex overflow-x-auto space-x-2 pb-2 px-1 relative rounded-xl bg-white/50 dark:bg-dark-300/30 backdrop-blur-md border border-gray-200 dark:border-gray-700 shadow-inner dark:shadow-lg">
-                {tabs.map((tab, index) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`relative z-10 flex items-center gap-2 px-5 py-2 font-semibold rounded-lg whitespace-nowrap transition-all duration-300 
-                      ${
-                        activeTab === tab.id
-                          ? "text-white dark:text-white"
-                          : "text-gray-700 dark:text-gray-300"
-                      }`}
-                  >
-                    {tab.icon}
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          );
-        })()}
+const tabs = [
+  { id: "overview", label: "Overview", icon: <FiGrid /> },
+  { id: "events", label: "My Events", icon: <FiCalendar /> },
+  { id: "tickets", label: "My Tickets", icon: <FiTicket /> },
+  { id: "analytics", label: "Analytics", icon: <FiBarChart2 /> },
+];
+
+// 👇 Your tab UI
+<div className="relative mb-8">
+  <div className="flex overflow-x-auto space-x-2 pb-2 px-1 relative rounded-xl bg-white/50 dark:bg-dark-300/30 backdrop-blur-md border border-gray-200 dark:border-gray-700 shadow-inner dark:shadow-lg">
+    {tabs.map((tab, index) => (
+      <button
+        key={tab.id}
+        onClick={() => setActiveTab(tab.id)}
+        className={`relative z-10 flex items-center gap-2 px-5 py-2 font-semibold rounded-lg whitespace-nowrap transition-all duration-300 
+          ${
+            activeTab === tab.id
+              ? "text-white dark:text-white"
+              : "text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white"
+          }`}
+      >
+        {tab.icon}
+        {tab.label}
+      </button>
+    ))}
+
+    {/* 🔥 Sliding Tab Indicator */}
+    <motion.div
+      layoutId="dashboard-tab"
+      className="absolute top-1 bottom-1 z-0 rounded-lg bg-gradient-to-r from-primary-500 to-secondary-500 shadow-md"
+      transition={{ type: "spring", stiffness: 400, damping: 30 }}
+      style={{
+        width: `calc(100% / ${tabs.length} - 0.5rem)`,
+        left: `calc(${tabs.findIndex(t => t.id === activeTab)} * (100% / ${tabs.length}) + 0.25rem)`,
+      }}
+    />
+  </div>
+</div>
         {/* Dashboard Content */}
         <motion.div
           key={activeTab}
@@ -625,8 +637,6 @@ const TicketSalesChart = ({ events }) => {
     </div>
   );
 };
-
-// Category Chart Component
 const CategoryChart = ({ events }) => {
   if (!events.length) {
     return (
@@ -637,50 +647,96 @@ const CategoryChart = ({ events }) => {
     );
   }
 
-  // Create a simple pie chart
   const categories = events.reduce((acc, event) => {
-    const category = event.category || 'other';
+    const category = event.category?.toLowerCase() || 'other';
     acc[category] = (acc[category] || 0) + 1;
     return acc;
   }, {});
 
+  const total = events.length;
+  const radius = 60;
+  const center = 75;
   const colors = [
-    'bg-red-500', 'bg-blue-500', 'bg-green-500', 
-    'bg-yellow-500', 'bg-purple-500', 'bg-pink-500'
+    '#f87171', '#60a5fa', '#34d399',
+    '#fbbf24', '#c084fc', '#f472b6',
   ];
 
+  let cumulativeAngle = 0;
+
+  const categoryData = Object.entries(categories).map(([label, count], index) => {
+    const percentage = count / total;
+    const angle = percentage * 360;
+    const startAngle = cumulativeAngle;
+    const endAngle = cumulativeAngle + angle;
+    const color = colors[index % colors.length];
+    cumulativeAngle += angle;
+
+    return { label, count, percentage, startAngle, endAngle, color };
+  });
+
+  const polarToCartesian = (cx, cy, r, angleInDegrees) => {
+    const angleInRadians = ((angleInDegrees - 90) * Math.PI) / 180.0;
+    return {
+      x: cx + r * Math.cos(angleInRadians),
+      y: cy + r * Math.sin(angleInRadians),
+    };
+  };
+
+  const describeArc = (x, y, radius, startAngle, endAngle) => {
+    const start = polarToCartesian(x, y, radius, endAngle);
+    const end = polarToCartesian(x, y, radius, startAngle);
+    const largeArcFlag = endAngle - startAngle <= 180 ? '0' : '1';
+
+    return [
+      `M ${start.x} ${start.y}`,
+      `A ${radius} ${radius} 0 ${largeArcFlag} 0 ${end.x} ${end.y}`,
+      `L ${x} ${y}`,
+      `Z`,
+    ].join(' ');
+  };
+
   return (
-    <div className="w-full h-full flex">
-      <div className="w-1/2 flex items-center justify-center">
-        <div className="relative w-32 h-32">
-          {/* This is a placeholder for a real chart library */}
-          <div className="absolute inset-0 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
-            {Object.keys(categories).map((category, index) => {
-              const percentage = (categories[category] / events.length) * 100;
-              return (
-                <div 
-                  key={category} 
-                  className={`absolute top-0 left-0 w-full h-full ${colors[index % colors.length]}`}
-                  style={{ 
-                    clipPath: `polygon(50% 50%, 50% 0, ${50 + percentage/2}% 0, 100% ${percentage}%, 100% 100%, 0 100%, 0 0)`,
-                    transform: `rotate(${index * 60}deg)`
-                  }}
-                ></div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-      <div className="w-1/2 flex flex-col justify-center">
-        {Object.keys(categories).map((category, index) => (
-          <div key={category} className="flex items-center mb-2">
-            <div className={`w-3 h-3 rounded-full mr-2 ${colors[index % colors.length]}`}></div>
-            <span className="text-xs text-gray-700 dark:text-gray-300 capitalize">{category} ({categories[category]})</span>
-          </div>
+    <div className="flex flex-col md:flex-row w-full h-full items-center justify-center gap-8">
+      <motion.svg
+        width={150}
+        height={150}
+        viewBox="0 0 150 150"
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ duration: 1 }}
+      >
+        {categoryData.map((cat, i) => (
+          <motion.path
+            key={cat.label}
+            d={describeArc(center, center, radius, cat.startAngle, cat.endAngle)}
+            fill={cat.color}
+            initial={{ pathLength: 0 }}
+            animate={{ pathLength: 1 }}
+            transition={{ duration: 1, delay: i * 0.2 }}
+          />
+        ))}
+        {/* Inner circle for donut effect */}
+        <circle cx={center} cy={center} r={radius - 20} fill="white" className="dark:fill-dark-700" />
+      </motion.svg>
+
+      {/* Legend */}
+      <div className="flex flex-col space-y-2">
+        {categoryData.map((cat, i) => (
+          <motion.div
+            key={cat.label}
+            initial={{ x: -10, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ delay: i * 0.2 + 0.6 }}
+            className="flex items-center space-x-2"
+          >
+            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: cat.color }}></div>
+            <span className="text-sm text-gray-800 dark:text-gray-200 capitalize">
+              {cat.label} — {cat.count} ({Math.round(cat.percentage * 100)}%)
+            </span>
+          </motion.div>
         ))}
       </div>
     </div>
   );
 };
-
 export default Dashboard; 
