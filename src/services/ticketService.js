@@ -47,6 +47,7 @@ const ticketService = {
         purchaseData.phoneNumber = ticketData.attendeeInfo.phoneNumber;
       }
       
+      // Add payment info if provided (for paid tickets)
       if (paymentInfo) {
         purchaseData = {
           ...purchaseData,
@@ -55,11 +56,26 @@ const ticketService = {
           paymentTransaction: paymentInfo.trans,
           paymentCurrency: paymentInfo.currency || 'USD'
         };
+      } else {
+        // For free tickets, add a flag to indicate it's free
+        purchaseData = {
+          ...purchaseData,
+          paymentMethod: 'Free Ticket',
+          paymentReference: 'FREE-TICKET-' + Date.now(),
+          paymentCurrency: 'USD',
+          isFreeTicket: true
+        };
       }
       
+      console.log('Sending ticket purchase request:', purchaseData);
       const response = await api.post('/tickets/purchase', purchaseData);
       return response.data;
     } catch (error) {
+      console.error('Error purchasing tickets:', error);
+      if (error.response) {
+        console.error('Error response data:', error.response.data);
+        console.error('Error response status:', error.response.status);
+      }
       throw error;
     }
   },
@@ -85,6 +101,7 @@ const ticketService = {
       // If payment info is provided, add it to the ticket data
       let purchaseData = { ...ticketData };
       
+      // Add payment info if provided (for paid tickets)
       if (paymentInfo) {
         purchaseData = {
           ...purchaseData,
@@ -93,11 +110,26 @@ const ticketService = {
           paymentTransaction: paymentInfo.trans,
           paymentCurrency: paymentInfo.currency || 'USD'
         };
+      } else {
+        // For free tickets, add a flag to indicate it's free
+        purchaseData = {
+          ...purchaseData,
+          paymentMethod: 'Free Ticket',
+          paymentReference: 'FREE-TICKET-GUEST-' + Date.now(),
+          paymentCurrency: 'USD',
+          isFreeTicket: true
+        };
       }
       
+      console.log('Sending guest ticket purchase request:', purchaseData);
       const response = await api.post('/tickets/purchase', purchaseData);
       return response.data;
     } catch (error) {
+      console.error('Error purchasing guest tickets:', error);
+      if (error.response) {
+        console.error('Error response data:', error.response.data);
+        console.error('Error response status:', error.response.status);
+      }
       throw error;
     }
   },

@@ -136,7 +136,8 @@ const EventDetails = () => {
             quantity,
             attendeeInfo: {
               phoneNumber: guestInfo.phoneNumber
-            }
+            },
+            phoneNumber: guestInfo.phoneNumber // Add phone number directly for server-side handling
           }, paymentInfo);
         } else {
           // Guest purchase
@@ -188,33 +189,38 @@ const EventDetails = () => {
     setPurchaseError(null);
     
     try {
-      // Calculate total amount in the smallest currency unit (kobo for NGN, cents for USD)
-      const totalAmount = selectedTicketType.price * quantity * 100; // Convert to cents/kobo
+      // Check if the ticket is free (price = 0)
+      const isFreeTicket = selectedTicketType.price === 0;
       
-      // Determine the email to use for Paystack
-      const userEmail = isAuthenticated ? currentUser.email : guestInfo.email;
-      const ticketTypeId = selectedTicketType._id;
-      
-      // Check if all required data is available
-      if (!userEmail) {
-        setPurchaseError('Email is required for payment processing');
-        setIsProcessing(false);
-        return;
-      }
-      
-      // Check for phone number
+      // Check for phone number for all tickets (free or paid)
       if (!guestInfo.phoneNumber) {
         setPurchaseError('Please provide your phone number to receive ticket information via SMS');
         setIsProcessing(false);
         return;
       }
       
-      // Check if all guest information is provided
-      if (!isAuthenticated && (!guestInfo.name)) {
-        setPurchaseError('Please provide your name and email to purchase tickets');
+      // For non-authenticated users, check all required fields
+      if (!isAuthenticated && (!guestInfo.name || !guestInfo.email)) {
+        setPurchaseError('Please provide your name and email to get tickets');
         setIsProcessing(false);
         return;
       }
+      
+      // For free tickets, directly process the purchase without payment
+      if (isFreeTicket) {
+        console.log('Processing free ticket purchase');
+        processFreeTicketPurchase();
+        return;
+      }
+      
+      // For paid tickets, continue with payment processing
+      
+      // Calculate total amount in the smallest currency unit (kobo for NGN, cents for USD)
+      const totalAmount = selectedTicketType.price * quantity * 100; // Convert to cents/kobo
+      
+      // Determine the email to use for Paystack
+      const userEmail = isAuthenticated ? currentUser.email : guestInfo.email;
+      const ticketTypeId = selectedTicketType._id;
       
       if (!window.PaystackPop) {
         setPurchaseError('Payment system is not available. Please try again later.');
@@ -243,6 +249,88 @@ const EventDetails = () => {
     } catch (err) {
       console.error('Error initiating payment:', err);
       setPurchaseError(err.response?.data?.message || 'Failed to process payment. Please try again.');
+      setIsProcessing(false);
+    }
+  };
+  
+  // Process free ticket purchase
+  const processFreeTicketPurchase = async () => {
+    try {
+      const ticketTypeId = selectedTicketType._id;
+      
+      // These checks are now redundant since we check in handlePurchaseTicket,
+      // but keeping them for extra safety
+      
+      // Check for phone number
+      if (!guestInfo.phoneNumber) {
+        setPurchaseError('Please provide your phone number to receive ticket information via SMS');
+        setIsProcessing(false);
+        return;
+      }
+      
+      // Check if all guest information is provided for non-authenticated users
+      if (!isAuthenticated && (!guestInfo.name || !guestInfo.email)) {
+        setPurchaseError('Please provide your name and email to get tickets');
+        setIsProcessing(false);
+        return;
+      }
+      
+      console.log('Processing free ticket purchase for', isAuthenticated ? 'authenticated user' : 'guest');
+      
+      // Process the free ticket purchase
+      try {
+        if (isAuthenticated) {
+          // Authenticated user purchase
+          const response = await ticketService.purchaseTickets({
+            eventId,
+            ticketTypeId,
+            quantity,
+            attendeeInfo: {
+              phoneNumber: guestInfo.phoneNumber
+            },
+            phoneNumber: guestInfo.phoneNumber, // Add phone number directly for server-side handling
+            isFreeTicket: true // Explicitly mark as free ticket
+          });
+          
+          console.log('Free ticket purchase response:', response);
+        } else {
+          // Guest purchase
+          const response = await ticketService.guestPurchaseTickets({
+            eventId,
+            ticketTypeId,
+            quantity,
+            attendeeInfo: guestInfo,
+            isFreeTicket: true // Explicitly mark as free ticket
+          });
+          
+          console.log('Free guest ticket purchase response:', response);
+        }
+        
+        // Show success message
+        setPurchaseSuccess(true);
+        
+        // Reset form
+        setTimeout(() => {
+          if (isAuthenticated) {
+            navigate('/tickets'); // Redirect authenticated users to tickets page
+          } else {
+            // For guests, just reset the form
+            setSelectedTicketType(null);
+            setQuantity(1);
+            setGuestInfo({ name: '', email: '', phoneNumber: '' });
+            setPurchaseSuccess(false);
+          }
+        }, 3000);
+      } catch (purchaseError) {
+        console.error('Error in ticket purchase:', purchaseError);
+        if (purchaseError.response) {
+          console.error('Error response:', purchaseError.response.data);
+        }
+        throw purchaseError; // Re-throw to be caught by the outer catch
+      }
+    } catch (err) {
+      console.error('Error completing free ticket purchase:', err);
+      setPurchaseError(err.response?.data?.message || 'Failed to process your free ticket. Please try again.');
       setIsProcessing(false);
     }
   };
@@ -690,7 +778,7 @@ const EventDetails = () => {
                       <div className="flex justify-between mb-2">
                         <span className="text-gray-600 dark:text-gray-400">Price</span>
                         <span className="font-medium text-gray-900 dark:text-white">
-                          {selectedTicketType.price} {selectedTicketType.currency}
+                          {selectedTicketType.price === 0 ? 'Free' : `${selectedTicketType.price} ${selectedTicketType.currency}`}
                         </span>
                       </div>
                       <div className="flex justify-between mb-2">
@@ -700,9 +788,15 @@ const EventDetails = () => {
                       <div className="flex justify-between mb-4 pt-2 border-t border-gray-200 dark:border-gray-700">
                         <span className="font-bold text-gray-900 dark:text-white">Total</span>
                         <span className="font-bold text-gray-900 dark:text-white">
-                          {(selectedTicketType.price * quantity).toFixed(2)} {selectedTicketType.currency}
+                          {selectedTicketType.price === 0 ? 'Free' : `${(selectedTicketType.price * quantity).toFixed(2)} ${selectedTicketType.currency}`}
                         </span>
                       </div>
+                      
+                      {selectedTicketType.price === 0 && (
+                        <div className="mb-4 p-3 bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 rounded-lg">
+                          <p className="text-sm">This is a free ticket! Just provide your contact information to receive it.</p>
+                        </div>
+                      )}
                       
                       {isAuthenticated && (
                         <div className="mb-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
@@ -802,7 +896,7 @@ const EventDetails = () => {
                         onClick={handlePurchaseTicket}
                         disabled={isProcessing || !guestInfo.phoneNumber || (!isAuthenticated && (!guestInfo.name || !guestInfo.email))}
                       >
-                        {isProcessing ? 'Processing...' : 'Get Tickets'}
+                        {isProcessing ? 'Processing...' : selectedTicketType.price === 0 ? 'Get Free Ticket' : 'Get Tickets'}
                       </button>
                       
                       {!isAuthenticated && (

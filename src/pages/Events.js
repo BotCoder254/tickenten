@@ -114,6 +114,15 @@ const Events = () => {
     const fetchEvents = async () => {
       setLoading(true);
       try {
+        console.log('Fetching events with filters:', {
+          page: pagination.page,
+          limit: pagination.limit,
+          category: selectedCategory !== 'All' ? selectedCategory : undefined,
+          isVirtual: filters.isVirtual,
+          sortBy: filters.sortBy,
+          searchQuery
+        });
+        
         let response;
         
         // Build filter parameters
@@ -142,18 +151,25 @@ const Events = () => {
           filterParams.visibility = 'public';
         }
 
+        console.log('Final filter params:', filterParams);
+
         // If there's a search query, use the search endpoint instead
         if (searchQuery) {
+          console.log('Searching with query:', searchQuery);
           response = await eventService.searchEvents(searchQuery);
+          console.log('Search response:', response);
+          
           // If it's a fallback response, show a notification
           if (response && response.success && response.searchFallback) {
             setError(response.message || 'Search is currently unavailable. Showing all events instead.');
           }
         } else {
           response = await eventService.getEvents(filterParams);
+          console.log('Events response:', response);
         }
         
         if (response && response.success) {
+          console.log('Events found:', (response.data || []).length);
           setEvents(response.data || []);
           setPagination(prev => ({
             ...prev,
@@ -163,6 +179,7 @@ const Events = () => {
           console.error('API returned unsuccessful response:', response);
           throw new Error(response.message || 'Failed to fetch events');
         } else {
+          console.error('No valid response from API');
           throw new Error('Failed to fetch events');
         }
       } catch (err) {
@@ -171,6 +188,7 @@ const Events = () => {
         
         // Try to get events with minimal filtering as a fallback
         try {
+          console.log('Attempting fallback with minimal filters');
           const fallbackResponse = await eventService.getEvents({ 
             page: 1,
             limit: 10,
@@ -178,13 +196,18 @@ const Events = () => {
             visibility: 'public'
           });
           
+          console.log('Fallback response:', fallbackResponse);
+          
           if (fallbackResponse && fallbackResponse.success && fallbackResponse.data) {
+            console.log('Fallback events found:', fallbackResponse.data.length);
             setEvents(fallbackResponse.data);
             setPagination(prev => ({
               ...prev,
               total: fallbackResponse.total || fallbackResponse.count || 0,
             }));
             // Keep the error message visible to indicate that the original request failed
+          } else {
+            console.error('Fallback failed with response:', fallbackResponse);
           }
         } catch (fallbackErr) {
           console.error('Fallback event fetch also failed:', fallbackErr);
