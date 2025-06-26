@@ -25,11 +25,11 @@ const PORT = process.env.PORT || 5000;
 // MongoDB Connection URI - use environment variable
 const uri = process.env.MONGO_URI || "mongodb+srv://stream:telvinteum@stream.o3qip.mongodb.net/?retryWrites=true&w=majority&appName=stream";
 
-// Create a MongoClient with a MongoClientOptions object
+// Create a MongoClient with a MongoClientOptions object but without strict API mode
 const client = new MongoClient(uri, {
     serverApi: {
         version: ServerApiVersion.v1,
-        strict: true,
+        strict: false, // Changed from true to false to allow text indexes
         deprecationErrors: true,
     }
 });
@@ -46,15 +46,34 @@ async function ensureTextIndex() {
       
       if (!hasTextIndex) {
         console.log('Text index not found. Creating index for Event collection...');
-        const result = await mongoose.connection.db.collection('events').createIndex({
-          title: 'text',
-          description: 'text',
-          shortDescription: 'text',
-          'location.city': 'text',
-          'location.country': 'text',
-          tags: 'text'
-        });
-        console.log('Text index created successfully:', result);
+        try {
+          // First try to create the index with standard options
+          const result = await mongoose.connection.db.collection('events').createIndex({
+            title: 'text',
+            description: 'text',
+            shortDescription: 'text',
+            'location.city': 'text',
+            'location.country': 'text',
+            tags: 'text'
+          });
+          console.log('Text index created successfully:', result);
+        } catch (indexError) {
+          console.error('Error creating text index with standard options:', indexError);
+          
+          // If that fails, try without using text index
+          console.log('Falling back to regular indexes for searchable fields');
+          try {
+            await mongoose.connection.db.collection('events').createIndex({ title: 1 });
+            await mongoose.connection.db.collection('events').createIndex({ description: 1 });
+            await mongoose.connection.db.collection('events').createIndex({ shortDescription: 1 });
+            await mongoose.connection.db.collection('events').createIndex({ 'location.city': 1 });
+            await mongoose.connection.db.collection('events').createIndex({ 'location.country': 1 });
+            await mongoose.connection.db.collection('events').createIndex({ tags: 1 });
+            console.log('Created individual indexes for searchable fields');
+          } catch (fallbackError) {
+            console.error('Error creating fallback indexes:', fallbackError);
+          }
+        }
       } else {
         console.log('Text index already exists.');
       }
@@ -66,13 +85,13 @@ async function ensureTextIndex() {
   }
 }
 
-// Connect to MongoDB
+// Connect to MongoDB with strict mode disabled for text indexes
 mongoose.connect(uri, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
     serverApi: {
         version: ServerApiVersion.v1,
-        strict: true,
+        strict: false, // Changed from true to false to allow text indexes
         deprecationErrors: true
     }
 })

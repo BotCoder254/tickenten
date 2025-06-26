@@ -129,6 +129,9 @@ exports.getEvents = async (req, res) => {
  */
 exports.getFeaturedEvents = async (req, res) => {
   try {
+    console.log('Getting featured events');
+    const limit = parseInt(req.query.limit, 10) || 6;
+    
     // Base filter for featured events
     const filter = {
       isFeatured: true,
@@ -136,13 +139,40 @@ exports.getFeaturedEvents = async (req, res) => {
       visibility: 'public',
     };
 
+    console.log('Featured events filter:', filter);
+    
     // We're removing the date check to show all featured events regardless of date
     // This will ensure unauthenticated users see featured events
-
     const featuredEvents = await Event.find(filter)
-      .sort({ createdAt: -1 })
-      .limit(6)
+      .sort({ startDate: 1 }) // Sort by upcoming events
+      .limit(limit)
       .populate('creator', 'name avatar');
+
+    console.log(`Found ${featuredEvents.length} featured events`);
+    
+    // If no featured events are found, return regular events
+    if (featuredEvents.length === 0) {
+      console.log('No featured events found, falling back to regular events');
+      
+      const regularFilter = {
+        status: 'published',
+        visibility: 'public'
+      };
+      
+      const regularEvents = await Event.find(regularFilter)
+        .sort({ startDate: 1 })
+        .limit(limit)
+        .populate('creator', 'name avatar');
+      
+      console.log(`Found ${regularEvents.length} regular events as fallback`);
+      
+      return res.status(200).json({
+        success: true,
+        count: regularEvents.length,
+        data: regularEvents,
+        featuredFallback: true
+      });
+    }
 
     res.status(200).json({
       success: true,
@@ -151,9 +181,38 @@ exports.getFeaturedEvents = async (req, res) => {
     });
   } catch (error) {
     console.error('Get featured events error:', error);
+    
+    // Try to get regular events as a fallback
+    try {
+      console.log('Error in featured events, attempting fallback to regular events');
+      const limit = parseInt(req.query.limit, 10) || 6;
+      
+      const regularFilter = {
+        status: 'published',
+        visibility: 'public'
+      };
+      
+      const regularEvents = await Event.find(regularFilter)
+        .sort({ startDate: 1 })
+        .limit(limit)
+        .populate('creator', 'name avatar');
+      
+      console.log(`Fallback found ${regularEvents.length} regular events`);
+      
+      return res.status(200).json({
+        success: true,
+        count: regularEvents.length,
+        data: regularEvents,
+        featuredFallback: true,
+        errorMessage: 'Featured events error, showing regular events instead'
+      });
+    } catch (fallbackError) {
+      console.error('Fallback to regular events also failed:', fallbackError);
+    }
+    
     res.status(500).json({
       success: false,
-      message: 'Server error',
+      message: 'Failed to get featured events',
       error: error.message,
     });
   }
@@ -197,14 +256,19 @@ exports.searchEvents = async (req, res) => {
       });
     }
 
+    console.log(`Searching events with query: "${q}"`);
+
     // Create a case-insensitive regex for the search term
-    const searchRegex = new RegExp(q, 'i');
+    // Escape special regex characters to prevent errors
+    const escapedQuery = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const searchRegex = new RegExp(escapedQuery, 'i');
     
     // Prepare the search query using regex instead of text search
     let searchQuery;
     
     // If user is authenticated, include their draft events in search results
     if (req.user) {
+      console.log('Authenticated user search, including their own events');
       searchQuery = {
         $and: [
           {
@@ -228,6 +292,7 @@ exports.searchEvents = async (req, res) => {
       };
     } else {
       // For unauthenticated users, only show published events with public visibility
+      console.log('Unauthenticated user search, only public events');
       searchQuery = {
         $and: [
           { status: 'published', visibility: 'public' },
@@ -246,11 +311,13 @@ exports.searchEvents = async (req, res) => {
       };
     }
 
+    console.log('Executing search query...');
     const events = await Event.find(searchQuery)
       .sort({ createdAt: -1 })
       .limit(20)
       .populate('creator', 'name avatar');
 
+    console.log(`Search found ${events.length} events`);
     res.status(200).json({
       success: true,
       count: events.length,
@@ -258,9 +325,40 @@ exports.searchEvents = async (req, res) => {
     });
   } catch (error) {
     console.error('Search events error:', error);
+    
+    // Try a simpler search if the regex search fails
+    try {
+      console.log('Attempting fallback search with title only');
+      const { q } = req.query;
+      const escapedQuery = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const searchRegex = new RegExp(escapedQuery, 'i');
+      
+      // Simpler query that only searches title
+      const fallbackQuery = {
+        title: searchRegex,
+        status: 'published',
+        visibility: 'public'
+      };
+      
+      const fallbackEvents = await Event.find(fallbackQuery)
+        .sort({ createdAt: -1 })
+        .limit(20);
+      
+      console.log(`Fallback search found ${fallbackEvents.length} events`);
+      return res.status(200).json({
+        success: true,
+        count: fallbackEvents.length,
+        data: fallbackEvents,
+        fallback: true
+      });
+    } catch (fallbackError) {
+      console.error('Fallback search also failed:', fallbackError);
+      // Continue to the error response below
+    }
+    
     res.status(500).json({
       success: false,
-      message: 'Server error',
+      message: 'Server error during search',
       error: error.message,
     });
   }
@@ -530,9 +628,14 @@ exports.publishEvent = async (req, res) => {
       });
     }
 
-    // Update event status
+    // Update event status - ensure exact string with correct casing
+    console.log(`Publishing event: ${event.title} (ID: ${event._id})`);
+    console.log(`Current status: "${event.status}" → Setting to: "published"`);
+    
     event.status = 'published';
     await event.save();
+    
+    console.log(`Event published successfully. New status: "${event.status}"`);
 
     res.status(200).json({
       success: true,

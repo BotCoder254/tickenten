@@ -11,16 +11,22 @@ const eventService = {
    */
   getEvents: async (filters = {}) => {
     try {
+      console.log('getEvents called with filters:', filters);
+      
       // Always ensure public visibility for unauthenticated users
       if (!localStorage.getItem('token')) {
+        console.log('No authentication token found, ensuring public visibility');
         filters.visibility = 'public';
         filters.status = 'published';
       }
       
+      console.log('Sending request with filters:', filters);
       const response = await api.get('/events', { params: filters });
+      console.log('getEvents response:', response.data);
       
       // Handle empty response data
       if (!response.data || !response.data.data) {
+        console.log('Empty response data from API');
         return {
           success: true,
           data: [],
@@ -32,6 +38,11 @@ const eventService = {
       return response.data;
     } catch (error) {
       console.error('Error in getEvents:', error);
+      console.error('Error details:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data
+      });
       
       // Return a standardized error response
       return {
@@ -50,21 +61,32 @@ const eventService = {
    */
   getFeaturedEvents: async (limit = 4) => {
     try {
+      console.log('getFeaturedEvents called with limit:', limit);
+      
+      // Try to get featured events from the API
       const response = await api.get('/events/featured', { params: { limit } });
+      console.log('getFeaturedEvents response:', response.data);
       
       // Handle empty response data
-      if (!response.data || !response.data.data) {
-        return {
-          success: true,
-          data: [],
-          message: 'No featured events found',
-          total: 0
-        };
+      if (!response.data || !response.data.data || response.data.data.length === 0) {
+        console.log('No featured events found, falling back to regular events');
+        // Fall back to regular events
+        return await eventService.getEvents({ 
+          limit, 
+          status: 'published',
+          visibility: 'public',
+          sort: 'startDate' // Sort by upcoming events
+        });
       }
       
       return response.data;
     } catch (error) {
       console.error('Error in getFeaturedEvents:', error);
+      console.error('Error details:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data
+      });
       
       // Try to get regular events as a fallback
       try {
@@ -72,7 +94,8 @@ const eventService = {
         return await eventService.getEvents({ 
           limit, 
           status: 'published',
-          visibility: 'public'
+          visibility: 'public',
+          sort: 'startDate' // Sort by upcoming events
         });
       } catch (fallbackError) {
         console.error('Fallback to getEvents also failed:', fallbackError);

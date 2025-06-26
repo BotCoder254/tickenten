@@ -333,8 +333,8 @@ const EventForm = ({ isEditing = false }) => {
   };
   
   // Handle form submission
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (e, shouldPublish = false) => {
+    if (e) e.preventDefault();
     
     if (!validateForm()) {
       return;
@@ -377,22 +377,33 @@ const EventForm = ({ isEditing = false }) => {
           currency: 'USD'
         })),
         featuredImage: 'https://via.placeholder.com/800x400', // Placeholder until actual upload
-        status: 'draft',
+        status: shouldPublish ? 'published' : 'draft', // Set status based on shouldPublish parameter
         visibility: 'public'
       };
       
-      console.log('Submitting event data:', JSON.stringify(eventData));
+      console.log(`Submitting event data with status: ${eventData.status}`, JSON.stringify(eventData));
       
+      let response;
       if (isEditing) {
-        await updateEventMutation.mutateAsync({ id: eventId, data: eventData });
+        response = await updateEventMutation.mutateAsync({ id: eventId, data: eventData });
       } else {
-        await createEventMutation.mutateAsync(eventData);
+        response = await createEventMutation.mutateAsync(eventData);
+        
+        // If we're creating and publishing in one step, and the event was created successfully,
+        // but the status is still 'draft', try to publish it explicitly
+        if (shouldPublish && response?.data && response.data.status !== 'published') {
+          console.log('Event created but not published. Publishing explicitly...');
+          await publishEventMutation.mutateAsync(response.data._id);
+        }
       }
+      
+      return response;
     } catch (error) {
       console.error('Error saving event:', error);
       setErrors({ submit: error.response?.data?.message || 'Failed to save event. Please try again.' });
       setFormSubmissionProgress(0);
       toast.error(error.response?.data?.message || 'Failed to save event');
+      throw error; // Re-throw to allow caller to handle
     } finally {
       setIsSubmitting(false);
     }
@@ -406,14 +417,15 @@ const EventForm = ({ isEditing = false }) => {
     }
     
     try {
-      // If this is a new event, create it first
+      // If this is a new event, create and publish it in one step
       if (!isEditing) {
-        await handleSubmit(new Event('submit'));
-        return; // handleSubmit will navigate away
+        console.log('Creating and publishing new event in one step');
+        await handleSubmit(null, true); // Pass true to indicate we want to publish
+      } else {
+        // If it's an existing event, publish it
+        console.log('Publishing existing event');
+        await publishEventMutation.mutateAsync(eventId);
       }
-      
-      // If it's an existing event, publish it
-      await publishEventMutation.mutateAsync(eventId);
     } catch (error) {
       console.error('Error during publish flow:', error);
     }

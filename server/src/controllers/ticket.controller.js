@@ -197,10 +197,20 @@ exports.purchaseTickets = async (req, res) => {
     paymentMethod,
     paymentReference,
     paymentCurrency,
-    paymentTransaction
+    paymentTransaction,
+    isFreeTicket,
+    phoneNumber // For authenticated users who only provide phone
   } = req.body;
 
   try {
+    console.log('Processing ticket purchase:', {
+      eventId,
+      ticketTypeId,
+      quantity,
+      isFreeTicket,
+      isAuthenticated: !!req.user
+    });
+    
     // Find event and check if it exists
     const event = await Event.findById(eventId);
     if (!event) {
@@ -212,10 +222,23 @@ exports.purchaseTickets = async (req, res) => {
 
     // Check if event is published and not ended
     if (event.status !== 'published') {
-      return res.status(400).json({
-        success: false,
-        message: 'Event is not available for ticket purchases',
+      console.log('Event status check:', {
+        eventId: event._id,
+        status: event.status,
+        title: event.title,
+        normalizedStatus: event.status.toLowerCase().trim()
       });
+      
+      // Check if the status is effectively "published" accounting for case/whitespace issues
+      if (event.status.toLowerCase().trim() === 'published') {
+        console.log('Event status is effectively published after normalization, continuing');
+      } else {
+        return res.status(400).json({
+          success: false,
+          message: 'Event is not available for ticket purchases',
+          details: `Event status is "${event.status}" instead of "published"`
+        });
+      }
     }
 
     if (new Date(event.endDate) < new Date()) {
@@ -261,6 +284,30 @@ exports.purchaseTickets = async (req, res) => {
         message: 'Attendee information is required for non-authenticated users',
       });
     }
+    
+    // For paid tickets, verify payment information is provided
+    // Skip payment validation for free tickets (price = 0)
+    const isTicketFree = ticketType.price === 0 || isFreeTicket === true;
+    console.log('Is ticket free:', isTicketFree, 'Price:', ticketType.price);
+    
+    if (!isTicketFree && !paymentReference && !paymentMethod) {
+      return res.status(400).json({
+        success: false,
+        message: 'Payment information is required for paid tickets',
+      });
+    }
+
+    // Get phone number from either the authenticated user, phoneNumber field, or attendeeInfo
+    const attendeePhone = req.user ? 
+                          (req.user.phoneNumber || phoneNumber) : 
+                          (attendeeInfo ? attendeeInfo.phoneNumber : null);
+                          
+    if (!attendeePhone) {
+      return res.status(400).json({
+        success: false,
+        message: 'Phone number is required for ticket purchase',
+      });
+    }
 
     // Create tickets
     const tickets = [];
@@ -274,9 +321,9 @@ exports.purchaseTickets = async (req, res) => {
         status: 'valid',
         attendeeName: req.user ? req.user.name : (attendeeInfo ? attendeeInfo.name : 'Guest'),
         attendeeEmail: req.user ? req.user.email : (attendeeInfo ? attendeeInfo.email : null),
-        attendeePhone: req.user ? req.user.phoneNumber : (attendeeInfo ? attendeeInfo.phoneNumber : null),
-        paymentMethod: paymentMethod || 'standard',
-        paymentReference: paymentReference || null,
+        attendeePhone: attendeePhone,
+        paymentMethod: isTicketFree ? 'Free Ticket' : (paymentMethod || 'standard'),
+        paymentReference: isTicketFree ? (paymentReference || 'FREE-TICKET') : (paymentReference || null),
         paymentCurrency: paymentCurrency || ticketType.currency || 'USD',
         guestPurchase: !req.user,
       });

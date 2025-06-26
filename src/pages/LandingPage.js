@@ -119,17 +119,31 @@ useEffect(() => {
     const fetchFeaturedEvents = async () => {
       setLoading(true);
       try {
+        console.log('Fetching featured events...');
         // First, try to get featured events
         const response = await eventService.getFeaturedEvents(4);
         
+        console.log('Featured events response:', response);
+        
         if (response && response.success && response.data && response.data.length > 0) {
+          console.log('Featured events found:', response.data.length);
           setFeaturedEvents(response.data);
         } else {
+          console.log('No featured events found or empty response, falling back to regular events');
           // If no featured events, fall back to getting regular events
-          const allEventsResponse = await eventService.getEvents({ limit: 4 });
-          if (allEventsResponse && allEventsResponse.success) {
+          const allEventsResponse = await eventService.getEvents({ 
+            limit: 4,
+            status: 'published',
+            visibility: 'public'
+          });
+          
+          console.log('Regular events response:', allEventsResponse);
+          
+          if (allEventsResponse && allEventsResponse.success && allEventsResponse.data) {
+            console.log('Regular events found:', allEventsResponse.data.length);
             setFeaturedEvents(allEventsResponse.data);
           } else {
+            console.error('Failed to fetch regular events');
             throw new Error('Failed to fetch events');
           }
         }
@@ -137,6 +151,7 @@ useEffect(() => {
         console.error('Error fetching featured events:', err);
         // Try to get regular events as a final fallback
         try {
+          console.log('Attempting final fallback...');
           const fallbackResponse = await eventService.getEvents({ 
             limit: 4,
             // Ensure we're only requesting published events
@@ -144,9 +159,13 @@ useEffect(() => {
             visibility: 'public'
           });
           
-          if (fallbackResponse && fallbackResponse.success) {
+          console.log('Fallback response:', fallbackResponse);
+          
+          if (fallbackResponse && fallbackResponse.success && fallbackResponse.data) {
+            console.log('Fallback events found:', fallbackResponse.data.length);
             setFeaturedEvents(fallbackResponse.data);
           } else {
+            console.error('Fallback failed with response:', fallbackResponse);
             setError('Failed to load events');
           }
         } catch (fallbackErr) {

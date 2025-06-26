@@ -12,8 +12,7 @@ import {
   FiBarChart2,
   FiPieChart,
   FiMapPin,
-  FiGrid,
-  FiTicket
+  FiGrid
 } from 'react-icons/fi';
 
 import eventService from '../../services/eventService';
@@ -230,44 +229,38 @@ const Dashboard = () => {
             Manage your events and tickets
           </p>
         </motion.div>
-const tabs = [
-  { id: "overview", label: "Overview", icon: <FiGrid /> },
-  { id: "events", label: "My Events", icon: <FiCalendar /> },
-  { id: "tickets", label: "My Tickets", icon: <FiTicket /> },
-  { id: "analytics", label: "Analytics", icon: <FiBarChart2 /> },
-];
-
-// 👇 Your tab UI
-<div className="relative mb-8">
-  <div className="flex overflow-x-auto space-x-2 pb-2 px-1 relative rounded-xl bg-white/50 dark:bg-dark-300/30 backdrop-blur-md border border-gray-200 dark:border-gray-700 shadow-inner dark:shadow-lg">
-    {tabs.map((tab, index) => (
-      <button
-        key={tab.id}
-        onClick={() => setActiveTab(tab.id)}
-        className={`relative z-10 flex items-center gap-2 px-5 py-2 font-semibold rounded-lg whitespace-nowrap transition-all duration-300 
-          ${
-            activeTab === tab.id
-              ? "text-white dark:text-white"
-              : "text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white"
-          }`}
-      >
-        {tab.icon}
-        {tab.label}
-      </button>
-    ))}
-
-    {/* 🔥 Sliding Tab Indicator */}
-    <motion.div
-      layoutId="dashboard-tab"
-      className="absolute top-1 bottom-1 z-0 rounded-lg bg-gradient-to-r from-primary-500 to-secondary-500 shadow-md"
-      transition={{ type: "spring", stiffness: 400, damping: 30 }}
-      style={{
-        width: `calc(100% / ${tabs.length} - 0.5rem)`,
-        left: `calc(${tabs.findIndex(t => t.id === activeTab)} * (100% / ${tabs.length}) + 0.25rem)`,
-      }}
-    />
-  </div>
-</div>
+        
+        {/* Define tabs array */}
+        {(() => {
+          const tabs = [
+            { id: "overview", label: "Overview", icon: <FiGrid /> },
+            { id: "events", label: "My Events", icon: <FiCalendar /> },
+            { id: "tickets", label: "My Tickets", icon: <FiTag /> },
+            { id: "analytics", label: "Analytics", icon: <FiBarChart2 /> },
+          ];
+          
+          return (
+            <div className="relative mb-8">
+              <div className="flex overflow-x-auto space-x-2 pb-2 px-1 relative rounded-xl bg-white/50 dark:bg-dark-300/30 backdrop-blur-md border border-gray-200 dark:border-gray-700 shadow-inner dark:shadow-lg">
+                {tabs.map((tab, index) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`relative z-10 flex items-center gap-2 px-5 py-2 font-semibold rounded-lg whitespace-nowrap transition-all duration-300 
+                      ${
+                        activeTab === tab.id
+                          ? "text-white dark:text-white"
+                          : "text-gray-700 dark:text-gray-300"
+                      }`}
+                  >
+                    {tab.icon}
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
         {/* Dashboard Content */}
         <motion.div
           key={activeTab}
