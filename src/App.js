@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-
+import ScrollToTop from './components/ScrollToTop';
 // Context Providers
 import { AuthProvider } from './context/AuthContext';
 import QueryProvider from './context/QueryProvider';
@@ -64,6 +64,7 @@ function App() {
   };
 
   return (
+        <ScrollToTop />
     <QueryProvider>
       <Router>
         <ThemeContext.Provider value={{ darkMode, toggleDarkMode }}>
