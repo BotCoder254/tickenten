@@ -236,55 +236,56 @@ const tabs = [
             Manage your events and tickets
           </p>
         </motion.div>
-
 <div className="relative mb-8 group">
-  {/* 🌌 Floating Glass Panel with Dynamic Border */}
-  <div className="flex overflow-x-auto scrollbar-hide space-x-1 p-1 relative rounded-2xl bg-white/20 dark:bg-gray-900/50 backdrop-blur-2xl border border-white/30 dark:border-gray-600/30 shadow-[0_8px_32px_rgba(0,0,0,0.1)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.3)] transition-all duration-500 hover:shadow-lg hover:dark:shadow-xl">
-    {tabs.map((tab) => (
-      <button
-        key={tab.id}
-        onClick={() => setActiveTab(tab.id)}
-        className={`relative z-10 flex flex-col items-center px-4 py-2.5 rounded-xl whitespace-nowrap transition-all duration-500 ease-out-expo 
-          ${
-            activeTab === tab.id
-              ? "text-white bg-gradient-to-br from-primary-400/20 to-primary-600/20 shadow-[inset_0_1px_1px_rgba(255,255,255,0.3)]"
-              : "text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-white/10 dark:hover:bg-white/5"
-          }`}
-      >
-        {/* ✨ Floating Icon with Glow */}
-        <span className={`relative transition-all duration-500 ${activeTab === tab.id ? "scale-110 drop-shadow-glow" : "scale-100"}`}>
-          {tab.icon}
-          {/* 🌟 Subtle Neon Ring (Only on Active) */}
+  {/* 🚀 Ultra-smooth tab container (scrollable but no visible scrollbar) */}
+  <div className="flex overflow-x-scroll snap-x snap-mandatory scroll-smooth p-1 relative rounded-2xl bg-white/20 dark:bg-gray-900/50 backdrop-blur-2xl border border-white/30 dark:border-gray-600/30 shadow-[0_8px_32px_rgba(0,0,0,0.1)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.3)] transition-all duration-500 hover:shadow-lg hover:dark:shadow-xl">
+    <div className="flex w-full space-x-1">
+      {tabs.map((tab) => (
+        <button
+          key={tab.id}
+          onClick={() => setActiveTab(tab.id)}
+          className={`relative z-10 flex flex-col items-center px-4 py-2.5 rounded-xl whitespace-nowrap transition-all duration-500 ease-out-expo snap-center flex-shrink-0
+            ${
+              activeTab === tab.id
+                ? "text-white bg-gradient-to-br from-primary-400/20 to-primary-600/20 shadow-[inset_0_1px_1px_rgba(255,255,255,0.3)]"
+                : "text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-white/10 dark:hover:bg-white/5"
+            }`}
+          style={{ flex: '0 0 auto' }} // Prevent flex squishing
+        >
+          {/* ✨ Floating Icon with Glow */}
+          <span className={`relative transition-all duration-500 ${activeTab === tab.id ? "scale-110 drop-shadow-glow" : "scale-100"}`}>
+            {tab.icon}
+            {activeTab === tab.id && (
+              <span className="absolute inset-0 rounded-full opacity-70 bg-primary-500/10 blur-[6px] -z-10" />
+            )}
+          </span>
+          
+          {/* 📛 Label with Smooth Slide-Up */}
+          <span className={`text-xs font-medium mt-1 transition-all duration-300 ${activeTab === tab.id ? "translate-y-0 opacity-100" : "translate-y-1 opacity-70"}`}>
+            {tab.label}
+          </span>
+          
+          {/* 🌈 NEW INDICATOR - Under Icon & Text */}
           {activeTab === tab.id && (
-            <span className="absolute inset-0 rounded-full opacity-70 bg-primary-500/10 blur-[6px] -z-10" />
+            <motion.div
+              layoutId="under-icon-indicator"
+              className="absolute bottom-0 h-[3px] w-6 rounded-full bg-gradient-to-r from-cyan-400 to-purple-500"
+              transition={{
+                type: "spring",
+                stiffness: 700,
+                damping: 30,
+              }}
+              style={{
+                filter: `
+                  drop-shadow(0 0 4px rgba(34, 211, 238, 0.7))
+                  drop-shadow(0 0 8px rgba(124, 58, 237, 0.5))
+                `,
+              }}
+            />
           )}
-        </span>
-        {/* 📛 Label with Smooth Slide-Up */}
-        <span className={`text-xs font-medium mt-1 transition-all duration-300 ${activeTab === tab.id ? "translate-y-0 opacity-100" : "translate-y-1 opacity-70"}`}>
-          {tab.label}
-        </span>
-      </button>
-    ))}
-{/* 🌊 Liquid Metal Indicator (SMOOTH AF) */}
-<motion.div
-  layoutId="god-tier-tab-indicator"
-  className="absolute -bottom-[3px] h-[4px] z-0 rounded-full bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 shadow-xl"
-  transition={{
-    type: "spring",
-    stiffness: 600,
-    damping: 25,
-    bounce: 0.4,
-  }}
-  style={{
-    width: `calc(100% / ${tabs.length} - 0.5rem)`,
-    left: `calc(${tabs.findIndex(t => t.id === activeTab)} * (100% / ${tabs.length}) + 0.25rem)`,
-    filter: `
-      drop-shadow(0 0 6px rgba(34, 211, 238, 0.7))
-      drop-shadow(0 0 10px rgba(124, 58, 237, 0.5))
-      drop-shadow(0 0 15px rgba(236, 72, 153, 0.3))
-    `,
-  }}
-/>
+        </button>
+      ))}
+    </div>
     
     {/* 💫 Hover-Activated Particle Effect (Subtle) */}
     <div className="absolute inset-0 rounded-2xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-700 bg-[radial-gradient(circle_at_center,_rgba(124,58,237,0.1)_0%,_transparent_70%)]" />
