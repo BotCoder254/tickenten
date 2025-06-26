@@ -214,13 +214,14 @@ const Dashboard = () => {
         return null;
     }
   };
+
 const tabs = [
   { id: "overview", label: "Overview", icon: <FiGrid /> },
   { id: "events", label: "My Events", icon: <FiCalendar /> },
   { id: "tickets", label: "My Tickets", icon: <FiTag /> },
   { id: "analytics", label: "Analytics", icon: <FiBarChart2 /> },
 ];
-                
+
   return (
     <div className="pt-20 pb-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -235,44 +236,39 @@ const tabs = [
             Manage your events and tickets
           </p>
         </motion.div>
-const tabs = [
-  { id: "overview", label: "Overview", icon: <FiGrid /> },
-  { id: "events", label: "My Events", icon: <FiCalendar /> },
-  { id: "tickets", label: "My Tickets", icon: <FiTicket /> },
-  { id: "analytics", label: "Analytics", icon: <FiBarChart2 /> },
-];
 
-// 👇 Your tab UI
-<div className="relative mb-8">
-  <div className="flex overflow-x-auto space-x-2 pb-2 px-1 relative rounded-xl bg-white/50 dark:bg-dark-300/30 backdrop-blur-md border border-gray-200 dark:border-gray-700 shadow-inner dark:shadow-lg">
-    {tabs.map((tab, index) => (
-      <button
-        key={tab.id}
-        onClick={() => setActiveTab(tab.id)}
-        className={`relative z-10 flex items-center gap-2 px-5 py-2 font-semibold rounded-lg whitespace-nowrap transition-all duration-300 
-          ${
-            activeTab === tab.id
-              ? "text-white dark:text-white"
-              : "text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white"
-          }`}
-      >
-        {tab.icon}
-        {tab.label}
-      </button>
-    ))}
+        {/* Tab Navigation */}
+        <div className="relative mb-8">
+          <div className="flex overflow-x-auto space-x-2 pb-2 px-1 relative rounded-xl bg-white/50 dark:bg-dark-300/30 backdrop-blur-md border border-gray-200 dark:border-gray-700 shadow-inner dark:shadow-lg">
+            {tabs.map((tab, index) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`relative z-10 flex items-center gap-2 px-5 py-2 font-semibold rounded-lg whitespace-nowrap transition-all duration-300 
+                  ${
+                    activeTab === tab.id
+                      ? "text-white dark:text-white"
+                      : "text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white"
+                  }`}
+              >
+                {tab.icon}
+                {tab.label}
+              </button>
+            ))}
 
-    {/* 🔥 Sliding Tab Indicator */}
-    <motion.div
-      layoutId="dashboard-tab"
-      className="absolute top-1 bottom-1 z-0 rounded-lg bg-gradient-to-r from-primary-500 to-secondary-500 shadow-md"
-      transition={{ type: "spring", stiffness: 400, damping: 30 }}
-      style={{
-        width: `calc(100% / ${tabs.length} - 0.5rem)`,
-        left: `calc(${tabs.findIndex(t => t.id === activeTab)} * (100% / ${tabs.length}) + 0.25rem)`,
-      }}
-    />
-  </div>
-</div>
+            {/* 🔥 Sliding Tab Indicator */}
+            <motion.div
+              layoutId="dashboard-tab"
+              className="absolute top-1 bottom-1 z-0 rounded-lg bg-gradient-to-r from-primary-500 to-secondary-500 shadow-md"
+              transition={{ type: "spring", stiffness: 400, damping: 30 }}
+              style={{
+                width: `calc(100% / ${tabs.length} - 0.5rem)`,
+                left: `calc(${tabs.findIndex(t => t.id === activeTab)} * (100% / ${tabs.length}) + 0.25rem)`,
+              }}
+            />
+          </div>
+        </div>
+
         {/* Dashboard Content */}
         <motion.div
           key={activeTab}
@@ -637,6 +633,7 @@ const TicketSalesChart = ({ events }) => {
     </div>
   );
 };
+
 const CategoryChart = ({ events }) => {
   if (!events.length) {
     return (
@@ -739,4 +736,5 @@ const CategoryChart = ({ events }) => {
     </div>
   );
 };
+
 export default Dashboard; 
