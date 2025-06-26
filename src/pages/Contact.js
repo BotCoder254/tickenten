@@ -19,17 +19,21 @@ const Contact = () => {
     e.preventDefault();
     setStatus('sending');
 
+    const apiKey = 'pr2b4'; // Proforms
+    const endpoint = `https://https://zocia.preciousadedokun.com.ng/f/${apiKey}`;
+
+    const form = new FormData();
+    Object.entries(formData).forEach(([key, val]) => form.append(key, val));
+
     try {
-      const response = await fetch('https://zocia.preciousadedokun.com.ng/f/pr2b4', {
+      const response = await fetch(endpoint, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json'
-        },
-        body: JSON.stringify(formData)
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }, // triggers AJAX mode
+        body: form
       });
 
-      if (response.ok) {
+      const result = await response.json();
+      if (result.status === 'success') {
         setStatus('success');
         setFormData({ name: '', email: '', subject: '', message: '' });
       } else {
