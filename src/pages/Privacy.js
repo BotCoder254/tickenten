@@ -3,27 +3,31 @@ import { motion } from 'framer-motion';
 
 const Privacy = () => {
   return (
-    <div className="pt-20 pb-16">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="pt-24 pb-20 min-h-screen bg-gradient-to-br from-white via-slate-100 to-white dark:from-[#0f0f0f] dark:via-[#111] dark:to-[#0f0f0f] transition-colors duration-300">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 25 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+          transition={{ duration: 0.6 }}
         >
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">Privacy Policy</h1>
-          <p className="text-gray-500 dark:text-gray-400 mb-8">Last updated: June 1, 2023</p>
-          
-          <div className="prose prose-lg dark:prose-invert max-w-none">
+          <div className="mb-12 text-center">
+            <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white mb-2">
+              Privacy Policy
+            </h1>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Last updated: June 1, 2023</p>
+          </div>
+
+          <div className="bg-white/80 dark:bg-white/5 backdrop-blur-lg shadow-lg border border-gray-200 dark:border-gray-700 rounded-xl p-8 overflow-hidden prose prose-neutral dark:prose-invert max-w-none text-base leading-relaxed dark:text-gray-300 transition-all duration-300">
             <h2>Introduction</h2>
             <p>
-              TickenTen ("we", "our", or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, 
+              TickenTen ("we", "our", or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect,
               use, disclose, and safeguard your information when you visit our website and use our services.
             </p>
             <p>
-              Please read this Privacy Policy carefully. By accessing or using our platform, you acknowledge that you have read, 
+              Please read this Privacy Policy carefully. By accessing or using our platform, you acknowledge that you have read,
               understood, and agree to be bound by all the terms outlined in this policy.
             </p>
-            
+
             <h2>Information We Collect</h2>
             <h3>Personal Information</h3>
             <p>We may collect personal information that you voluntarily provide to us when you:</p>
@@ -43,7 +47,7 @@ const Privacy = () => {
               <li>Billing information</li>
               <li>Profile information</li>
             </ul>
-            
+
             <h3>Automatically Collected Information</h3>
             <p>When you access our platform, we may automatically collect certain information about your device, including:</p>
             <ul>
@@ -54,7 +58,7 @@ const Privacy = () => {
               <li>Usage data</li>
               <li>Cookies and similar technologies</li>
             </ul>
-            
+
             <h2>How We Use Your Information</h2>
             <p>We may use the information we collect for various purposes, including to:</p>
             <ul>
@@ -67,7 +71,7 @@ const Privacy = () => {
               <li>Protect against fraudulent or unauthorized transactions</li>
               <li>Comply with legal obligations</li>
             </ul>
-            
+
             <h2>Disclosure of Your Information</h2>
             <p>We may share your information with:</p>
             <ul>
@@ -76,7 +80,7 @@ const Privacy = () => {
               <li>Business partners with your consent</li>
               <li>Legal authorities when required by law</li>
             </ul>
-            
+
             <h2>Your Privacy Rights</h2>
             <p>Depending on your location, you may have certain rights regarding your personal information, including:</p>
             <ul>
@@ -86,26 +90,26 @@ const Privacy = () => {
               <li>The right to restrict or object to processing</li>
               <li>The right to data portability</li>
             </ul>
-            
+
             <h2>Security</h2>
             <p>
-              We implement appropriate technical and organizational measures to protect your personal information. 
-              However, no method of transmission over the Internet or electronic storage is 100% secure, so we cannot 
+              We implement appropriate technical and organizational measures to protect your personal information.
+              However, no method of transmission over the Internet or electronic storage is 100% secure, so we cannot
               guarantee absolute security.
             </p>
-            
+
             <h2>Changes to This Privacy Policy</h2>
             <p>
-              We may update this Privacy Policy from time to time. The updated version will be indicated by an updated 
+              We may update this Privacy Policy from time to time. The updated version will be indicated by an updated
               "Last Updated" date. We encourage you to review this Privacy Policy periodically.
             </p>
-            
+
             <h2>Contact Us</h2>
             <p>
               If you have questions or concerns about this Privacy Policy, please contact us at:
             </p>
             <p>
-              Email: privacy@tickenten.com<br />
+              Email: <a href="mailto:privacy@tickenten.com">privacy@tickenten.com</a><br />
               Address: 123 Event Street, San Francisco, CA 94105, United States
             </p>
           </div>
@@ -115,4 +119,4 @@ const Privacy = () => {
   );
 };
 
-export default Privacy; 
+export default Privacy;
