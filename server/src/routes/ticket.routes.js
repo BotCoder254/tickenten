@@ -15,10 +15,30 @@ router.get('/user', protect, ticketController.getUserTickets);
 // @access  Private
 router.get('/event/:eventId', protect, ticketController.getEventTickets);
 
-// @route   GET /api/tickets/:ticketId
-// @desc    Get ticket by ID
+// @route   GET /api/tickets/verify/:ticketNumber
+// @desc    Verify ticket validity
+// @access  Public
+router.get('/verify/:ticketNumber', ticketController.verifyTicket);
+
+// Ticket Resale Routes
+
+// @route   GET /api/tickets/resale-listings
+// @desc    Get available resale tickets
+// @access  Public
+router.get('/resale-listings', ticketController.getResaleTickets);
+
+// @route   POST /api/tickets/resale/:ticketId/purchase
+// @desc    Purchase a resale ticket
 // @access  Private
-router.get('/:ticketId', protect, ticketController.getTicketById);
+router.post(
+  '/resale/:ticketId/purchase',
+  [
+    body('paymentMethod').not().isEmpty().withMessage('Payment method is required'),
+    body('paymentReference').not().isEmpty().withMessage('Payment reference is required'),
+  ],
+  protect,
+  ticketController.purchaseResaleTicket
+);
 
 // @route   POST /api/tickets/purchase
 // @desc    Purchase tickets for an event
@@ -39,6 +59,11 @@ router.post(
   ticketController.purchaseTickets
 );
 
+// @route   GET /api/tickets/:ticketId
+// @desc    Get ticket by ID
+// @access  Private
+router.get('/:ticketId', protect, ticketController.getTicketById);
+
 // @route   PUT /api/tickets/:ticketId/cancel
 // @desc    Cancel a ticket
 // @access  Private
@@ -48,11 +73,6 @@ router.put('/:ticketId/cancel', protect, ticketController.cancelTicket);
 // @desc    Check in a ticket
 // @access  Private
 router.put('/:ticketId/check-in', protect, ticketController.checkInTicket);
-
-// @route   GET /api/tickets/verify/:ticketNumber
-// @desc    Verify ticket validity
-// @access  Public
-router.get('/verify/:ticketNumber', ticketController.verifyTicket);
 
 // @route   GET /api/tickets/:ticketId/download
 // @desc    Download ticket as PDF
@@ -75,5 +95,23 @@ router.post(
 // @desc    Delete a ticket
 // @access  Private
 router.delete('/:ticketId', protect, ticketController.deleteTicket);
+
+// @route   POST /api/tickets/:ticketId/resale
+// @desc    List a ticket for resale
+// @access  Private
+router.post(
+  '/:ticketId/resale',
+  [
+    body('resalePrice').isNumeric().withMessage('Resale price must be a number'),
+    body('description').optional().isString().withMessage('Description must be a string'),
+  ],
+  protect,
+  ticketController.listTicketForResale
+);
+
+// @route   DELETE /api/tickets/:ticketId/resale
+// @desc    Cancel a ticket resale listing
+// @access  Private
+router.delete('/:ticketId/resale', protect, ticketController.cancelTicketResale);
 
 module.exports = router; 
