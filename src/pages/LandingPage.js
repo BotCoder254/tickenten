@@ -203,7 +203,7 @@ useEffect(() => {
         </p>
         <div className="mt-8 flex flex-col sm:flex-row gap-4">
           <Link
-            to="/register"
+            to="/dashboard/events/new"
             className="px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg shadow-md transition duration-300 ease-in-out text-center"
           >
             Create an Event
