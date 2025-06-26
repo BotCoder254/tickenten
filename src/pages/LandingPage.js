@@ -235,7 +235,8 @@ useEffect(() => {
               <div className="text-sm font-medium opacity-80">🎉 Featured Event</div>
               <div className="text-2xl font-bold mt-1">Summer Music Festival 2023</div>
               <div className="flex items-center mt-2 text-sm text-white/80">
-                <FiCalendar className="mr-2" /> June 15–18, 2023
+                <FiCalendar className="mr-2" />
+              <span>June 15-28 2025</span>
               </div>
             </div>
           </div>
@@ -261,7 +262,7 @@ useEffect(() => {
       </motion.div>
     </div>
   </div>
-</section> 
+</section>
 {/* Search Section */}
 <section className="py-16 bg-white dark:bg-dark-100">
   <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -275,52 +276,34 @@ useEffect(() => {
       <h2 className="text-2xl md:text-3xl font-bold text-center mb-6 text-gray-900 dark:text-white">
         Discover Amazing Events
       </h2>
-      
+
       <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-4">
+        {/* Search input */}
         <div className="flex-grow relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <FiSearch className="h-5 w-5 text-gray-400 dark:text-gray-500" />
+          </div>
+          <input
+            type="text"
+            className="input pl-10 w-full h-12 md:h-14 rounded-lg border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-dark-200 text-gray-800 dark:text-white"
+            placeholder="Search for events, concerts, conferences..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+
+        {/* Search button */}
         <div className="flex-shrink-0">
           <button
-            type="submit" 
-            className="btn btn-primary w-full md:w-auto h-12 md:h-14 px-6 text-base font-medium hover:shadow-lg transition-shadow duration-300">
-              <motion.div
-  initial={{ opacity: 0, y: 30, scale: 0.95 }}
-  animate={{ opacity: 1, y: 0, scale: 1 }}
-  transition={{ duration: 0.6, delay: 0.6 }}
-  className="absolute -bottom-8 -right-8 backdrop-blur-md bg-white/80 dark:bg-black/40 border border-white/10 rounded-2xl shadow-2xl p-5 w-56 hover:scale-105 transition-transform"
->
-  <div className="text-center space-y-1">
-    <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
-      Active Users
-    </div>
-    <span
-      className="text-2xl font-bold text-gray-900 dark:text-white mt-1"
-      id="active-user-counter"
-    >
-      0
-    </span>
-  </div>
-</motion.div>
-      </motion.div>
-    </div>
-  </div>
-</section>
-      {/* Search Section */}
-      <section className="py-12 bg-white dark:bg-dark-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="relative -mt-24 bg-white dark:bg-dark-100 rounded-xl shadow-xl p-6"
+            type="submit"
+            className="btn btn-primary w-full md:w-auto h-12 md:h-14 px-6 text-base font-medium hover:shadow-lg transition-shadow duration-300"
           >
             Search Events
           </button>
         </div>
       </form>
-      
+
+      {/* Popular Categories */}
       <div className="mt-8">
         <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">
           Popular Categories
