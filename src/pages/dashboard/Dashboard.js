@@ -680,37 +680,96 @@ const CategoryChart = ({ events }) => {
   ];
 
   return (
-    <div className="w-full h-full flex">
-      <div className="w-1/2 flex items-center justify-center">
-        <div className="relative w-32 h-32">
-          {/* This is a placeholder for a real chart library */}
-          <div className="absolute inset-0 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
-            {Object.keys(categories).map((category, index) => {
-              const percentage = (categories[category] / events.length) * 100;
-              return (
+  <div className="w-full h-full flex flex-col md:flex-row">
+    {/* 🌪️ Psychedelic Data Vortex */}
+    <div className="w-full md:w-1/2 flex items-center justify-center p-4">
+      <div className="relative w-64 h-64"> {/* Increased size for better visibility */}
+        <div className="absolute inset-0 rounded-full overflow-hidden">
+          {/* 🌌 Plasma Storm Background */}
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.1)_0%,transparent_70%)] animate-[pulse_10s_infinite]" />
+          
+          {/* 🌀 3D Data Vortex */}
+          {Object.keys(categories).map((category, index) => {
+            const percentage = (categories[category] / events.length) * 100;
+            const angle = (index * 360 / Object.keys(categories).length);
+            const glowColor = [
+              "rgba(236, 72, 153, 0.7)",  // pink
+              "rgba(139, 92, 246, 0.7)",  // purple
+              "rgba(59, 130, 246, 0.7)",  // blue
+              "rgba(34, 211, 238, 0.7)",  // cyan
+              "rgba(16, 185, 129, 0.7)",  // emerald
+              "rgba(245, 158, 11, 0.7)"   // amber
+            ][index % 6];
+
+            return (
+              <div key={category} className="absolute top-0 left-0 w-full h-full">
+                {/* 🌪️ Plasma Stream (Fixed percentage syntax) */}
                 <div 
-                  key={category} 
-                  className={`absolute top-0 left-0 w-full h-full ${colors[index % colors.length]}`}
-                  style={{ 
-                    clipPath: `polygon(50% 50%, 50% 0, ${50 + percentage/2}% 0, 100% ${percentage}%, 100% 100%, 0 100%, 0 0)`,
-                    transform: `rotate(${index * 60}deg)`
+                  className="absolute w-[150%] h-[150%] origin-center"
+                  style={{
+                    transform: `rotate(${angle}deg)`,
+                    filter: `blur(12px) drop-shadow(0 0 8px ${glowColor})`
                   }}
-                ></div>
-              );
-            })}
-          </div>
+                >
+                  <div 
+                    className={`absolute top-1/2 left-1/2 ${colors[index % colors.length]} transition-all duration-1000 ease-out-back`}
+                    style={{
+                      width: `${percentage}%`,
+                      height: `${percentage}%`,
+                      clipPath: `polygon(
+                        50% 50%,
+                        ${50 + Math.sin(angle * Math.PI/180) * 100}% ${50 + Math.cos(angle * Math.PI/180) * 100}%,
+                        ${50 + Math.sin((angle+20) * Math.PI/180) * 100}% ${50 + Math.cos((angle+20) * Math.PI/180) * 100}%,
+                        ${50 + Math.sin((angle+40) * Math.PI/180) * 100}% ${50 + Math.cos((angle+40) * Math.PI/180) * 100}%
+                      )`,
+                      transform: `translate(-50%, -50%) rotate(${angle * 2}deg)`,
+                      animation: `float 8s infinite ${index * 0.2}s alternate ease-in-out`
+                    }}
+                  />
+                </div>
+
+                {/* 💥 Pulsing Data Node */}
+                <div 
+                  className="absolute rounded-full opacity-90"
+                  style={{
+                    width: `${Math.max(5, percentage / 5)}%`, // Minimum size
+                    height: `${Math.max(5, percentage / 5)}%`,
+                    top: `${50 - Math.sin(angle * Math.PI/180) * 40}%`,
+                    left: `${50 + Math.cos(angle * Math.PI/180) * 40}%`,
+                    background: `radial-gradient(circle, white, ${colors[index % colors.length]})`,
+                    filter: `blur(${percentage / 20}px)`,
+                    animation: `pulse 3s infinite ${index * 0.3}s`
+                  }}
+                />
+              </div>
+            );
+          })}
+
+          {/* ⚡ Energy Core */}
+          <div className="absolute top-1/2 left-1/2 w-16 h-16 -mt-8 -ml-8 rounded-full bg-white/80 blur-xl animate-[pulse_2s_infinite]" />
         </div>
       </div>
-      <div className="w-1/2 flex flex-col justify-center">
-        {Object.keys(categories).map((category, index) => (
-          <div key={category} className="flex items-center mb-2">
-            <div className={`w-3 h-3 rounded-full mr-2 ${colors[index % colors.length]}`}></div>
-            <span className="text-xs text-gray-700 dark:text-gray-300 capitalize">{category} ({categories[category]})</span>
-          </div>
-        ))}
-      </div>
     </div>
-  );
+
+    {/* 📊 Legend (Improved layout) */}
+    <div className="w-full md:w-1/2 flex flex-col justify-center p-4 space-y-3">
+      {Object.keys(categories).map((category, index) => (
+        <div key={category} className="flex items-center">
+          <div 
+            className="w-4 h-4 rounded-full mr-3 shadow-sm"
+            style={{
+              background: colors[index % colors.length],
+              boxShadow: `0 0 8px ${colors[index % colors.length]}`
+            }}
+          />
+          <span className="text-sm font-medium text-gray-800 dark:text-gray-200 capitalize">
+            {category} <span className="opacity-70">({categories[category]})</span>
+          </span>
+        </div>
+      ))}
+    </div>
+  </div>
+);
 };
 
 export default Dashboard; 
