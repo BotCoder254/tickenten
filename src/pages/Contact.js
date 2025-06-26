@@ -12,168 +12,162 @@ const Contact = () => {
   const [status, setStatus] = useState(null);
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setStatus('sending');
-    
-    // Simulate form submission
-    setTimeout(() => {
-      console.log('Form data submitted:', formData);
-      setStatus('success');
-      setFormData({
-        name: '',
-        email: '',
-        subject: '',
-        message: ''
+
+    const apiKey = 'pr2b4'; // Proforms
+    const endpoint = `https://https://zocia.preciousadedokun.com.ng/f/${apiKey}`;
+
+    const form = new FormData();
+    Object.entries(formData).forEach(([key, val]) => form.append(key, val));
+
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }, // triggers AJAX mode
+        body: form
       });
-    }, 1500);
+
+      const result = await response.json();
+      if (result.status === 'success') {
+        setStatus('success');
+        setFormData({ name: '', email: '', subject: '', message: '' });
+      } else {
+        setStatus('error');
+      }
+    } catch (error) {
+      setStatus('error');
+    }
   };
 
   return (
-    <div className="pt-20 pb-16">
+    <div className="pt-24 pb-16 min-h-screen bg-gradient-to-br from-white via-slate-100 to-white dark:from-[#0f0f0f] dark:via-[#111] dark:to-[#0f0f0f] transition-colors duration-300">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 25 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+          transition={{ duration: 0.6 }}
         >
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6 text-center">Contact Us</h1>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mt-12">
-            {/* Contact Information */}
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">Get in Touch</h2>
-              <p className="text-gray-600 dark:text-gray-400 mb-8">
-                Have questions about our platform? Want to partner with us? 
-                We'd love to hear from you. Fill out the form or reach out to us directly.
+          <h1 className="text-4xl font-extrabold text-center text-gray-900 dark:text-white mb-12 tracking-tight">
+            Let's Connect
+          </h1>
+
+          <div className="grid md:grid-cols-2 gap-10">
+            {/* Contact Info */}
+            <div className="space-y-6">
+              <h2 className="text-2xl font-semibold text-gray-800 dark:text-white mb-2">Contact Info</h2>
+              <p className="text-gray-600 dark:text-gray-400 text-base leading-relaxed">
+                Have questions, suggestions, or just want to say hello? We're always here to help you make your events extraordinary.
               </p>
-              
-              <div className="space-y-6">
-                <div className="flex items-start">
-                  <div className="flex-shrink-0">
-                    <FiMail className="h-6 w-6 text-primary-600 dark:text-primary-400" />
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-base font-medium text-gray-900 dark:text-white">Email</p>
-                    <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">support@tickenten.com</p>
+
+              <div className="mt-6 space-y-5">
+                <div className="flex items-start gap-4">
+                  <FiMail className="text-indigo-600 dark:text-indigo-400 w-6 h-6" />
+                  <div>
+                    <h4 className="font-medium text-gray-800 dark:text-gray-200">Email</h4>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">support@tickenten.com</p>
                   </div>
                 </div>
-                
-                <div className="flex items-start">
-                  <div className="flex-shrink-0">
-                    <FiPhone className="h-6 w-6 text-primary-600 dark:text-primary-400" />
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-base font-medium text-gray-900 dark:text-white">Phone</p>
-                    <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">+1 (555) 123-4567</p>
+
+                <div className="flex items-start gap-4">
+                  <FiPhone className="text-indigo-600 dark:text-indigo-400 w-6 h-6" />
+                  <div>
+                    <h4 className="font-medium text-gray-800 dark:text-gray-200">Phone</h4>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">+1 (555) 123-4567</p>
                   </div>
                 </div>
-                
-                <div className="flex items-start">
-                  <div className="flex-shrink-0">
-                    <FiMapPin className="h-6 w-6 text-primary-600 dark:text-primary-400" />
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-base font-medium text-gray-900 dark:text-white">Office</p>
-                    <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+
+                <div className="flex items-start gap-4">
+                  <FiMapPin className="text-indigo-600 dark:text-indigo-400 w-6 h-6" />
+                  <div>
+                    <h4 className="font-medium text-gray-800 dark:text-gray-200">Address</h4>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
                       123 Event Street<br />
-                      San Francisco, CA 94105<br />
-                      United States
+                      San Francisco, CA 94105
                     </p>
                   </div>
                 </div>
               </div>
             </div>
-            
+
             {/* Contact Form */}
-            <div className="card p-6">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">Send Us a Message</h2>
-              
-              {status === 'success' ? (
-                <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
-                  <p className="text-green-800 dark:text-green-300 font-medium">
-                    Thank you for your message! We'll get back to you soon.
-                  </p>
+            <div className="backdrop-blur-md bg-white/70 dark:bg-white/5 border border-gray-200 dark:border-gray-800 shadow-xl rounded-xl p-6 sm:p-8 transition-all duration-300">
+              <h2 className="text-2xl font-semibold text-gray-800 dark:text-white mb-6">Send a Message</h2>
+
+              {status === 'success' && (
+                <div className="mb-4 p-3 rounded-md bg-green-100 dark:bg-green-800 text-green-700 dark:text-green-200 text-sm font-medium">
+                  ✅ Message sent successfully!
                 </div>
-              ) : (
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div>
-                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Name
-                    </label>
-                    <input
-                      type="text"
-                      id="name"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleChange}
-                      required
-                      className="mt-1 input w-full"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Email
-                    </label>
-                    <input
-                      type="email"
-                      id="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      required
-                      className="mt-1 input w-full"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label htmlFor="subject" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Subject
-                    </label>
-                    <input
-                      type="text"
-                      id="subject"
-                      name="subject"
-                      value={formData.subject}
-                      onChange={handleChange}
-                      required
-                      className="mt-1 input w-full"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label htmlFor="message" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Message
-                    </label>
-                    <textarea
-                      id="message"
-                      name="message"
-                      rows="4"
-                      value={formData.message}
-                      onChange={handleChange}
-                      required
-                      className="mt-1 input w-full"
-                    ></textarea>
-                  </div>
-                  
-                  <div>
-                    <button
-                      type="submit"
-                      className="w-full btn btn-primary"
-                      disabled={status === 'sending'}
-                    >
-                      {status === 'sending' ? 'Sending...' : 'Send Message'}
-                    </button>
-                  </div>
-                </form>
               )}
+              {status === 'error' && (
+                <div className="mb-4 p-3 rounded-md bg-red-100 dark:bg-red-800 text-red-700 dark:text-red-200 text-sm font-medium">
+                  ❌ Something went wrong. Try again later.
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit} className="space-y-5">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Name</label>
+                  <input
+                    type="text"
+                    name="name"
+                    required
+                    value={formData.name}
+                    onChange={handleChange}
+                    className="w-full mt-1 px-4 py-2 rounded-md bg-white dark:bg-[#111] text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
+                  <input
+                    type="email"
+                    name="email"
+                    required
+                    value={formData.email}
+                    onChange={handleChange}
+                    className="w-full mt-1 px-4 py-2 rounded-md bg-white dark:bg-[#111] text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Subject</label>
+                  <input
+                    type="text"
+                    name="subject"
+                    required
+                    value={formData.subject}
+                    onChange={handleChange}
+                    className="w-full mt-1 px-4 py-2 rounded-md bg-white dark:bg-[#111] text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Message</label>
+                  <textarea
+                    name="message"
+                    rows="4"
+                    required
+                    value={formData.message}
+                    onChange={handleChange}
+                    className="w-full mt-1 px-4 py-2 rounded-md bg-white dark:bg-[#111] text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  ></textarea>
+                </div>
+
+                <div>
+                  <button
+                    type="submit"
+                    disabled={status === 'sending'}
+                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md transition disabled:opacity-60"
+                  >
+                    {status === 'sending' ? 'Sending...' : 'Send Message'}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         </motion.div>
@@ -182,4 +176,4 @@ const Contact = () => {
   );
 };
 
-export default Contact; 
+export default Contact;
