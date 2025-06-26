@@ -215,7 +215,13 @@ const Dashboard = () => {
         return null;
     }
   };
-
+const tabs = [
+  { id: "overview", label: "Overview", icon: <FiGrid /> },
+  { id: "events", label: "My Events", icon: <FiCalendar /> },
+  { id: "tickets", label: "My Tickets", icon: <FiTicket /> },
+  { id: "analytics", label: "Analytics", icon: <FiBarChart2 /> },
+];
+                
   return (
     <div className="pt-20 pb-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -230,14 +236,6 @@ const Dashboard = () => {
             Manage your events and tickets
           </p>
         </motion.div>
-const tabs = [
-  { id: "overview", label: "Overview", icon: <FiGrid /> },
-  { id: "events", label: "My Events", icon: <FiCalendar /> },
-  { id: "tickets", label: "My Tickets", icon: <FiTicket /> },
-  { id: "analytics", label: "Analytics", icon: <FiBarChart2 /> },
-];
-
-// 👇 Your tab UI
 <div className="relative mb-8">
   <div className="flex overflow-x-auto space-x-2 pb-2 px-1 relative rounded-xl bg-white/50 dark:bg-dark-300/30 backdrop-blur-md border border-gray-200 dark:border-gray-700 shadow-inner dark:shadow-lg">
     {tabs.map((tab, index) => (
