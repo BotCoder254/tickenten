@@ -128,9 +128,10 @@ const EventDetails = () => {
         };
         
         // Process the actual ticket purchase with payment info
+        let purchaseResponse;
         if (isAuthenticated) {
           // Authenticated user purchase
-          await ticketService.purchaseTickets({
+          purchaseResponse = await ticketService.purchaseTickets({
             eventId,
             ticketTypeId,
             quantity,
@@ -147,7 +148,7 @@ const EventDetails = () => {
             return;
           }
           
-          await ticketService.guestPurchaseTickets({
+          purchaseResponse = await ticketService.guestPurchaseTickets({
             eventId,
             ticketTypeId,
             quantity,
@@ -158,18 +159,21 @@ const EventDetails = () => {
         // Show success message
         setPurchaseSuccess(true);
         
-        // Reset form
+        // Get the first ticket from the response to pass to success page
+        const ticketData = purchaseResponse && purchaseResponse.data && purchaseResponse.data.length > 0 
+          ? purchaseResponse.data[0] 
+          : null;
+        
+        // Redirect to success page with ticket info
         setTimeout(() => {
-          if (isAuthenticated) {
-            navigate('/tickets'); // Redirect authenticated users to tickets page
-          } else {
-            // For guests, just reset the form
-            setSelectedTicketType(null);
-            setQuantity(1);
-            setGuestInfo({ name: '', email: '', phoneNumber: '' });
-            setPurchaseSuccess(false);
-          }
-        }, 3000);
+          navigate('/ticket-success', { 
+            state: { 
+              ticketId: ticketData?._id,
+              ticketNumber: ticketData?.ticketNumber,
+              eventTitle: event.title
+            } 
+          });
+        }, 1000);
       } else {
         setPurchaseError('Payment was not successful. Please try again.');
       }
@@ -179,7 +183,7 @@ const EventDetails = () => {
     } finally {
       setIsProcessing(false);
     }
-  }, [eventId, guestInfo, isAuthenticated, navigate, quantity, selectedTicketType]);
+  }, [eventId, guestInfo, isAuthenticated, navigate, quantity, selectedTicketType, event]);
 
   // Handle ticket purchase
   const handlePurchaseTicket = () => {
@@ -279,9 +283,10 @@ const EventDetails = () => {
       
       // Process the free ticket purchase
       try {
+        let response;
         if (isAuthenticated) {
           // Authenticated user purchase
-          const response = await ticketService.purchaseTickets({
+          response = await ticketService.purchaseTickets({
             eventId,
             ticketTypeId,
             quantity,
@@ -295,7 +300,7 @@ const EventDetails = () => {
           console.log('Free ticket purchase response:', response);
         } else {
           // Guest purchase
-          const response = await ticketService.guestPurchaseTickets({
+          response = await ticketService.guestPurchaseTickets({
             eventId,
             ticketTypeId,
             quantity,
@@ -309,18 +314,19 @@ const EventDetails = () => {
         // Show success message
         setPurchaseSuccess(true);
         
-        // Reset form
+        // Get the first ticket from the response to pass to success page
+        const ticketData = response && response.data && response.data.length > 0 ? response.data[0] : null;
+        
+        // Redirect to success page with ticket info
         setTimeout(() => {
-          if (isAuthenticated) {
-            navigate('/tickets'); // Redirect authenticated users to tickets page
-          } else {
-            // For guests, just reset the form
-            setSelectedTicketType(null);
-            setQuantity(1);
-            setGuestInfo({ name: '', email: '', phoneNumber: '' });
-            setPurchaseSuccess(false);
-          }
-        }, 3000);
+          navigate('/ticket-success', { 
+            state: { 
+              ticketId: ticketData?._id,
+              ticketNumber: ticketData?.ticketNumber,
+              eventTitle: event.title
+            } 
+          });
+        }, 1000);
       } catch (purchaseError) {
         console.error('Error in ticket purchase:', purchaseError);
         if (purchaseError.response) {

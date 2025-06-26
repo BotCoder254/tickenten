@@ -211,6 +211,15 @@ exports.purchaseTickets = async (req, res) => {
       isAuthenticated: !!req.user
     });
     
+    if (req.user) {
+      console.log('Authenticated user info:', {
+        userId: req.user.id,
+        userName: req.user.name,
+        userEmail: req.user.email,
+        userPhone: req.user.phoneNumber || 'Not provided'
+      });
+    }
+    
     // Find event and check if it exists
     const event = await Event.findById(eventId);
     if (!event) {
@@ -301,6 +310,13 @@ exports.purchaseTickets = async (req, res) => {
     const attendeePhone = req.user ? 
                           (req.user.phoneNumber || phoneNumber) : 
                           (attendeeInfo ? attendeeInfo.phoneNumber : null);
+    
+    console.log('Phone number check:', {
+      userPhone: req.user ? req.user.phoneNumber : 'No user',
+      providedPhone: phoneNumber,
+      attendeeInfoPhone: attendeeInfo ? attendeeInfo.phoneNumber : 'No attendee info',
+      finalPhone: attendeePhone
+    });
                           
     if (!attendeePhone) {
       return res.status(400).json({
@@ -312,6 +328,14 @@ exports.purchaseTickets = async (req, res) => {
     // Create tickets
     const tickets = [];
     for (let i = 0; i < quantity; i++) {
+      // Ensure we have a valid attendee name
+      let attendeeName = 'Guest';
+      if (req.user && req.user.name) {
+        attendeeName = req.user.name;
+      } else if (attendeeInfo && attendeeInfo.name) {
+        attendeeName = attendeeInfo.name;
+      }
+      
       const ticket = new Ticket({
         event: eventId,
         user: req.user ? req.user.id : null, // Allow null for unauthenticated users
@@ -319,7 +343,7 @@ exports.purchaseTickets = async (req, res) => {
         ticketNumber: `${event.title.substring(0, 3).toUpperCase()}${Date.now()}${Math.floor(Math.random() * 1000)}`,
         purchaseDate: Date.now(),
         status: 'valid',
-        attendeeName: req.user ? req.user.name : (attendeeInfo ? attendeeInfo.name : 'Guest'),
+        attendeeName: attendeeName,
         attendeeEmail: req.user ? req.user.email : (attendeeInfo ? attendeeInfo.email : null),
         attendeePhone: attendeePhone,
         paymentMethod: isTicketFree ? 'Free Ticket' : (paymentMethod || 'standard'),
@@ -328,6 +352,7 @@ exports.purchaseTickets = async (req, res) => {
         guestPurchase: !req.user,
       });
 
+      console.log('Creating ticket with attendee name:', attendeeName);
       await ticket.save();
       tickets.push(ticket);
     }
@@ -870,4 +895,310 @@ exports.deleteTicket = async (req, res) => {
       error: error.message,
     });
   }
-}; 
+};
+
+/**
+ * @desc    List a ticket for resale
+ * @route   POST /api/tickets/:ticketId/resale
+ * @access  Private
+ */
+exports.listTicketForResale = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({
+      success: false,
+      errors: errors.array(),
+    });
+  }
+
+  try {
+    const ticket = await Ticket.findById(req.params.ticketId);
+
+    if (!ticket) {
+      return res.status(404).json({
+        success: false,
+        message: 'Ticket not found',
+      });
+    }
+
+    // Check if user owns the ticket
+    if (ticket.user.toString() !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to resell this ticket',
+      });
+    }
+
+    // Check if ticket is valid
+    if (ticket.status !== 'valid') {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot resell a ticket that is ${ticket.status}`,
+      });
+    }
+
+    // Check if ticket is already listed for resale
+    if (ticket.isForResale) {
+      return res.status(400).json({
+        success: false,
+        message: 'Ticket is already listed for resale',
+      });
+    }
+
+    // Update ticket with resale information
+    ticket.isForResale = true;
+    ticket.resalePrice = req.body.resalePrice;
+    ticket.resaleDescription = req.body.description || '';
+    ticket.resaleListingDate = Date.now();
+
+    await ticket.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Ticket listed for resale successfully',
+      data: ticket,
+    });
+  } catch (error) {
+    console.error('List ticket for resale error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * @desc    Cancel a ticket resale listing
+ * @route   DELETE /api/tickets/:ticketId/resale
+ * @access  Private
+ */
+exports.cancelTicketResale = async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.ticketId);
+
+    if (!ticket) {
+      return res.status(404).json({
+        success: false,
+        message: 'Ticket not found',
+      });
+    }
+
+    // Check if user owns the ticket
+    if (ticket.user.toString() !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to cancel this resale listing',
+      });
+    }
+
+    // Check if ticket is listed for resale
+    if (!ticket.isForResale) {
+      return res.status(400).json({
+        success: false,
+        message: 'Ticket is not listed for resale',
+      });
+    }
+
+    // Update ticket to remove resale information
+    ticket.isForResale = false;
+    ticket.resalePrice = undefined;
+    ticket.resaleDescription = undefined;
+    ticket.resaleListingDate = undefined;
+
+    await ticket.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Ticket resale listing canceled successfully',
+      data: ticket,
+    });
+  } catch (error) {
+    console.error('Cancel ticket resale error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * @desc    Get available resale tickets
+ * @route   GET /api/tickets/resale
+ * @access  Public
+ */
+exports.getResaleTickets = async (req, res) => {
+  try {
+    // Build filter based on query parameters
+    const filter = { isForResale: true };
+    
+    // Filter by event if provided
+    if (req.query.eventId) {
+      filter.event = req.query.eventId;
+    }
+    
+    // Filter by price range if provided
+    if (req.query.minPrice) {
+      filter.resalePrice = { $gte: parseFloat(req.query.minPrice) };
+    }
+    
+    if (req.query.maxPrice) {
+      if (filter.resalePrice) {
+        filter.resalePrice.$lte = parseFloat(req.query.maxPrice);
+      } else {
+        filter.resalePrice = { $lte: parseFloat(req.query.maxPrice) };
+      }
+    }
+
+    // Get resale tickets
+    const tickets = await Ticket.find(filter)
+      .populate({
+        path: 'event',
+        select: 'title startDate endDate location isVirtual featuredImage ticketTypes',
+      })
+      .populate({
+        path: 'ticketType',
+        select: '_id',
+      })
+      .sort({ resaleListingDate: -1 });
+
+    // Process tickets to include ticket type information from the event
+    const processedTickets = tickets.map(ticket => {
+      const ticketData = ticket.toObject();
+      
+      // Find the ticket type in the event's ticketTypes array using the ticketType ID reference
+      if (ticketData.event && ticketData.event.ticketTypes && ticketData.ticketType) {
+        const foundTicketType = ticketData.event.ticketTypes.find(
+          type => type._id.toString() === ticketData.ticketType._id.toString()
+        );
+        
+        if (foundTicketType) {
+          ticketData.ticketTypeInfo = foundTicketType;
+        }
+      }
+      
+      return ticketData;
+    });
+
+    res.status(200).json({
+      success: true,
+      count: processedTickets.length,
+      data: processedTickets,
+    });
+  } catch (error) {
+    console.error('Get resale tickets error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * @desc    Purchase a resale ticket
+ * @route   POST /api/tickets/resale/:ticketId/purchase
+ * @access  Private
+ */
+exports.purchaseResaleTicket = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({
+      success: false,
+      errors: errors.array(),
+    });
+  }
+
+  try {
+    const ticket = await Ticket.findById(req.params.ticketId);
+
+    if (!ticket) {
+      return res.status(404).json({
+        success: false,
+        message: 'Ticket not found',
+      });
+    }
+
+    // Check if ticket is listed for resale
+    if (!ticket.isForResale) {
+      return res.status(400).json({
+        success: false,
+        message: 'Ticket is not available for resale',
+      });
+    }
+
+    // Check if ticket is valid
+    if (ticket.status !== 'valid') {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot purchase a ticket that is ${ticket.status}`,
+      });
+    }
+
+    // Check if user is trying to buy their own ticket
+    if (ticket.user.toString() === req.user.id) {
+      return res.status(400).json({
+        success: false,
+        message: 'You cannot purchase your own resale ticket',
+      });
+    }
+
+    const { paymentMethod, paymentReference } = req.body;
+
+    // For paid tickets, verify payment information is provided
+    if (!paymentMethod || !paymentReference) {
+      return res.status(400).json({
+        success: false,
+        message: 'Payment information is required for resale ticket purchase',
+      });
+    }
+
+    // Get the previous owner for notification purposes
+    const previousOwner = await User.findById(ticket.user);
+
+    // Update ticket ownership and resale status
+    const previousOwnerId = ticket.user;
+    ticket.user = req.user.id;
+    ticket.isForResale = false;
+    ticket.resalePrice = undefined;
+    ticket.resaleDescription = undefined;
+    ticket.resaleListingDate = undefined;
+    ticket.resalePurchaseDate = Date.now();
+    ticket.previousOwner = previousOwnerId;
+
+    await ticket.save();
+
+    // Notify previous owner via email if available
+    if (previousOwner && previousOwner.email) {
+      try {
+        await sendEmail({
+          to: previousOwner.email,
+          subject: 'Your Ticket Has Been Sold',
+          html: `
+            <h1>Ticket Sale Confirmation</h1>
+            <p>Your ticket for ${ticket.event.title} has been sold.</p>
+            <p>Ticket Number: ${ticket.ticketNumber}</p>
+            <p>Sale Price: $${req.body.resalePrice}</p>
+            <p>Thank you for using our platform!</p>
+          `,
+        });
+      } catch (emailError) {
+        console.error('Error sending ticket sale email:', emailError);
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Resale ticket purchased successfully',
+      data: ticket,
+    });
+  } catch (error) {
+    console.error('Purchase resale ticket error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+      error: error.message,
+    });
+  }
+};
