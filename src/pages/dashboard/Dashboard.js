@@ -920,22 +920,29 @@ const ResaleListingCard = ({ ticket, formatDate, queryClient }) => {
     return null;
   }
   
+  // Safe access to nested properties
+  const eventTitle = ticket.event?.title || 'Event Title';
+  const eventDate = ticket.event?.startDate;
+  const ticketTypeName = ticket.ticketTypeInfo?.name || 'Standard Ticket';
+  const resalePrice = ticket.resalePrice || 0;
+  const listingDate = ticket.resaleListingDate;
+  
   return (
     <div className="card p-4 flex flex-col md:flex-row justify-between items-start md:items-center">
       <div className="flex-1">
         <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
-          {ticket.event?.title || 'Event Title'}
+          {eventTitle}
         </h3>
         <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-          {ticket.event?.startDate ? formatDate(ticket.event.startDate) : 'Date unavailable'}
+          {eventDate ? formatDate(eventDate) : 'Date unavailable'}
           <span className="mx-2">•</span>
-          {ticket.ticketTypeInfo?.name || 'Standard Ticket'}
+          {ticketTypeName}
         </div>
         <div className="bg-yellow-100 text-yellow-800 dark:bg-yellow-800/30 dark:text-yellow-300 text-xs px-2 py-1 rounded-full inline-block font-medium">
-          Listed for ${ticket.resalePrice?.toFixed(2) || '0.00'}
+          Listed for ${resalePrice.toFixed(2)}
         </div>
         <div className="text-xs text-gray-500 mt-2">
-          Listed on: {ticket.resaleListingDate ? formatDate(ticket.resaleListingDate) : 'Recently'}
+          Listed on: {listingDate ? formatDate(listingDate) : 'Recently'}
         </div>
       </div>
       <div className="mt-4 md:mt-0 flex space-x-2">
@@ -952,27 +959,41 @@ const ResaleListingCard = ({ ticket, formatDate, queryClient }) => {
 
 // Sold Resale Card Component
 const SoldResaleCard = ({ ticket, formatDate }) => {
+  // Check if we have valid ticket data
+  if (!ticket || !ticket._id) {
+    console.error('Invalid sold ticket data received:', ticket);
+    return null;
+  }
+  
+  // Safe access to nested properties
+  const eventTitle = ticket.event?.title || 'Event Title';
+  const eventDate = ticket.event?.startDate;
+  const ticketTypeName = ticket.ticketTypeInfo?.name || 'Standard Ticket';
+  const resalePrice = ticket.resalePrice || 0;
+  const soldDate = ticket.resalePurchaseDate;
+  const buyerName = ticket.user?.name || 'Anonymous User';
+  
   return (
     <div className="card p-4">
       <div className="flex justify-between items-start">
         <div>
           <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
-            {ticket.event?.title || 'Event Title'}
+            {eventTitle}
           </h3>
           <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-            {formatDate(ticket.event?.startDate)}
+            {eventDate ? formatDate(eventDate) : 'Date unavailable'}
             <span className="mx-2">•</span>
-            {ticket.ticketTypeInfo?.name || 'Standard Ticket'}
+            {ticketTypeName}
           </div>
           <div className="text-xs text-gray-500">
-            Sold on: {formatDate(ticket.resalePurchaseDate)}
+            Sold on: {soldDate ? formatDate(soldDate) : 'Recently'}
           </div>
           <div className="text-xs text-gray-500">
-            Purchased by: {ticket.user?.name || 'Anonymous User'}
+            Purchased by: {buyerName}
           </div>
         </div>
         <div className="bg-green-100 text-green-800 dark:bg-green-800/30 dark:text-green-300 text-sm px-3 py-1 rounded-full font-medium">
-          Sold for ${ticket.resalePrice?.toFixed(2) || '0.00'}
+          Sold for ${resalePrice.toFixed(2)}
         </div>
       </div>
     </div>

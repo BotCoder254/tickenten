@@ -4,7 +4,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 
 import { motion } from 'framer-motion';
 
-import { FiCalendar, FiMapPin, FiClock, FiFilter, FiDollarSign, FiUser, FiMail, FiPhone } from 'react-icons/fi';
+import { FiCalendar, FiMapPin, FiClock, FiFilter, FiDollarSign, FiUser, FiMail, FiPhone, FiTag } from 'react-icons/fi';
 
 import { useQuery } from '@tanstack/react-query';
 
@@ -1083,4 +1083,354 @@ const ResaleTickets = () => {
 
                   <option value="">All Events</option>
 
-                  {events?.map((event) => 
+                  {events?.map((event) => (
+                    <option key={event._id} value={event._id}>
+                      {event.title}
+                    </option>
+                  ))}
+
+                </select>
+
+              </div>
+
+              <div>
+
+                <label htmlFor="minPrice" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+
+                  Min Price
+
+                </label>
+
+                <input
+
+                  id="minPrice"
+
+                  type="text"
+
+                  value={minPrice}
+
+                  onChange={(e) => setMinPrice(e.target.value)}
+
+                  className="input w-full"
+
+                />
+
+              </div>
+
+              <div>
+
+                <label htmlFor="maxPrice" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+
+                  Max Price
+
+                </label>
+
+                <input
+
+                  id="maxPrice"
+
+                  type="text"
+
+                  value={maxPrice}
+
+                  onChange={(e) => setMaxPrice(e.target.value)}
+
+                  className="input w-full"
+
+                />
+
+              </div>
+
+            </div>
+
+            <div className="mt-4">
+
+              <button
+
+                onClick={applyFilters}
+
+                className="btn btn-primary"
+
+              >
+
+                Apply Filters
+
+              </button>
+
+              <button
+
+                onClick={clearFilters}
+
+                className="btn btn-outline-secondary ml-2"
+
+              >
+
+                Clear Filters
+
+              </button>
+
+            </div>
+
+          </motion.div>
+
+        )}
+
+
+        {/* Resale Tickets Display */}
+        <div className="mb-8">
+          {/* Show message when no tickets are found */}
+          {!isInitialLoading && resaleTickets?.length === 0 && (
+            <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg">
+              <FiTag className="mx-auto h-12 w-12 text-gray-400" />
+              <h3 className="mt-2 text-lg font-medium text-gray-900 dark:text-white">No resale tickets available</h3>
+              <p className="mt-1 text-gray-500 dark:text-gray-400">
+                {filterEvent || minPrice || maxPrice 
+                  ? 'No tickets match your filter criteria. Try adjusting your filters.' 
+                  : 'There are currently no tickets listed for resale.'}
+              </p>
+              {(filterEvent || minPrice || maxPrice) && (
+                <button
+                  onClick={clearFilters}
+                  className="mt-4 btn btn-outline-primary"
+                >
+                  Clear Filters
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Display tickets in a grid */}
+          {!isInitialLoading && resaleTickets?.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {resaleTickets.map((ticket) => (
+                <div key={ticket._id} className="card overflow-hidden">
+                  {/* Ticket Image */}
+                  <div className="h-48 bg-gray-200 dark:bg-gray-700 relative">
+                    {ticket.event?.featuredImage ? (
+                      <img 
+                        src={getImageUrl(ticket.event.featuredImage)} 
+                        alt={ticket.event?.title || 'Event'} 
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80';
+                        }}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gray-400">
+                        <FiTag className="h-12 w-12" />
+                      </div>
+                    )}
+                    {/* Dark overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
+                    
+                    {/* Date and location at bottom */}
+                    <div className="absolute bottom-2 left-2 right-2 text-white">
+                      <div className="flex items-center text-sm">
+                        <FiCalendar className="mr-1" />
+                        <span>{formatDate(ticket.event?.startDate)}</span>
+                      </div>
+                      <div className="flex items-center text-sm mt-1">
+                        <FiMapPin className="mr-1" />
+                        <span>
+                          {ticket.event?.isVirtual 
+                            ? 'Virtual Event' 
+                            : ticket.event?.location?.city || 'Location unavailable'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Ticket Details */}
+                  <div className="p-4">
+                    <h3 className="font-bold text-gray-900 dark:text-white text-lg mb-2 line-clamp-2">
+                      {ticket.event?.title || 'Event Title'}
+                    </h3>
+                    <div className="flex justify-between items-center mb-3">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                        {ticket.ticketTypeInfo?.name || 'Standard Ticket'}
+                      </span>
+                      <span className="font-medium text-primary-600 dark:text-primary-400">
+                        ${ticket.resalePrice?.toFixed(2) || '0.00'} {ticket.ticketTypeInfo?.currency || 'USD'}
+                      </span>
+                    </div>
+                    <div className="text-xs text-gray-500 mb-4">
+                      <div className="flex items-center">
+                        <FiClock className="mr-1" />
+                        <span>Listed on {formatDate(ticket.resaleListingDate || new Date())}</span>
+                      </div>
+                      <div className="flex items-center mt-1">
+                        <FiDollarSign className="mr-1" />
+                        <span>Original price: ${ticket.ticketTypeInfo?.price?.toFixed(2) || '0.00'} {ticket.ticketTypeInfo?.currency || 'USD'}</span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleSelectTicket(ticket)}
+                      className="btn btn-primary w-full"
+                      disabled={isProcessing}
+                    >
+                      Purchase Ticket
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        
+        {/* Purchase Modal */}
+        {selectedTicket && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+                  Purchase Resale Ticket
+                </h2>
+                
+                {purchaseSuccess ? (
+                  <div className="text-center py-6">
+                    <div className="w-16 h-16 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg className="w-8 h-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                      </svg>
+                    </div>
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Purchase Successful!</h3>
+                    <p className="text-gray-600 dark:text-gray-400 mb-4">
+                      Your ticket has been purchased successfully. Redirecting to your ticket...
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="mb-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                      <div className="flex justify-between mb-2">
+                        <span className="text-gray-600 dark:text-gray-400">Event:</span>
+                        <span className="font-medium text-gray-900 dark:text-white">{selectedTicket.event?.title}</span>
+                      </div>
+                      <div className="flex justify-between mb-2">
+                        <span className="text-gray-600 dark:text-gray-400">Ticket Type:</span>
+                        <span className="font-medium text-gray-900 dark:text-white">{selectedTicket.ticketTypeInfo?.name}</span>
+                      </div>
+                      <div className="flex justify-between mb-2">
+                        <span className="text-gray-600 dark:text-gray-400">Original Price:</span>
+                        <span className="font-medium text-gray-900 dark:text-white">
+                          ${selectedTicket.ticketTypeInfo?.price?.toFixed(2) || '0.00'} {selectedTicket.ticketTypeInfo?.currency || 'USD'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between mb-2">
+                        <span className="text-gray-600 dark:text-gray-400">Resale Price:</span>
+                        <span className="font-medium text-green-600 dark:text-green-400">
+                          ${selectedTicket.resalePrice?.toFixed(2) || '0.00'} {selectedTicket.ticketTypeInfo?.currency || 'USD'}
+                        </span>
+                      </div>
+                      <div className="border-t border-gray-200 dark:border-gray-600 pt-2 mt-2">
+                        <div className="flex justify-between">
+                          <span className="text-gray-800 dark:text-gray-200 font-medium">Total:</span>
+                          <span className="font-bold text-gray-900 dark:text-white">
+                            ${selectedTicket.resalePrice?.toFixed(2) || '0.00'} {selectedTicket.ticketTypeInfo?.currency || 'USD'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {purchaseError && (
+                      <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800/30 rounded-lg text-red-700 dark:text-red-400 text-sm">
+                        {purchaseError}
+                      </div>
+                    )}
+                    
+                    {!isAuthenticated ? (
+                      <div className="mb-4 p-4 bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-800/30 rounded-lg">
+                        <p className="text-yellow-700 dark:text-yellow-400 text-sm mb-3">
+                          You need to be logged in to purchase tickets.
+                        </p>
+                        <Link to={`/login?redirect=${encodeURIComponent(window.location.pathname)}`} className="btn btn-primary w-full">
+                          Log In to Continue
+                        </Link>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="mb-4">
+                          <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Phone Number (for SMS notifications)
+                          </label>
+                          <div className="flex items-center">
+                            <FiPhone className="text-gray-400 mr-2" />
+                            <input
+                              id="phoneNumber"
+                              type="tel"
+                              name="phoneNumber"
+                              value={guestInfo.phoneNumber}
+                              onChange={handleGuestInfoChange}
+                              className="input w-full"
+                              placeholder="+1234567890"
+                            />
+                          </div>
+                        </div>
+                        
+                        <div className="flex justify-end space-x-3 mt-6">
+                          <button
+                            onClick={handleClosePurchase}
+                            className="btn btn-outline-secondary"
+                            disabled={isProcessing}
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={handlePurchaseTicket}
+                            className="btn btn-primary"
+                            disabled={isProcessing}
+                          >
+                            {isProcessing ? 'Processing...' : 'Purchase'}
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Queue Modal */}
+        {showQueueModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-md">
+              <div className="p-6">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+                  Ticket Purchase Queue
+                </h2>
+                
+                <QueueStatus 
+                  queueInfo={queueInfo} 
+                  onQueueReady={handleQueueReady}
+                  isProcessing={isProcessing}
+                />
+                
+                <div className="flex justify-end space-x-3 mt-6">
+                  <button
+                    onClick={() => setShowQueueModal(false)}
+                    className="btn btn-outline-secondary"
+                  >
+                    Close
+                  </button>
+                  {isQueueReady && (
+                    <button
+                      onClick={processPurchase}
+                      className="btn btn-primary"
+                      disabled={isProcessing}
+                    >
+                      {isProcessing ? 'Processing...' : 'Continue Purchase'}
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default ResaleTickets;
