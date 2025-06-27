@@ -10,6 +10,16 @@ const router = express.Router();
 // @access  Private
 router.get('/user', protect, ticketController.getUserTickets);
 
+// @route   GET /api/tickets/user/resale-listings
+// @desc    Get tickets listed for resale by the current user
+// @access  Private
+router.get('/user/resale-listings', protect, ticketController.getUserResaleListings);
+
+// @route   GET /api/tickets/user/resale-sold
+// @desc    Get tickets sold by the user through resale
+// @access  Private
+router.get('/user/resale-sold', protect, ticketController.getUserResaleSold);
+
 // @route   GET /api/tickets/event/:eventId
 // @desc    Get tickets for an event (for event organizers)
 // @access  Private

@@ -362,6 +362,34 @@ const ticketService = {
   },
 
   /**
+   * Get user's resale listings
+   * @returns {Promise} - API response with user's resale listings
+   */
+  getUserResaleListings: async () => {
+    try {
+      const response = await api.get('/tickets/user/resale-listings');
+      return response.data;
+    } catch (error) {
+      console.error('Error getting user resale listings:', error);
+      return { data: [] };
+    }
+  },
+
+  /**
+   * Get user's sold resale tickets
+   * @returns {Promise} - API response with user's sold resale tickets and revenue
+   */
+  getUserResaleSold: async () => {
+    try {
+      const response = await api.get('/tickets/user/resale-sold');
+      return response.data;
+    } catch (error) {
+      console.error('Error getting user sold resale tickets:', error);
+      return { data: [], totalRevenue: 0 };
+    }
+  },
+
+  /**
    * Purchase a resale ticket
    * @param {string} resaleId - Resale listing ID
    * @param {Object} purchaseData - Purchase data including payment info
