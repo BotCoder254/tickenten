@@ -518,95 +518,118 @@ const ResaleTickets = () => {
     <div className="pt-20 pb-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Resale Tickets</h1>
-            <p className="mt-2 text-gray-600 dark:text-gray-400">
-              Find tickets being resold by other users
-            </p>
-          </div>
+<div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 bg-white/60 dark:bg-gray-800/50 backdrop-blur-md p-6 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 transition-all duration-300">
+  <div>
+    <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white">
+      🎟️ Resale Tickets
+    </h1>
+    <p className="mt-2 text-lg text-gray-600 dark:text-gray-400">
+      Find tickets being resold by real fans at crazy deals
+    </p>
+  </div>
 
-          <div className="mt-4 md:mt-0">
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-              className="btn btn-outline-primary flex items-center"
-          >
-              <FiFilter className="mr-2" /> 
-              Filters {(filterEvent || minPrice || maxPrice) && '(Active)'}
-          </button>
-          </div>
-        </div>
+  <div className="mt-6 md:mt-0">
+    <button
+      onClick={() => setShowFilters(!showFilters)}
+      className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold rounded-xl shadow-lg transition-transform transform hover:scale-105"
+    >
+      <FiFilter className="text-xl" />
+      <span className="text-base">
+        {showFilters ? 'Hide Filters' : 'Show Filters'}
+        {(filterEvent || minPrice || maxPrice) && ' (Active)'}
+      </span>
+    </button>
+  </div>
+</div>
+{/* Filters Panel */}
+{showFilters && (
+  <motion.div
+    initial={{ opacity: 0, height: 0 }}
+    animate={{ opacity: 1, height: 'auto' }}
+    exit={{ opacity: 0, height: 0 }}
+    transition={{ duration: 0.3 }}
+    className="mb-10 p-6 rounded-2xl bg-white/70 dark:bg-gray-800/60 backdrop-blur-md shadow-2xl border border-gray-200 dark:border-gray-700"
+  >
+    <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-6">
+      🧪 Filter Resale Tickets
+    </h2>
 
-        {/* Filters Panel */}
-        {showFilters && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            className="mb-8 card p-6"
-          >
-            <h2 className="text-lg font-bold mb-4 text-gray-900 dark:text-white">Filter Resale Tickets</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label htmlFor="eventFilter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Event
-                </label>
-                <select
-                  id="eventFilter"
-                  value={filterEvent}
-                  onChange={(e) => setFilterEvent(e.target.value)}
-                  className="input w-full"
-                >
-                  <option value="">All Events</option>
-                  {events?.map((event) => (
-                    <option key={event._id} value={event._id}>
-                      {event.title}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              
-              <div>
-                <label htmlFor="minPrice" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Min Price
-                </label>
-                    <input
-                  id="minPrice"
-                      type="number"
-                  value={minPrice}
-                  onChange={(e) => setMinPrice(e.target.value)}
-                  min="0"
-                  className="input w-full"
-                  placeholder="Minimum price"
-                    />
-                  </div>
-              
-              <div>
-                <label htmlFor="maxPrice" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Max Price
-                </label>
-                    <input
-                  id="maxPrice"
-                      type="number"
-                  value={maxPrice}
-                  onChange={(e) => setMaxPrice(e.target.value)}
-                  min="0"
-                  className="input w-full"
-                  placeholder="Maximum price"
-                    />
-                  </div>
-                </div>
-            
-            <div className="mt-6 flex space-x-3">
-              <button onClick={applyFilters} className="btn btn-primary">
-                Apply Filters
-              </button>
-              <button onClick={clearFilters} className="btn btn-outline-secondary">
-                  Clear Filters
-                </button>
-            </div>
-          </motion.div>
-        )}
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div>
+        <label
+          htmlFor="eventFilter"
+          className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2"
+        >
+          🎤 Event
+        </label>
+        <select
+          id="eventFilter"
+          value={filterEvent}
+          onChange={(e) => setFilterEvent(e.target.value)}
+          className="w-full px-4 py-3 rounded-xl border-2 border-purple-300 focus:outline-none focus:ring-4 focus:ring-purple-500 bg-white dark:bg-gray-900 dark:border-gray-700 dark:text-white transition-all duration-300"
+        >
+          <option value="">All Events</option>
+          {events?.map((event) => (
+            <option key={event._id} value={event._id}>
+              {event.title}
+            </option>
+          ))}
+        </select>
+      </div>
 
+      <div>
+        <label
+          htmlFor="minPrice"
+          className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2"
+        >
+          💸 Min Price
+        </label>
+        <input
+          id="minPrice"
+          type="number"
+          value={minPrice}
+          onChange={(e) => setMinPrice(e.target.value)}
+          min="0"
+          placeholder="e.g. 10"
+          className="w-full px-4 py-3 rounded-xl border-2 border-purple-300 focus:outline-none focus:ring-4 focus:ring-purple-500 bg-white dark:bg-gray-900 dark:border-gray-700 dark:text-white transition-all duration-300"
+        />
+      </div>
+
+      <div>
+        <label
+          htmlFor="maxPrice"
+          className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2"
+        >
+          💰 Max Price
+        </label>
+        <input
+          id="maxPrice"
+          type="number"
+          value={maxPrice}
+          onChange={(e) => setMaxPrice(e.target.value)}
+          min="0"
+          placeholder="e.g. 200"
+          className="w-full px-4 py-3 rounded-xl border-2 border-purple-300 focus:outline-none focus:ring-4 focus:ring-purple-500 bg-white dark:bg-gray-900 dark:border-gray-700 dark:text-white transition-all duration-300"
+        />
+      </div>
+    </div>
+
+    <div className="mt-8 flex gap-4 justify-end">
+      <button
+        onClick={applyFilters}
+        className="px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold hover:from-purple-700 hover:to-pink-700 transition-all duration-300 shadow-md hover:scale-105"
+      >
+        ✅ Apply Filters
+      </button>
+      <button
+        onClick={clearFilters}
+        className="px-6 py-3 rounded-xl border border-purple-400 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-gray-700 font-semibold transition-all duration-300"
+      >
+        🧹 Clear Filters
+      </button>
+    </div>
+  </motion.div>
+)}
         {/* No Results */}
         {resaleTickets?.length === 0 && (
           <div className="text-center py-12">
