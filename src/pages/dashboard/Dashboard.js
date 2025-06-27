@@ -69,11 +69,20 @@ const Dashboard = () => {
   // Get user resale listings
   const {
     data: resaleListings,
-    isLoading: resaleListingsLoading
+    isLoading: resaleListingsLoading,
+    refetch: refetchResaleListings,
+    isError: resaleListingsError
   } = useQuery({
     queryKey: ['resaleListings'],
     queryFn: ticketService.getUserResaleListings,
     select: (data) => data.data || [],
+    refetchInterval: 30000, // Refetch every 30 seconds
+    refetchOnWindowFocus: true,
+    staleTime: 10000, // Consider data stale after 10 seconds
+    retry: 3,
+    onError: (error) => {
+      console.error('Error fetching resale listings:', error);
+    }
   });
 
   // Get user sold resale tickets
@@ -218,16 +227,39 @@ const Dashboard = () => {
         return (
           <div>
             <div className="mb-8">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Your Resale Listings</h2>
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Your Resale Listings</h2>
+                <button 
+                  onClick={() => {
+                    refetchResaleListings();
+                    toast.info('Refreshing resale listings...');
+                  }}
+                  className="btn btn-outline-primary btn-sm flex items-center"
+                  disabled={resaleListingsLoading}
+                >
+                  <FiRefreshCw className={`mr-2 ${resaleListingsLoading ? 'animate-spin' : ''}`} /> 
+                  {resaleListingsLoading ? 'Refreshing...' : 'Refresh'}
+                </button>
+              </div>
               
               {resaleListingsLoading ? (
                 <div className="flex justify-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary-500"></div>
                 </div>
+              ) : resaleListingsError ? (
+                <div className="text-center py-8 bg-red-50 dark:bg-red-900/10 rounded-lg">
+                  <div className="text-red-600 dark:text-red-400 mb-2">Error loading resale listings</div>
+                  <button 
+                    onClick={() => refetchResaleListings()} 
+                    className="btn btn-sm btn-outline-danger"
+                  >
+                    Try Again
+                  </button>
+                </div>
               ) : resaleListings?.length > 0 ? (
                 <div className="space-y-4">
                   {resaleListings.map((ticket) => (
-                    <ResaleListingCard key={ticket._id} ticket={ticket} formatDate={formatDate} />
+                    <ResaleListingCard key={ticket._id} ticket={ticket} formatDate={formatDate} queryClient={queryClient} />
                   ))}
                 </div>
               ) : (
@@ -235,6 +267,11 @@ const Dashboard = () => {
                   <FiTag className="mx-auto h-12 w-12 text-gray-400" />
                   <h3 className="mt-2 text-lg font-medium text-gray-900 dark:text-white">No resale listings</h3>
                   <p className="mt-1 text-gray-500 dark:text-gray-400">You don't have any tickets listed for resale.</p>
+                  <div className="mt-4">
+                    <Link to="/dashboard?tab=tickets" className="btn btn-primary">
+                      Go to My Tickets
+                    </Link>
+                  </div>
                 </div>
               )}
             </div>
@@ -860,8 +897,28 @@ const CategoryChart = ({ events }) => {
 };
 
 // Resale Listing Card Component
-const ResaleListingCard = ({ ticket, formatDate }) => {
-  const queryClient = useQueryClient();
+const ResaleListingCard = ({ ticket, formatDate, queryClient }) => {
+  const handleCancelListing = async () => {
+    if (window.confirm('Are you sure you want to cancel this resale listing?')) {
+      try {
+        await ticketService.cancelTicketResale(ticket._id);
+        queryClient.invalidateQueries(['resaleListings']);
+        toast.success('Resale listing cancelled successfully');
+      } catch (error) {
+        toast.error('Failed to cancel resale listing');
+        console.error(error);
+      }
+    }
+  };
+  
+  // Add debug logging
+  console.log('Rendering ResaleListingCard with ticket:', ticket);
+  
+  // Check if we have valid ticket data
+  if (!ticket || !ticket._id) {
+    console.error('Invalid ticket data received:', ticket);
+    return null;
+  }
   
   return (
     <div className="card p-4 flex flex-col md:flex-row justify-between items-start md:items-center">
@@ -870,7 +927,7 @@ const ResaleListingCard = ({ ticket, formatDate }) => {
           {ticket.event?.title || 'Event Title'}
         </h3>
         <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-          {formatDate(ticket.event?.startDate)}
+          {ticket.event?.startDate ? formatDate(ticket.event.startDate) : 'Date unavailable'}
           <span className="mx-2">•</span>
           {ticket.ticketTypeInfo?.name || 'Standard Ticket'}
         </div>
@@ -878,26 +935,13 @@ const ResaleListingCard = ({ ticket, formatDate }) => {
           Listed for ${ticket.resalePrice?.toFixed(2) || '0.00'}
         </div>
         <div className="text-xs text-gray-500 mt-2">
-          Listed on: {formatDate(ticket.resaleListingDate)}
+          Listed on: {ticket.resaleListingDate ? formatDate(ticket.resaleListingDate) : 'Recently'}
         </div>
       </div>
       <div className="mt-4 md:mt-0 flex space-x-2">
         <button 
           className="btn btn-sm btn-outline" 
-          onClick={() => {
-            /* Handle cancel listing */
-            if (window.confirm('Are you sure you want to cancel this resale listing?')) {
-              ticketService.cancelTicketResale(ticket._id)
-                .then(() => {
-                  queryClient.invalidateQueries(['resaleListings']);
-                  toast.success('Resale listing cancelled successfully');
-                })
-                .catch(error => {
-                  toast.error('Failed to cancel resale listing');
-                  console.error(error);
-                });
-            }
-          }}
+          onClick={handleCancelListing}
         >
           Cancel Listing
         </button>
