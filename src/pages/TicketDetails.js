@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FiCalendar, FiMapPin, FiClock, FiDownload, FiShare2, FiTrash2 } from 'react-icons/fi';
+import { FiCalendar, FiMapPin, FiClock, FiDownload, FiShare2, FiTrash2, FiDollarSign, FiInfo } from 'react-icons/fi';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import QRCode from 'react-qr-code';
 import ticketService from '../services/ticketService';
@@ -15,6 +15,13 @@ const TicketDetails = () => {
   const [shareSuccess, setShareSuccess] = useState('');
   const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Resale state variables
+  const [showResaleModal, setShowResaleModal] = useState(false);
+  const [resalePrice, setResalePrice] = useState('');
+  const [resaleDescription, setResaleDescription] = useState('');
+  const [resaleError, setResaleError] = useState('');
+  const [resaleLoading, setResaleLoading] = useState(false);
 
   // Get ticket details
   const { data: ticket, isLoading: ticketLoading, error } = useQuery({
@@ -39,6 +46,20 @@ const TicketDetails = () => {
       navigate('/dashboard?tab=tickets');
     },
   });
+  
+  // Resale ticket mutation
+  const resaleMutation = useMutation({
+    mutationFn: (resaleData) => ticketService.listTicketForResale(ticketId, resaleData),
+    onSuccess: () => {
+      // Close modal and refetch ticket data
+      setShowResaleModal(false);
+      queryClient.invalidateQueries(['ticket', ticketId]);
+    },
+    onError: (error) => {
+      setResaleError(error.response?.data?.message || 'Failed to list ticket for resale.');
+      setResaleLoading(false);
+    },
+  });
 
   // Format date
   const formatDate = (dateString) => {
@@ -58,6 +79,17 @@ const TicketDetails = () => {
       hour: '2-digit',
       minute: '2-digit',
     });
+  };
+
+  // Get image URL helper function
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80';
+    
+    if (imagePath.startsWith('http')) {
+      return imagePath;
+    }
+    
+    return `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}${imagePath}`;
   };
 
   // Handle ticket download
@@ -132,6 +164,61 @@ const TicketDetails = () => {
         console.error('Error deleting ticket:', err);
         const errorMessage = err.message || 'Failed to delete ticket. Please try again.';
         alert(errorMessage);
+        setIsLoading(false);
+      }
+    }
+  };
+  
+  // Handle resale modal toggle
+  const handleResaleModal = () => {
+    setShowResaleModal(!showResaleModal);
+    setResalePrice('');
+    setResaleDescription('');
+    setResaleError('');
+  };
+  
+  // Handle resale submission
+  const handleResaleSubmit = async () => {
+    // Validate price
+    const numPrice = parseFloat(resalePrice);
+    if (isNaN(numPrice) || numPrice <= 0) {
+      setResaleError('Please enter a valid price greater than zero.');
+      return;
+    }
+    
+    // Check if it's a free ticket (shouldn't be resold for money)
+    if (ticket.ticketTypeInfo?.price === 0 && numPrice > 0) {
+      setResaleError('Free tickets cannot be resold for money.');
+      return;
+    }
+    
+    try {
+      setResaleLoading(true);
+      setResaleError('');
+      
+      await resaleMutation.mutateAsync({
+        resalePrice: numPrice,
+        description: resaleDescription
+      });
+      
+    } catch (err) {
+      console.error('Error listing ticket for resale:', err);
+      setResaleError(err.response?.data?.message || 'Failed to list ticket for resale.');
+      setResaleLoading(false);
+    }
+  };
+  
+  // Cancel resale listing
+  const handleCancelResale = async () => {
+    if (window.confirm('Are you sure you want to cancel this resale listing?')) {
+      try {
+        setIsLoading(true);
+        await ticketService.cancelTicketResale(ticketId);
+        queryClient.invalidateQueries(['ticket', ticketId]);
+        setIsLoading(false);
+      } catch (err) {
+        console.error('Error cancelling resale listing:', err);
+        alert('Failed to cancel resale listing. Please try again.');
         setIsLoading(false);
       }
     }
@@ -247,7 +334,30 @@ const TicketDetails = () => {
             </div>
             <h2 className="text-xl font-bold mt-2">{ticket.event?.title}</h2>
             <p className="opacity-90">{ticket.ticketTypeInfo?.name || 'General Admission'}</p>
+            
+            {/* Resale indicator if ticket is for resale */}
+            {ticket.isForResale && (
+              <div className="mt-2 inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-300">
+                <FiDollarSign className="mr-1" />
+                Listed for Resale at {ticket.resalePrice} {ticket.ticketTypeInfo?.currency || 'USD'}
+              </div>
+            )}
           </div>
+
+          {/* Event Image */}
+          {ticket.event?.featuredImage && (
+            <div className="w-full h-48 overflow-hidden">
+              <img 
+                src={getImageUrl(ticket.event.featuredImage)} 
+                alt={ticket.event?.title || 'Event'} 
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = "https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80";
+                }}
+              />
+            </div>
+          )}
 
           {/* Ticket Body */}
           <div className="p-6">
@@ -329,17 +439,52 @@ const TicketDetails = () => {
                       {ticket.ticketTypeInfo?.price} {ticket.ticketTypeInfo?.currency}
                     </p>
                   </div>
+                  
+                  {ticket.event?.description && (
+                    <div>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center">
+                        <FiInfo className="mr-1" /> Event Description
+                      </p>
+                      <p className="text-gray-900 dark:text-white mt-1 text-sm">
+                        {ticket.event.description.length > 100 
+                          ? `${ticket.event.description.substring(0, 100)}...` 
+                          : ticket.event.description}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
 
             {/* Actions */}
             <div className="mt-8 border-t border-gray-200 dark:border-gray-700 pt-6 flex flex-wrap gap-3">
-              <Link to={`/events/${ticket.event?._id}`} className="btn btn-outline-primary">
-                View Event
-              </Link>
+              {ticket.event?._id && (
+                <Link to={`/events/${ticket.event._id}`} className="btn btn-outline-primary">
+                  View Event
+                </Link>
+              )}
+              
               {ticket.status !== 'used' && ticket.status !== 'cancelled' && (
                 <>
+                  {!ticket.isForResale ? (
+                    <button 
+                      className="btn btn-outline-primary flex items-center"
+                      onClick={handleResaleModal}
+                    >
+                      <FiDollarSign className="mr-1" />
+                      Resell Ticket
+                    </button>
+                  ) : (
+                    <button 
+                      className="btn btn-outline-warning flex items-center"
+                      onClick={handleCancelResale}
+                      disabled={isLoading}
+                    >
+                      <FiDollarSign className="mr-1" />
+                      Cancel Resale
+                    </button>
+                  )}
+                  
                   <button 
                     className="btn btn-outline-danger"
                     onClick={handleCancelTicket}
@@ -368,9 +513,103 @@ const TicketDetails = () => {
                 </button>
               )}
             </div>
+            
+            {/* Additional Actions */}
+            <div className="mt-4 flex flex-wrap gap-3">
+              <Link to="/dashboard/tickets" className="btn btn-outline-secondary">
+                Back to My Tickets
+              </Link>
+              <Link to="/dashboard" className="btn btn-outline-secondary">
+                Dashboard
+              </Link>
+            </div>
           </div>
         </motion.div>
       </div>
+      
+      {/* Resale Modal */}
+      {showResaleModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6"
+          >
+            <h3 className="text-lg font-bold mb-4 text-gray-900 dark:text-white">Resell Your Ticket</h3>
+            
+            {/* Price Info */}
+            <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+              <p className="text-sm text-blue-800 dark:text-blue-300">
+                Original Ticket Price: {ticket.ticketTypeInfo?.price} {ticket.ticketTypeInfo?.currency}
+              </p>
+            </div>
+            
+            {resaleError && (
+              <div className="mb-4 p-3 bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 rounded-lg">
+                <p>{resaleError}</p>
+              </div>
+            )}
+            
+            <form onSubmit={(e) => { e.preventDefault(); handleResaleSubmit(); }}>
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="resalePrice" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Resale Price ({ticket.ticketTypeInfo?.currency})
+                  </label>
+                  <input
+                    id="resalePrice"
+                    type="number"
+                    value={resalePrice}
+                    onChange={(e) => setResalePrice(e.target.value)}
+                    className="input w-full"
+                    placeholder="Enter price"
+                    min="0"
+                    step="0.01"
+                    required
+                    disabled={ticket.ticketTypeInfo?.price === 0}
+                  />
+                  {ticket.ticketTypeInfo?.price === 0 && (
+                    <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                      Free tickets cannot be resold for money.
+                    </p>
+                  )}
+                </div>
+                
+                <div>
+                  <label htmlFor="resaleDescription" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Description (Optional)
+                  </label>
+                  <textarea
+                    id="resaleDescription"
+                    value={resaleDescription}
+                    onChange={(e) => setResaleDescription(e.target.value)}
+                    className="input w-full"
+                    rows={3}
+                    placeholder="Add any details about your ticket"
+                  ></textarea>
+                </div>
+              </div>
+              
+              <div className="mt-6 flex gap-3">
+                <button
+                  type="button"
+                  onClick={handleResaleModal}
+                  className="btn btn-outline-secondary flex-1"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary flex-1"
+                  disabled={resaleLoading || ticket.ticketTypeInfo?.price === 0}
+                >
+                  {resaleLoading ? 'Listing...' : 'List for Resale'}
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 };

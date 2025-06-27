@@ -6,6 +6,10 @@ const passport = require('passport');
 const path = require('path');
 const dotenv = require('dotenv');
 const fs = require('fs');
+const cookieParser = require('cookie-parser');
+const http = require('http');
+const socketIo = require('socket.io');
+const queueSystem = require('./utils/queueSystem');
 
 // Load environment variables
 dotenv.config();
@@ -15,9 +19,25 @@ const authRoutes = require('./routes/auth.routes');
 const eventRoutes = require('./routes/event.routes');
 const userRoutes = require('./routes/user.routes');
 const ticketRoutes = require('./routes/ticket.routes');
+const queueRoutes = require('./routes/queue.routes');
 
 // Create Express app
 const app = express();
+
+// Create HTTP server
+const server = http.createServer(app);
+
+// Set up Socket.io
+const io = socketIo(server, {
+  cors: {
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    methods: ['GET', 'POST'],
+    credentials: true
+  }
+});
+
+// Pass io to queue system
+queueSystem.setSocketIo(io);
 
 // Set port
 const PORT = process.env.PORT || 5000;
@@ -114,7 +134,11 @@ mongoose.connect(uri, {
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors());
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  credentials: true
+}));
+app.use(cookieParser()); // Add cookie parser middleware
 
 // Create uploads directory if it doesn't exist
 const uploadsDir = path.join(__dirname, '../uploads');
@@ -136,10 +160,36 @@ app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/tickets', ticketRoutes);
+app.use('/api/queue', queueRoutes); // Add queue routes
 
 // Add a health check endpoint
 app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'ok', message: 'Server is running' });
+});
+
+// Socket.io connection handling
+io.on('connection', (socket) => {
+  console.log('New client connected');
+  
+  // Join a queue room for real-time updates
+  socket.on('queue:join', (eventId) => {
+    if (eventId) {
+      socket.join(`queue:${eventId}`);
+      console.log(`Client joined queue room for event ${eventId}`);
+    }
+  });
+  
+  // Leave a queue room
+  socket.on('queue:leave', (eventId) => {
+    if (eventId) {
+      socket.leave(`queue:${eventId}`);
+      console.log(`Client left queue room for event ${eventId}`);
+    }
+  });
+  
+  socket.on('disconnect', () => {
+    console.log('Client disconnected');
+  });
 });
 
 // Serve static assets if in production
@@ -166,7 +216,7 @@ app.use((err, req, res, next) => {
 });
 
 // Start server
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
 
