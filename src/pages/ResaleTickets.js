@@ -39,7 +39,6 @@ const formatDate = (dateString) => {
 };
 
 // Helper function to format time
-
 const formatTime = (dateString) => {
 
   const date = new Date(dateString);
