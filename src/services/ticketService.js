@@ -373,7 +373,7 @@ const ticketService = {
       const token = localStorage.getItem('token');
       if (!token) {
         console.warn('User is not authenticated, cannot fetch resale listings');
-        return { data: [] };
+        return { success: true, data: [] };
       }
       
       // Make the API request with retry logic
@@ -384,6 +384,7 @@ const ticketService = {
       while (retries <= maxRetries) {
         try {
           response = await api.get('/tickets/user/resale-listings');
+          console.log('User resale listings response received:', response);
           break; // Success, exit retry loop
         } catch (err) {
           retries++;
@@ -395,22 +396,26 @@ const ticketService = {
         }
       }
       
-      console.log('User resale listings response:', response.data);
+      console.log('User resale listings response data:', response.data);
       
       // Validate the response data
       if (!response.data.success) {
         console.warn('API returned unsuccessful response:', response.data);
       }
       
-      if (!Array.isArray(response.data.data)) {
-        console.warn('API returned non-array data:', response.data.data);
-        return { data: [] };
+      // Ensure we always return an array for data
+      if (!response.data.data || !Array.isArray(response.data.data)) {
+        console.warn('API returned non-array data, using empty array instead:', response.data.data);
+        response.data.data = [];
       }
       
       // Log the number of resale listings
       console.log(`Found ${response.data.data.length} resale listings`);
       
-      return response.data;
+      return {
+        success: true,
+        data: response.data.data || []
+      };
     } catch (error) {
       console.error('Error getting user resale listings:', error);
       // Check for specific error types
@@ -418,7 +423,7 @@ const ticketService = {
         console.error('Error response status:', error.response.status);
         console.error('Error response data:', error.response.data);
       }
-      return { data: [] };
+      return { success: true, data: [] };
     }
   },
 
