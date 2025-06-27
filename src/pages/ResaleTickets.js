@@ -5,6 +5,8 @@ import { FiCalendar, FiMapPin, FiClock, FiFilter, FiDollarSign, FiUser, FiMail, 
 import { useQuery } from '@tanstack/react-query';
 import ticketService from '../services/ticketService';
 import eventService from '../services/eventService';
+import queueService from '../services/queueService';
+import QueueStatus from '../components/QueueStatus';
 import { useAuth } from '../context/AuthContext';
 
 // Helper function to format date
@@ -55,6 +57,11 @@ const ResaleTickets = () => {
   const [purchaseError, setPurchaseError] = useState(null);
   const [purchaseSuccess, setPurchaseSuccess] = useState(false);
   const [guestInfo, setGuestInfo] = useState({ name: '', email: '', phoneNumber: '' });
+  
+  // Queue system state
+  const [showQueueModal, setShowQueueModal] = useState(false);
+  const [queueInfo, setQueueInfo] = useState(null);
+  const [isQueueReady, setIsQueueReady] = useState(false);
 
   // Fetch resale tickets
   const { data: resaleTickets, isLoading, error, refetch } = useQuery({
@@ -66,6 +73,9 @@ const ResaleTickets = () => {
     }),
     select: (data) => data.data || [],
   });
+  
+  // Define isInitialLoading as an alias for isLoading to maintain compatibility
+  const isInitialLoading = isLoading;
 
   // Fetch events for filter dropdown
   const { data: events } = useQuery({
@@ -100,14 +110,116 @@ const ResaleTickets = () => {
     setShowFilters(false);
   };
   
-  // Handle ticket selection for purchase
+  // Add this effect to check for existing queue position when a ticket is selected
+  useEffect(() => {
+    // Check if user is already in a queue for the selected ticket's event
+    const checkExistingQueue = async () => {
+      if (selectedTicket && selectedTicket.event && selectedTicket.event._id) {
+        try {
+          // Check if we have a stored queueId for this event
+          const eventId = selectedTicket.event._id;
+          const storedQueueId = localStorage.getItem(`queue_${eventId}`);
+          
+          if (storedQueueId) {
+            const queueResponse = await queueService.checkPosition(eventId, storedQueueId);
+            
+            if (queueResponse.success && 
+                (queueResponse.data.position > 0 || queueResponse.data.isProcessing)) {
+              // User is already in queue, restore queue state
+              setQueueInfo({
+                ...queueResponse.data,
+                queueId: storedQueueId
+              });
+              
+              // If user is at the front of the queue, mark as ready
+              if (queueResponse.data.position <= 1 || queueResponse.data.isProcessing) {
+                setIsQueueReady(true);
+              }
+            }
+          }
+        } catch (err) {
+          console.error('Error checking existing queue:', err);
+          // Silently fail - we'll create a new queue if needed
+        }
+      }
+    };
+    
+    checkExistingQueue();
+  }, [selectedTicket]);
+
+  // Add effect to check for saved ticket selection when the queue info changes
+  useEffect(() => {
+    const checkSavedTicket = () => {
+      if (!selectedTicket && queueInfo && queueInfo.queueId) {
+        const eventId = queueInfo.eventId || (searchParams.get('eventId'));
+        
+        if (eventId) {
+          try {
+            const savedTicket = localStorage.getItem(`selected_resale_ticket_${eventId}`);
+            if (savedTicket) {
+              const ticketData = JSON.parse(savedTicket);
+              setSelectedTicket(ticketData);
+            }
+          } catch (err) {
+            console.error('Error loading saved ticket selection:', err);
+            // Continue without restored selection
+          }
+        }
+      }
+    };
+    
+    checkSavedTicket();
+  }, [queueInfo, selectedTicket, searchParams]);
+
+  // Update the handleSelectTicket function to store the selection
   const handleSelectTicket = (ticket) => {
     setSelectedTicket(ticket);
     setPurchaseError(null);
     
+    // Store the selected ticket in localStorage to preserve across queue process
+    if (ticket && ticket.event && ticket.event._id) {
+      try {
+        localStorage.setItem(`selected_resale_ticket_${ticket.event._id}`, JSON.stringify({
+          _id: ticket._id,
+          resalePrice: ticket.resalePrice,
+          event: {
+            _id: ticket.event._id,
+            title: ticket.event.title
+          },
+          ticketTypeInfo: ticket.ticketTypeInfo
+        }));
+      } catch (err) {
+        console.error('Error saving ticket selection to localStorage:', err);
+        // Continue even if storage fails
+      }
+    }
+    
     // Prefill phone number if authenticated
     if (isAuthenticated && currentUser.phoneNumber) {
       setGuestInfo(prev => ({ ...prev, phoneNumber: currentUser.phoneNumber }));
+      
+      // If authenticated, start the queue process in the background
+      if (ticket && ticket.event && ticket.event._id) {
+        const eventId = ticket.event._id;
+        
+        // Join queue in the background
+        queueService.joinQueue(eventId)
+          .then(queueResponse => {
+            if (queueResponse.success) {
+              setQueueInfo(queueResponse.data);
+              // Don't show the modal yet
+              
+              // If user is already at the front of the queue, mark as ready
+              if (queueResponse.data.position <= 1 || queueResponse.data.isProcessing) {
+                setIsQueueReady(true);
+              }
+            }
+          })
+          .catch(err => {
+            console.error('Error joining queue early:', err);
+            // Silently fail - we'll try again when user clicks purchase
+          });
+      }
     }
   };
   
@@ -139,10 +251,16 @@ const ResaleTickets = () => {
       }
     };
   }, []);
-  
+
   // Define the payment success callback
   const handlePaymentSuccess = useCallback(async (response, ticketId) => {
     try {
+      if (!selectedTicket) {
+        setPurchaseError('Ticket information was lost. Please try again.');
+        setIsProcessing(false);
+        return;
+      }
+      
       if (response.status === 'success') {
         // Prepare payment info from Paystack
         const paymentInfo = {
@@ -165,8 +283,27 @@ const ResaleTickets = () => {
         // Show success message
         setPurchaseSuccess(true);
         
+        // Clear stored ticket data since purchase was successful
+        try {
+          if (selectedTicket && selectedTicket.event && selectedTicket.event._id) {
+            localStorage.removeItem(`selected_resale_ticket_${selectedTicket.event._id}`);
+          }
+        } catch (err) {
+          console.error('Error clearing stored ticket data:', err);
+        }
+        
         // Get the ticket from the response
         const ticketData = purchaseResponse && purchaseResponse.data;
+        
+        // Complete queue processing if in a queue
+        if (queueInfo && queueInfo.userId && selectedTicket.event && selectedTicket.event._id) {
+          queueService.completeProcessing(selectedTicket.event._id, queueInfo.userId).catch(err => {
+            console.error('Error completing queue processing:', err);
+          });
+        }
+        
+        // Close the queue modal after successful purchase
+        setShowQueueModal(false);
         
         // Redirect to success page with ticket info
         setTimeout(() => {
@@ -174,7 +311,7 @@ const ResaleTickets = () => {
             state: { 
               ticketId: ticketData?._id,
               ticketNumber: ticketData?.ticketNumber,
-              eventTitle: selectedTicket?.event?.title,
+              eventTitle: selectedTicket?.event?.title || 'Event',
               isResale: true
             } 
           });
@@ -188,9 +325,9 @@ const ResaleTickets = () => {
       setPurchaseError(err.response?.data?.message || 'Payment was successful, but we could not complete your ticket purchase. Please contact support with your payment reference: ' + response.reference);
       setIsProcessing(false);
     }
-  }, [navigate, selectedTicket]);
+  }, [navigate, selectedTicket, queueInfo]);
   
-  // Handle ticket purchase
+  // Update the handlePurchaseTicket function
   const handlePurchaseTicket = () => {
     if (!selectedTicket || !isAuthenticated) return;
     
@@ -198,6 +335,81 @@ const ResaleTickets = () => {
     setPurchaseError(null);
     
     try {
+      // Always use queue for resale tickets
+      const shouldQueue = true;
+      
+      if (shouldQueue && !isQueueReady) {
+        // If we already have queue info but not showing modal, show it
+        if (queueInfo && !showQueueModal) {
+          setShowQueueModal(true);
+          setIsProcessing(false);
+          return;
+        }
+        
+        // Join the queue first
+        queueService.joinQueue(selectedTicket.event._id)
+          .then(queueResponse => {
+            if (queueResponse.success) {
+              setQueueInfo(queueResponse.data);
+              setShowQueueModal(true);
+              setIsProcessing(false);
+              
+              // If user is already at the front of the queue, allow purchase
+              if (queueResponse.data.position <= 1 || queueResponse.data.isProcessing) {
+                setIsQueueReady(true);
+              }
+            }
+          })
+          .catch(err => {
+            console.error('Error joining queue:', err);
+            // Continue with purchase anyway if queue fails
+            processPurchase();
+          });
+        
+        return; // Stop here until queue is ready
+      }
+      
+      // If queue is ready, proceed with purchase
+      processPurchase();
+      
+    } catch (err) {
+      console.error('Error initiating purchase:', err);
+      setPurchaseError(err.response?.data?.message || 'Failed to process request. Please try again.');
+      setIsProcessing(false);
+    }
+  };
+  
+  // Process the actual purchase (after queue if needed)
+  const processPurchase = () => {
+    try {
+      // Try to recover the selected ticket if it's null
+      if (!selectedTicket) {
+        // Find the event ID
+        const eventId = queueInfo?.eventId || searchParams.get('eventId');
+        
+        if (eventId) {
+          try {
+            const savedTicket = localStorage.getItem(`selected_resale_ticket_${eventId}`);
+            if (savedTicket) {
+              const ticketData = JSON.parse(savedTicket);
+              setSelectedTicket(ticketData);
+              // Continue with the recovered ticket
+              setTimeout(() => {
+                processPurchase();
+              }, 100);
+              return;
+            }
+          } catch (err) {
+            console.error('Error recovering ticket selection:', err);
+            // Continue to error handling below
+          }
+        }
+        
+        setPurchaseError('Ticket selection was lost. Please try again.');
+        setIsProcessing(false);
+        return;
+      }
+      
       // Check for phone number
       if (!guestInfo.phoneNumber) {
         setPurchaseError('Please provide your phone number to receive ticket information via SMS');
@@ -205,8 +417,16 @@ const ResaleTickets = () => {
         return;
       }
       
+      // Ensure we have a valid resale price
+      const resalePrice = selectedTicket.resalePrice || 0;
+      if (resalePrice <= 0) {
+        setPurchaseError('Invalid ticket price. Please try again or contact support.');
+        setIsProcessing(false);
+        return;
+      }
+      
       // Calculate amount in the smallest currency unit (kobo for NGN, cents for USD)
-      const totalAmount = selectedTicket.resalePrice * 100; // Convert to cents/kobo
+      const totalAmount = resalePrice * 100; // Convert to cents/kobo
       
       // Determine the email to use for Paystack
       const userEmail = isAuthenticated ? currentUser.email : guestInfo.email;
@@ -218,32 +438,59 @@ const ResaleTickets = () => {
         return;
       }
       
+      // Get currency with fallback
+      const currency = selectedTicket.ticketTypeInfo?.currency || "NGN";
+      
       // Initialize Paystack payment
       const handler = window.PaystackPop.setup({
-        key: 'pk_live_f75e7fc5c652583410d16789fc9955853373fc8c', // Paystack public key
+        key: 'pk_test_c2b42dd5ca88bee2b49fba8bec4ca46e54525f09', // Paystack public key
         email: userEmail,
         amount: totalAmount,
-        currency: selectedTicket.ticketTypeInfo?.currency || "USD",
+        currency: currency,
         callback: (response) => {
           handlePaymentSuccess(response, ticketId);
+          
+          // Complete queue processing if in a queue
+          if (queueInfo && queueInfo.userId) {
+            queueService.completeProcessing(selectedTicket.event._id, queueInfo.userId).catch(err => {
+              console.error('Error completing queue processing:', err);
+            });
+          }
         },
         onClose: () => {
           // Handle payment cancellation
           setPurchaseError('Payment was cancelled. Please try again to complete your purchase.');
           setIsProcessing(false);
+          
+          // If user was in queue, they'll need to try again
+          if (showQueueModal) {
+            setIsQueueReady(false);
+          }
         }
       });
       
       // Open the Paystack payment modal
       handler.openIframe();
     } catch (err) {
-      console.error('Error initiating payment:', err);
+      console.error('Error processing payment:', err);
       setPurchaseError(err.response?.data?.message || 'Failed to process payment. Please try again.');
       setIsProcessing(false);
     }
   };
+  
+  // Handle queue ready callback
+  const handleQueueReady = (queueData) => {
+    setIsQueueReady(true);
+    // Automatically proceed with purchase when it's the user's turn
+    if (queueData.isProcessing && selectedTicket) {
+      // Wait a moment to allow the user to see they're ready
+      setTimeout(() => {
+        processPurchase();
+      }, 1500);
+    }
+  };
 
-  if (isLoading) {
+  if (isInitialLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
@@ -280,13 +527,13 @@ const ResaleTickets = () => {
           </div>
 
           <div className="mt-4 md:mt-0">
-            <button
-              onClick={() => setShowFilters(!showFilters)}
+          <button
+            onClick={() => setShowFilters(!showFilters)}
               className="btn btn-outline-primary flex items-center"
-            >
+          >
               <FiFilter className="mr-2" /> 
               Filters {(filterEvent || minPrice || maxPrice) && '(Active)'}
-            </button>
+          </button>
           </div>
         </div>
 
@@ -322,40 +569,40 @@ const ResaleTickets = () => {
                 <label htmlFor="minPrice" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Min Price
                 </label>
-                <input
+                    <input
                   id="minPrice"
-                  type="number"
+                      type="number"
                   value={minPrice}
                   onChange={(e) => setMinPrice(e.target.value)}
                   min="0"
                   className="input w-full"
                   placeholder="Minimum price"
-                />
-              </div>
+                    />
+                  </div>
               
               <div>
                 <label htmlFor="maxPrice" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Max Price
                 </label>
-                <input
+                    <input
                   id="maxPrice"
-                  type="number"
+                      type="number"
                   value={maxPrice}
                   onChange={(e) => setMaxPrice(e.target.value)}
                   min="0"
                   className="input w-full"
                   placeholder="Maximum price"
-                />
-              </div>
-            </div>
+                    />
+                  </div>
+                </div>
             
             <div className="mt-6 flex space-x-3">
               <button onClick={applyFilters} className="btn btn-primary">
                 Apply Filters
               </button>
               <button onClick={clearFilters} className="btn btn-outline-secondary">
-                Clear Filters
-              </button>
+                  Clear Filters
+                </button>
             </div>
           </motion.div>
         )}
@@ -370,7 +617,7 @@ const ResaleTickets = () => {
             <Link to="/events" className="mt-6 btn btn-primary inline-block">
               Browse Events
             </Link>
-          </div>
+      </div>
         )}
 
         {/* Tickets Grid */}
@@ -393,7 +640,7 @@ const ResaleTickets = () => {
                     e.target.src = "https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80";
                   }}
                 />
-              </div>
+                </div>
               
               {/* Ticket Content */}
               <div className="p-5">
@@ -427,10 +674,11 @@ const ResaleTickets = () => {
                   </div>
                   <div className="flex items-center text-sm font-medium text-gray-900 dark:text-white">
                     <FiDollarSign className="mr-2 text-gray-400" />
-                    {ticket.resalePrice} {ticket.ticketTypeInfo?.currency || 'USD'}
-                    {ticket.ticketTypeInfo?.price !== ticket.resalePrice && (
+                    {ticket.resalePrice !== undefined ? `${ticket.resalePrice} ${ticket.ticketTypeInfo?.currency || 'USD'}` : 'Price unavailable'}
+                    {ticket.ticketTypeInfo?.price !== undefined && ticket.resalePrice !== undefined && 
+                     ticket.ticketTypeInfo.price !== ticket.resalePrice && (
                       <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">
-                        (Original: {ticket.ticketTypeInfo?.price})
+                        (Original: {ticket.ticketTypeInfo.price})
                       </span>
                     )}
                   </div>
@@ -449,6 +697,57 @@ const ResaleTickets = () => {
           ))}
         </div>
       </div>
+      
+      {/* Queue Modal */}
+      {showQueueModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6"
+          >
+            <h3 className="text-lg font-bold mb-4 text-gray-900 dark:text-white text-center">
+              Ticket Purchase Queue
+            </h3>
+            
+            <QueueStatus 
+              eventId={selectedTicket?.event?._id}
+              queueId={queueInfo?.queueId}
+              onReady={handleQueueReady}
+              autoRefresh={true}
+              refreshInterval={5000}
+            />
+            
+            <div className="mt-6">
+              {selectedTicket ? (
+                <button
+                  onClick={processPurchase}
+                  className={`w-full btn ${isQueueReady ? 'btn-primary' : 'btn-disabled bg-gray-300 dark:bg-gray-700 cursor-not-allowed'}`}
+                  disabled={isProcessing || !isQueueReady}
+                >
+                  {isProcessing ? 'Processing...' : isQueueReady ? 'Continue to Purchase' : 'Waiting in Queue...'}
+                </button>
+              ) : (
+                <div className="text-center text-amber-600 dark:text-amber-400 mb-3">
+                  <p>Your ticket selection was lost. Please close this window and select a ticket again.</p>
+                </div>
+              )}
+            </div>
+            
+            <div className="mt-4 text-center">
+              <button
+                onClick={() => {
+                  setShowQueueModal(false);
+                  // Don't reset queue info or ready status - keep for next attempt
+                }}
+                className="text-sm text-gray-600 dark:text-gray-400 hover:underline"
+              >
+                {isQueueReady ? 'Close' : 'I\'ll come back later'}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
       
       {/* Purchase Modal */}
       {selectedTicket && (
@@ -479,24 +778,30 @@ const ResaleTickets = () => {
             <div className="mb-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
               <div className="flex justify-between mb-2">
                 <span className="text-gray-600 dark:text-gray-400">Ticket Type</span>
-                <span className="font-medium text-gray-900 dark:text-white">{selectedTicket.ticketTypeInfo?.name}</span>
+                <span className="font-medium text-gray-900 dark:text-white">{selectedTicket.ticketTypeInfo?.name || 'Standard Ticket'}</span>
               </div>
               <div className="flex justify-between mb-2">
                 <span className="text-gray-600 dark:text-gray-400">Original Price</span>
                 <span className="font-medium text-gray-900 dark:text-white">
-                  {selectedTicket.ticketTypeInfo?.price} {selectedTicket.ticketTypeInfo?.currency}
+                  {selectedTicket.ticketTypeInfo?.price !== undefined 
+                    ? `${selectedTicket.ticketTypeInfo.price} ${selectedTicket.ticketTypeInfo?.currency || 'USD'}`
+                    : 'Not available'}
                 </span>
               </div>
               <div className="flex justify-between mb-2">
                 <span className="text-gray-600 dark:text-gray-400">Resale Price</span>
                 <span className="font-medium text-gray-900 dark:text-white">
-                  {selectedTicket.resalePrice} {selectedTicket.ticketTypeInfo?.currency}
+                  {selectedTicket.resalePrice !== undefined 
+                    ? `${selectedTicket.resalePrice} ${selectedTicket.ticketTypeInfo?.currency || 'USD'}`
+                    : 'Not available'}
                 </span>
               </div>
               <div className="flex justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
                 <span className="font-bold text-gray-900 dark:text-white">Total</span>
                 <span className="font-bold text-gray-900 dark:text-white">
-                  {selectedTicket.resalePrice} {selectedTicket.ticketTypeInfo?.currency}
+                  {selectedTicket.resalePrice !== undefined 
+                    ? `${selectedTicket.resalePrice} ${selectedTicket.ticketTypeInfo?.currency || 'USD'}`
+                    : 'Not available'}
                 </span>
               </div>
             </div>
@@ -551,7 +856,9 @@ const ResaleTickets = () => {
                     className="btn btn-primary flex-1"
                     disabled={isProcessing || !guestInfo.phoneNumber}
                   >
-                    {isProcessing ? 'Processing...' : `Pay ${selectedTicket.resalePrice} ${selectedTicket.ticketTypeInfo?.currency}`}
+                    {isProcessing ? 'Processing...' : selectedTicket.resalePrice !== undefined 
+                      ? `Pay ${selectedTicket.resalePrice} ${selectedTicket.ticketTypeInfo?.currency || 'USD'}`
+                      : 'Purchase Ticket'}
                   </button>
                 </div>
               </>

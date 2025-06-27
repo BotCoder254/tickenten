@@ -5,6 +5,8 @@ import { FiCalendar, FiMapPin, FiClock, FiTag, FiShare2, FiHeart, FiTrash2, FiMa
 import { useQuery } from '@tanstack/react-query';
 import eventService from '../services/eventService';
 import ticketService from '../services/ticketService';
+import queueService from '../services/queueService';
+import QueueStatus from '../components/QueueStatus';
 import { useAuth } from '../context/AuthContext';
 
 // Add the getImageUrl helper function
@@ -30,6 +32,11 @@ const EventDetails = () => {
   const [purchaseError, setPurchaseError] = useState(null);
   const { isAuthenticated, currentUser } = useAuth();
   const navigate = useNavigate();
+  
+  // Queue system state
+  const [showQueueModal, setShowQueueModal] = useState(false);
+  const [queueInfo, setQueueInfo] = useState(null);
+  const [isQueueReady, setIsQueueReady] = useState(false);
 
   const { data: event, isLoading, error } = useQuery({
     queryKey: ['event', eventId],
@@ -79,10 +86,89 @@ const EventDetails = () => {
     }
   };
 
-  // Handle ticket selection
+  // Add this effect to check for existing queue position when component mounts
+  useEffect(() => {
+    // Check if user is already in a queue for this event
+    const checkExistingQueue = async () => {
+      if (eventId) {
+        try {
+          // Check if we have a stored queueId for this event
+          const storedQueueId = localStorage.getItem(`queue_${eventId}`);
+          
+          if (storedQueueId) {
+            const queueResponse = await queueService.checkPosition(eventId, storedQueueId);
+            
+            if (queueResponse.success && 
+                (queueResponse.data.position > 0 || queueResponse.data.isProcessing)) {
+              // User is already in queue, restore queue state
+              setQueueInfo({
+                ...queueResponse.data,
+                queueId: storedQueueId
+              });
+              setShowQueueModal(true);
+              
+              // If user is at the front of the queue, mark as ready
+              if (queueResponse.data.position <= 1 || queueResponse.data.isProcessing) {
+                setIsQueueReady(true);
+              }
+            }
+          }
+        } catch (err) {
+          console.error('Error checking existing queue:', err);
+          // Silently fail - we'll create a new queue if needed
+        }
+      }
+    };
+    
+    checkExistingQueue();
+  }, [eventId]);
+
+  // Update the handleTicketSelect function to store the selection
   const handleTicketSelect = (ticketType) => {
     setSelectedTicketType(ticketType);
     setQuantity(1);
+    
+    // Store the selected ticket in localStorage to preserve across queue process
+    if (ticketType && eventId) {
+      try {
+        localStorage.setItem(`selected_ticket_${eventId}`, JSON.stringify({
+          _id: ticketType._id,
+          name: ticketType.name,
+          price: ticketType.price,
+          currency: ticketType.currency,
+          quantity: ticketType.quantity,
+          quantitySold: ticketType.quantitySold
+        }));
+      } catch (err) {
+        console.error('Error saving ticket selection to localStorage:', err);
+        // Continue even if storage fails
+      }
+    }
+    
+    // Check if this is a high-demand ticket that might need queuing
+    const shouldQueueEarly = ticketType.quantitySold > 10;
+    
+    if (shouldQueueEarly && !showQueueModal && !isQueueReady) {
+      // Prepare to join queue in the background
+      const userData = !isAuthenticated ? {} : {};
+      
+      queueService.joinQueue(eventId, userData)
+        .then(queueResponse => {
+          if (queueResponse.success) {
+            setQueueInfo(queueResponse.data);
+            // Don't show the modal yet, just prepare the queue position
+            
+            // If user is already at the front of the queue, mark as ready
+            if (queueResponse.data.position <= 1 || queueResponse.data.isProcessing) {
+              setIsQueueReady(true);
+            }
+          }
+        })
+        .catch(err => {
+          console.error('Error joining queue early:', err);
+          // Silently fail - we'll try again when user clicks purchase
+        });
+    }
   };
 
   // Handle quantity change
@@ -159,6 +245,13 @@ const EventDetails = () => {
         // Show success message
         setPurchaseSuccess(true);
         
+        // Clear stored ticket data since purchase was successful
+        try {
+          localStorage.removeItem(`selected_ticket_${eventId}`);
+        } catch (err) {
+          console.error('Error clearing stored ticket data:', err);
+        }
+        
         // Get the first ticket from the response to pass to success page
         const ticketData = purchaseResponse && purchaseResponse.data && purchaseResponse.data.length > 0 
           ? purchaseResponse.data[0] 
@@ -170,7 +263,7 @@ const EventDetails = () => {
             state: { 
               ticketId: ticketData?._id,
               ticketNumber: ticketData?.ticketNumber,
-              eventTitle: event.title
+              eventTitle: event?.title || 'Event'
             } 
           });
         }, 1000);
@@ -183,9 +276,25 @@ const EventDetails = () => {
     } finally {
       setIsProcessing(false);
     }
-  }, [eventId, guestInfo, isAuthenticated, navigate, quantity, selectedTicketType, event]);
+  }, [eventId, guestInfo, isAuthenticated, navigate, quantity, selectedTicketType, event, queueInfo]);
 
-  // Handle ticket purchase
+  // Add effect to check for saved ticket selection when component mounts
+  useEffect(() => {
+    if (!selectedTicketType && eventId) {
+      try {
+        const savedTicket = localStorage.getItem(`selected_ticket_${eventId}`);
+        if (savedTicket) {
+          const ticketData = JSON.parse(savedTicket);
+          setSelectedTicketType(ticketData);
+        }
+      } catch (err) {
+        console.error('Error loading saved ticket selection:', err);
+        // Continue without restored selection
+      }
+    }
+  }, [eventId, selectedTicketType]);
+
+  // Update the handlePurchaseTicket function
   const handlePurchaseTicket = () => {
     if (!selectedTicketType) return;
     
@@ -193,6 +302,99 @@ const EventDetails = () => {
     setPurchaseError(null);
     
     try {
+      // For free tickets, we might still want to queue if it's a high-demand event
+      const isFreeTicket = selectedTicketType.price === 0;
+      
+      // Check if we need to queue (for popular events or during high traffic)
+      const shouldQueue = selectedTicketType.quantitySold > 10; // Example condition
+      
+      if (shouldQueue && !isQueueReady) {
+        // Join the queue first if not already in queue
+        const userData = !isAuthenticated ? {
+          name: guestInfo.name || '',
+          email: guestInfo.email || ''
+        } : {};
+        
+        // If we already have queue info but not ready, show the modal
+        if (queueInfo && !showQueueModal) {
+          setShowQueueModal(true);
+          setIsProcessing(false);
+          return;
+        }
+        
+        queueService.joinQueue(eventId, userData)
+          .then(queueResponse => {
+            if (queueResponse.success) {
+              setQueueInfo(queueResponse.data);
+              setShowQueueModal(true);
+              setIsProcessing(false);
+              
+              // If user is already at the front of the queue, allow purchase
+              if (queueResponse.data.position <= 1 || queueResponse.data.isProcessing) {
+                setIsQueueReady(true);
+                
+                // For free tickets, we can proceed immediately when ready
+                if (isFreeTicket && queueResponse.data.isProcessing) {
+                  setTimeout(() => {
+                    processFreeTicketPurchase();
+                  }, 1500);
+                }
+              }
+            }
+          })
+          .catch(err => {
+            console.error('Error joining queue:', err);
+            // Continue with purchase anyway if queue fails
+            if (isFreeTicket) {
+              processFreeTicketPurchase();
+            } else {
+              processPurchase();
+            }
+          });
+        
+        return; // Stop here until queue is ready
+      }
+      
+      // If no queue needed or queue is ready, proceed with purchase
+      if (isFreeTicket) {
+        processFreeTicketPurchase();
+      } else {
+        processPurchase();
+      }
+      
+    } catch (err) {
+      console.error('Error initiating purchase:', err);
+      setPurchaseError(err.response?.data?.message || 'Failed to process request. Please try again.');
+      setIsProcessing(false);
+    }
+  };
+  
+  // Process the actual purchase (after queue if needed)
+  const processPurchase = () => {
+    try {
+      // Try to recover the selected ticket if it's null
+      if (!selectedTicketType) {
+        try {
+          const savedTicket = localStorage.getItem(`selected_ticket_${eventId}`);
+          if (savedTicket) {
+            const ticketData = JSON.parse(savedTicket);
+            setSelectedTicketType(ticketData);
+            // Continue with the recovered ticket
+            setTimeout(() => {
+              processPurchase();
+            }, 100);
+            return;
+          }
+        } catch (err) {
+          console.error('Error recovering ticket selection:', err);
+          // Continue to error handling below
+        }
+        
+        setPurchaseError('Ticket selection was lost. Please try again.');
+        setIsProcessing(false);
+        return;
+      }
+      
       // Check if the ticket is free (price = 0)
       const isFreeTicket = selectedTicketType.price === 0;
       
@@ -234,32 +436,79 @@ const EventDetails = () => {
       
       // Initialize Paystack payment with proper function definitions
       const handler = window.PaystackPop.setup({
-        key: 'pk_live_f75e7fc5c652583410d16789fc9955853373fc8c', // Paystack public key
+        key: 'pk_test_c2b42dd5ca88bee2b49fba8bec4ca46e54525f09', // Paystack public key
         email: userEmail,
         amount: totalAmount,
-        currency: selectedTicketType.currency || "USD",
+        currency: selectedTicketType.currency || "NGN",
         callback: (response) => {
           handlePaymentSuccess(response, ticketTypeId);
+          
+          // Complete queue processing if in a queue
+          if (queueInfo && queueInfo.userId) {
+            queueService.completeProcessing(eventId, queueInfo.userId).catch(err => {
+              console.error('Error completing queue processing:', err);
+            });
+          }
         },
         onClose: () => {
           // Handle payment cancellation
           setPurchaseError('Payment was cancelled. Please try again to complete your purchase.');
           setIsProcessing(false);
+          
+          // If user was in queue, they'll need to try again
+          if (showQueueModal) {
+            setIsQueueReady(false);
+          }
         }
       });
       
       // Open the Paystack payment modal
       handler.openIframe();
     } catch (err) {
-      console.error('Error initiating payment:', err);
+      console.error('Error processing payment:', err);
       setPurchaseError(err.response?.data?.message || 'Failed to process payment. Please try again.');
       setIsProcessing(false);
     }
   };
   
+  // Handle queue ready callback
+  const handleQueueReady = (queueData) => {
+    setIsQueueReady(true);
+    // Automatically proceed with purchase when it's the user's turn
+    if (queueData.isProcessing && selectedTicketType) {
+      // Wait a moment to allow the user to see they're ready
+      setTimeout(() => {
+        processPurchase();
+      }, 1500);
+    }
+  };
+
   // Process free ticket purchase
   const processFreeTicketPurchase = async () => {
     try {
+      // Try to recover the selected ticket if it's null
+      if (!selectedTicketType) {
+        try {
+          const savedTicket = localStorage.getItem(`selected_ticket_${eventId}`);
+          if (savedTicket) {
+            const ticketData = JSON.parse(savedTicket);
+            setSelectedTicketType(ticketData);
+            // Continue with the recovered ticket
+            setTimeout(() => {
+              processFreeTicketPurchase();
+            }, 100);
+            return;
+          }
+        } catch (err) {
+          console.error('Error recovering ticket selection:', err);
+          // Continue to error handling below
+        }
+        
+        setPurchaseError('Ticket selection was lost. Please try again.');
+        setIsProcessing(false);
+        return;
+      }
+      
       const ticketTypeId = selectedTicketType._id;
       
       // These checks are now redundant since we check in handlePurchaseTicket,
@@ -314,8 +563,25 @@ const EventDetails = () => {
         // Show success message
         setPurchaseSuccess(true);
         
+        // Clear stored ticket data since purchase was successful
+        try {
+          localStorage.removeItem(`selected_ticket_${eventId}`);
+        } catch (err) {
+          console.error('Error clearing stored ticket data:', err);
+        }
+        
         // Get the first ticket from the response to pass to success page
         const ticketData = response && response.data && response.data.length > 0 ? response.data[0] : null;
+        
+        // Complete queue processing if in a queue
+        if (queueInfo && queueInfo.userId) {
+          queueService.completeProcessing(eventId, queueInfo.userId).catch(err => {
+            console.error('Error completing queue processing:', err);
+          });
+        }
+        
+        // Close the queue modal after successful purchase
+        setShowQueueModal(false);
         
         // Redirect to success page with ticket info
         setTimeout(() => {
@@ -323,7 +589,7 @@ const EventDetails = () => {
             state: { 
               ticketId: ticketData?._id,
               ticketNumber: ticketData?.ticketNumber,
-              eventTitle: event.title
+              eventTitle: event?.title || 'Event'
             } 
           });
         }, 1000);
@@ -927,8 +1193,59 @@ const EventDetails = () => {
           </motion.div>
         </div>
       </div>
+      
+      {/* Queue Modal */}
+      {showQueueModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6"
+          >
+            <h3 className="text-lg font-bold mb-4 text-gray-900 dark:text-white text-center">
+              Ticket Purchase Queue
+            </h3>
+            
+            <QueueStatus 
+              eventId={eventId}
+              queueId={queueInfo?.queueId}
+              onReady={handleQueueReady}
+              autoRefresh={true}
+              refreshInterval={5000}
+            />
+            
+            <div className="mt-6">
+              {selectedTicketType ? (
+                <button
+                  onClick={selectedTicketType.price === 0 ? processFreeTicketPurchase : processPurchase}
+                  className={`w-full btn ${isQueueReady ? 'btn-primary' : 'btn-disabled bg-gray-300 dark:bg-gray-700 cursor-not-allowed'}`}
+                  disabled={isProcessing || !isQueueReady}
+                >
+                  {isProcessing ? 'Processing...' : isQueueReady ? 'Continue to Purchase' : 'Waiting in Queue...'}
+                </button>
+              ) : (
+                <div className="text-center text-amber-600 dark:text-amber-400 mb-3">
+                  <p>Your ticket selection was lost. Please close this window and select a ticket again.</p>
+                </div>
+              )}
+            </div>
+            
+            <div className="mt-4 text-center">
+              <button
+                onClick={() => {
+                  setShowQueueModal(false);
+                  // Don't reset queue info or ready status - keep for next attempt
+                }}
+                className="text-sm text-gray-600 dark:text-gray-400 hover:underline"
+              >
+                {isQueueReady ? 'Close' : 'I\'ll come back later'}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 };
 
-export default EventDetails; 
+export default EventDetails;

@@ -1159,32 +1159,31 @@ exports.purchaseResaleTicket = async (req, res) => {
 
     // Update ticket ownership and resale status
     const previousOwnerId = ticket.user;
+    ticket.previousOwner = previousOwnerId; // Store the previous owner ID
     ticket.user = req.user.id;
     ticket.isForResale = false;
-    ticket.resalePrice = undefined;
+    ticket.resalePurchaseDate = Date.now();
+    
+    // Note: Don't clear the resalePrice as we need it for revenue calculation
     ticket.resaleDescription = undefined;
     ticket.resaleListingDate = undefined;
-    ticket.resalePurchaseDate = Date.now();
-    ticket.previousOwner = previousOwnerId;
 
     await ticket.save();
 
-    // Notify previous owner via email if available
+    // Update purchase count and record transaction
+    // This would be where you'd record the resale transaction in a real system
+
+    // Send notification to previous owner about the sale
     if (previousOwner && previousOwner.email) {
       try {
         await sendEmail({
-          to: previousOwner.email,
-          subject: 'Your Ticket Has Been Sold',
-          html: `
-            <h1>Ticket Sale Confirmation</h1>
-            <p>Your ticket for ${ticket.event.title} has been sold.</p>
-            <p>Ticket Number: ${ticket.ticketNumber}</p>
-            <p>Sale Price: $${req.body.resalePrice}</p>
-            <p>Thank you for using our platform!</p>
-          `,
+          email: previousOwner.email,
+          subject: 'Your ticket has been sold',
+          message: `Your ticket for ${ticket.event.title} has been sold for ${ticket.resalePrice} ${ticket.paymentCurrency}.`
         });
       } catch (emailError) {
-        console.error('Error sending ticket sale email:', emailError);
+        console.error('Failed to send email notification:', emailError);
+        // Don't fail the whole process if email fails
       }
     }
 
@@ -1195,6 +1194,123 @@ exports.purchaseResaleTicket = async (req, res) => {
     });
   } catch (error) {
     console.error('Purchase resale ticket error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * @desc    Get tickets listed for resale by the current user
+ * @route   GET /api/tickets/user/resale-listings
+ * @access  Private
+ */
+exports.getUserResaleListings = async (req, res) => {
+  try {
+    // Find tickets that belong to the user and are listed for resale
+    const tickets = await Ticket.find({ 
+      user: req.user.id,
+      isForResale: true
+    })
+    .populate({
+      path: 'event',
+      select: 'title startDate endDate location isVirtual featuredImage ticketTypes',
+    })
+    .populate({
+      path: 'ticketType',
+      select: '_id',
+    })
+    .sort({ resaleListingDate: -1 });
+
+    // Process tickets to include ticket type information
+    const processedTickets = tickets.map(ticket => {
+      const ticketData = ticket.toObject();
+      
+      // Find the ticket type in the event's ticketTypes array using the ticketType ID reference
+      if (ticketData.event && ticketData.event.ticketTypes && ticketData.ticketType) {
+        const foundTicketType = ticketData.event.ticketTypes.find(
+          type => type._id.toString() === ticketData.ticketType._id.toString()
+        );
+        
+        if (foundTicketType) {
+          ticketData.ticketTypeInfo = foundTicketType;
+        }
+      }
+      
+      return ticketData;
+    });
+
+    res.status(200).json({
+      success: true,
+      count: processedTickets.length,
+      data: processedTickets,
+    });
+  } catch (error) {
+    console.error('Get user resale listings error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * @desc    Get tickets sold by the user through resale
+ * @route   GET /api/tickets/user/resale-sold
+ * @access  Private
+ */
+exports.getUserResaleSold = async (req, res) => {
+  try {
+    // Find tickets that had the current user as previous owner (sold through resale)
+    const tickets = await Ticket.find({ 
+      previousOwner: req.user.id,
+      resalePurchaseDate: { $exists: true }
+    })
+    .populate({
+      path: 'event',
+      select: 'title startDate endDate location isVirtual featuredImage ticketTypes',
+    })
+    .populate({
+      path: 'ticketType',
+      select: '_id',
+    })
+    .populate('user', 'name')
+    .sort({ resalePurchaseDate: -1 });
+
+    // Process tickets to include ticket type information
+    const processedTickets = tickets.map(ticket => {
+      const ticketData = ticket.toObject();
+      
+      // Find the ticket type in the event's ticketTypes array using the ticketType ID reference
+      if (ticketData.event && ticketData.event.ticketTypes && ticketData.ticketType) {
+        const foundTicketType = ticketData.event.ticketTypes.find(
+          type => type._id.toString() === ticketData.ticketType._id.toString()
+        );
+        
+        if (foundTicketType) {
+          ticketData.ticketTypeInfo = foundTicketType;
+        }
+      }
+      
+      return ticketData;
+    });
+
+    // Calculate total revenue from resale tickets
+    const totalRevenue = processedTickets.reduce((sum, ticket) => {
+      return sum + (ticket.resalePrice || 0);
+    }, 0);
+
+    res.status(200).json({
+      success: true,
+      count: processedTickets.length,
+      totalRevenue,
+      data: processedTickets,
+    });
+  } catch (error) {
+    console.error('Get user resale sold error:', error);
     res.status(500).json({
       success: false,
       message: 'Server error',
