@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FiCalendar, FiMapPin, FiClock, FiDownload, FiShare2, FiTrash2, FiDollarSign } from 'react-icons/fi';
+import { FiCalendar, FiMapPin, FiClock, FiDownload, FiShare2, FiTrash2, FiDollarSign, FiInfo } from 'react-icons/fi';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import QRCode from 'react-qr-code';
 import ticketService from '../services/ticketService';
@@ -79,6 +79,17 @@ const TicketDetails = () => {
       hour: '2-digit',
       minute: '2-digit',
     });
+  };
+
+  // Get image URL helper function
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80';
+    
+    if (imagePath.startsWith('http')) {
+      return imagePath;
+    }
+    
+    return `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}${imagePath}`;
   };
 
   // Handle ticket download
@@ -333,6 +344,21 @@ const TicketDetails = () => {
             )}
           </div>
 
+          {/* Event Image */}
+          {ticket.event?.featuredImage && (
+            <div className="w-full h-48 overflow-hidden">
+              <img 
+                src={getImageUrl(ticket.event.featuredImage)} 
+                alt={ticket.event?.title || 'Event'} 
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = "https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80";
+                }}
+              />
+            </div>
+          )}
+
           {/* Ticket Body */}
           <div className="p-6">
             <div className="flex flex-col md:flex-row gap-6">
@@ -413,15 +439,30 @@ const TicketDetails = () => {
                       {ticket.ticketTypeInfo?.price} {ticket.ticketTypeInfo?.currency}
                     </p>
                   </div>
+                  
+                  {ticket.event?.description && (
+                    <div>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center">
+                        <FiInfo className="mr-1" /> Event Description
+                      </p>
+                      <p className="text-gray-900 dark:text-white mt-1 text-sm">
+                        {ticket.event.description.length > 100 
+                          ? `${ticket.event.description.substring(0, 100)}...` 
+                          : ticket.event.description}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
 
             {/* Actions */}
             <div className="mt-8 border-t border-gray-200 dark:border-gray-700 pt-6 flex flex-wrap gap-3">
-              <Link to={`/events/${ticket.event?._id}`} className="btn btn-outline-primary">
-                View Event
-              </Link>
+              {ticket.event?._id && (
+                <Link to={`/events/${ticket.event._id}`} className="btn btn-outline-primary">
+                  View Event
+                </Link>
+              )}
               
               {ticket.status !== 'used' && ticket.status !== 'cancelled' && (
                 <>
@@ -471,6 +512,16 @@ const TicketDetails = () => {
                   {isLoading ? 'Deleting...' : 'Delete Ticket'}
                 </button>
               )}
+            </div>
+            
+            {/* Additional Actions */}
+            <div className="mt-4 flex flex-wrap gap-3">
+              <Link to="/dashboard/tickets" className="btn btn-outline-secondary">
+                Back to My Tickets
+              </Link>
+              <Link to="/dashboard" className="btn btn-outline-secondary">
+                Dashboard
+              </Link>
             </div>
           </div>
         </motion.div>
