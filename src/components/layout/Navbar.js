@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiMenu, FiX, FiMoon, FiSun, FiUser, FiPlus, FiSettings } from 'react-icons/fi';
+import { FiMenu, FiX, FiMoon, FiSun, FiUser, FiPlus, FiSettings, FiHeart } from 'react-icons/fi';
 import { useTheme } from '../../App';
 import { useAuth } from '../../context/AuthContext';
 
@@ -109,6 +109,19 @@ const Navbar = () => {
               >
                 Resale Tickets
               </Link>
+              {isAuthenticated && (
+                <Link
+                  to="/saved-events"
+                  className={`px-3 py-2 rounded-md text-sm font-medium ${
+                    location.pathname === '/saved-events'
+                      ? 'text-primary-600 dark:text-primary-400'
+                      : 'text-gray-700 hover:text-primary-600 dark:text-gray-300 dark:hover:text-primary-400'
+                  } transition-colors duration-200`}
+                >
+                  <FiHeart className="inline mr-1" />
+                  Saved
+                </Link>
+              )}
               {isAuthenticated ? (
                 <>
                   <Link
@@ -273,6 +286,19 @@ const Navbar = () => {
               >
                 Resale Tickets
               </Link>
+              {isAuthenticated && (
+                <Link
+                  to="/saved-events"
+                  className={`block px-3 py-2 rounded-md text-base font-medium ${
+                    location.pathname === '/saved-events'
+                      ? 'text-primary-600 dark:text-primary-400'
+                      : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-dark-200'
+                  }`}
+                >
+                  <FiHeart className="inline mr-1" />
+                  Saved Events
+                </Link>
+              )}
               {isAuthenticated ? (
                 <>
                   <Link

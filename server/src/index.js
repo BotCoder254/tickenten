@@ -20,6 +20,7 @@ const eventRoutes = require('./routes/event.routes');
 const userRoutes = require('./routes/user.routes');
 const ticketRoutes = require('./routes/ticket.routes');
 const queueRoutes = require('./routes/queue.routes');
+const paypalRoutes = require('./routes/paypal.routes');
 
 // Create Express app
 const app = express();
@@ -161,6 +162,7 @@ app.use('/api/events', eventRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/tickets', ticketRoutes);
 app.use('/api/queue', queueRoutes); // Add queue routes
+app.use('/api/paypal', paypalRoutes); // Add PayPal routes
 
 // Add a health check endpoint
 app.get('/api/health', (req, res) => {

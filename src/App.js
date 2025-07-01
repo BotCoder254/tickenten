@@ -21,6 +21,7 @@ import ResaleTickets from './pages/ResaleTickets';
 import UserProfile from './pages/UserProfile';
 import NotFound from './pages/NotFound';
 import Events from './pages/Events';
+import SavedEvents from './pages/SavedEvents';
 import About from './pages/About';
 import Contact from './pages/Contact';
 import Privacy from './pages/Privacy';
@@ -98,6 +99,7 @@ function App() {
                   <Route path="dashboard/events" element={<Dashboard />} />
                   <Route path="tickets/:ticketId" element={<TicketDetails />} />
                   <Route path="profile" element={<UserProfile />} />
+                  <Route path="saved-events" element={<SavedEvents />} />
                 </Route>
                 
                 {/* 404 route */}

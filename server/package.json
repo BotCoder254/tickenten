@@ -12,6 +12,8 @@
     "test:email": "node src/tests/email-test.js"
   },
   "dependencies": {
+    "@paypal/checkout-server-sdk": "^1.0.3",
+    "@paypal/paypal-js": "^8.2.0",
     "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",

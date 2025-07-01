@@ -1071,3 +1071,33 @@ exports.unlikeEvent = async (req, res) => {
     });
   }
 };
+
+/**
+ * @desc    Get all events liked/saved by the current user
+ * @route   GET /api/events/saved
+ * @access  Private
+ */
+exports.getSavedEvents = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    // Find all events that have the current user in their likedBy array
+    const events = await Event.find({ 
+      likedBy: userId,
+      status: 'published' 
+    }).populate('creator', 'name email avatar');
+
+    res.status(200).json({
+      success: true,
+      count: events.length,
+      data: events,
+    });
+  } catch (error) {
+    console.error('Get saved events error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+      error: error.message,
+    });
+  }
+};

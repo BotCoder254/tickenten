@@ -74,6 +74,13 @@ router.get('/search', optionalProtect, eventController.searchEvents);
 router.get('/user', protect, eventController.getUserEvents);
 
 /**
+ * @route   GET /api/events/saved
+ * @desc    Get events saved/liked by the current user
+ * @access  Private
+ */
+router.get('/saved', protect, eventController.getSavedEvents);
+
+/**
  * @route   GET /api/events/:id
  * @desc    Get event by ID
  * @access  Public

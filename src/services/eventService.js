@@ -320,6 +320,26 @@ const eventService = {
   },
 
   /**
+   * Get all events liked/saved by the current user
+   * @returns {Promise} - API response with saved events
+   */
+  getSavedEvents: async () => {
+    try {
+      const response = await api.get('/events/saved');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching saved events:', error);
+      // Return a standardized error response
+      return {
+        success: false,
+        data: [],
+        message: error.response?.data?.message || 'Failed to fetch saved events',
+        error: error
+      };
+    }
+  },
+
+  /**
    * Publish an event
    * @param {string} eventId - Event ID
    * @returns {Promise} - API response

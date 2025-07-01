@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
-import { FaTag, FaUndo } from 'react-icons/fa';
+import React, { useState, useEffect, useRef } from 'react';
+import { FaTag, FaUndo, FaPaypal, FaCreditCard } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../App';
 import ticketService from '../services/ticketService';
+import paypalService from '../services/paypalService';
 
 const TicketResale = ({ ticket, onResaleComplete }) => {
   const { isAuthenticated, user } = useAuth();
@@ -13,6 +14,11 @@ const TicketResale = ({ ticket, onResaleComplete }) => {
   const [description, setDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('card');
+  const [paypalLoaded, setPaypalLoaded] = useState(false);
+  
+  // Ref for the PayPal button container
+  const paypalButtonRef = useRef(null);
 
   // Check if the ticket is valid for resale
   const canResell = ticket && 
@@ -23,6 +29,32 @@ const TicketResale = ({ ticket, onResaleComplete }) => {
 
   // Check if ticket is already listed for resale
   const isListed = ticket && ticket.isForResale;
+
+  // Update useEffect to load PayPal script
+  useEffect(() => {
+    if (isResaleMode && paymentMethod === 'paypal' && !paypalLoaded) {
+      const loadPayPalScript = async () => {
+        try {
+          // Get client ID from our server
+          const config = await paypalService.getClientConfig();
+          if (config && config.success && config.data && config.data['client-id']) {
+            await paypalService.loadScript(config.data['client-id']);
+            setPaypalLoaded(true);
+          } else {
+            console.error('Invalid PayPal configuration from server');
+            toast.error('PayPal is not available. Please use card payment instead.');
+            setPaymentMethod('card');
+          }
+        } catch (error) {
+          console.error('Error loading PayPal script:', error);
+          toast.error('Failed to load PayPal. Please try again later.');
+          setPaymentMethod('card');
+        }
+      };
+      
+      loadPayPalScript();
+    }
+  }, [isResaleMode, paymentMethod, paypalLoaded]);
 
   const validateForm = () => {
     if (!price || isNaN(price) || parseFloat(price) <= 0) {
@@ -41,17 +73,23 @@ const TicketResale = ({ ticket, onResaleComplete }) => {
       setIsSubmitting(true);
       const resaleData = {
         resalePrice: parseFloat(price),
-        description: description.trim() || 'Ticket for resale'
+        description: description.trim() || 'Ticket for resale',
+        paymentMethod: paymentMethod
       };
 
-      await ticketService.listTicketForResale(ticket._id, resaleData);
-      toast.success('Your ticket has been listed for resale');
-      setIsResaleMode(false);
-      setPrice('');
-      setDescription('');
+      const response = await ticketService.listTicketForResale(ticket._id, resaleData);
       
-      if (onResaleComplete) {
-        onResaleComplete();
+      if (response && response.success) {
+        toast.success('Your ticket has been listed for resale');
+        setIsResaleMode(false);
+        setPrice('');
+        setDescription('');
+        
+        if (onResaleComplete) {
+          onResaleComplete();
+        }
+      } else {
+        toast.error(response?.message || 'Failed to list ticket for resale');
       }
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to list ticket for resale');
@@ -64,11 +102,16 @@ const TicketResale = ({ ticket, onResaleComplete }) => {
   const handleCancelResale = async () => {
     try {
       setIsSubmitting(true);
-      await ticketService.cancelTicketResale(ticket._id);
-      toast.success('Your ticket has been removed from resale');
+      const response = await ticketService.cancelTicketResale(ticket._id);
       
-      if (onResaleComplete) {
-        onResaleComplete();
+      if (response && response.success) {
+        toast.success('Your ticket has been removed from resale');
+        
+        if (onResaleComplete) {
+          onResaleComplete();
+        }
+      } else {
+        toast.error(response?.message || 'Failed to cancel ticket resale');
       }
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to cancel ticket resale');
@@ -76,6 +119,12 @@ const TicketResale = ({ ticket, onResaleComplete }) => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+  
+  // Handle payment method change
+  const handlePaymentMethodChange = (method) => {
+    setPaymentMethod(method);
+    setPaypalLoaded(false); // Reset PayPal loaded state when changing payment methods
   };
 
   if (!canResell) {
@@ -91,6 +140,11 @@ const TicketResale = ({ ticket, onResaleComplete }) => {
             <p className="text-sm text-gray-600 dark:text-gray-300">
               This ticket is currently listed for ${ticket.resalePrice?.toFixed(2) || '0.00'}
             </p>
+            {ticket.paymentMethod && (
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Accepted payment: {ticket.paymentMethod === 'paypal' ? 'PayPal' : 'Card Payment'}
+              </p>
+            )}
           </div>
           <button
             onClick={handleCancelResale}
@@ -141,13 +195,45 @@ const TicketResale = ({ ticket, onResaleComplete }) => {
             />
           </div>
           
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Accepted Payment Method
+            </label>
+            <div className="space-y-2">
+              <label className="flex items-center space-x-2 p-2 border rounded hover:bg-gray-100 dark:hover:bg-dark-200 cursor-pointer">
+                <input
+                  type="radio"
+                  value="card"
+                  checked={paymentMethod === 'card'}
+                  onChange={() => handlePaymentMethodChange('card')}
+                  className="h-4 w-4"
+                />
+                <FaCreditCard className="text-gray-600 dark:text-gray-400" />
+                <span className="text-gray-700 dark:text-gray-300">Card Payment (Paystack)</span>
+              </label>
+              
+              <label className="flex items-center space-x-2 p-2 border rounded hover:bg-gray-100 dark:hover:bg-dark-200 cursor-pointer">
+                <input
+                  type="radio"
+                  value="paypal"
+                  checked={paymentMethod === 'paypal'}
+                  onChange={() => handlePaymentMethodChange('paypal')}
+                  className="h-4 w-4"
+                />
+                <FaPaypal className="text-blue-600" />
+                <span className="text-gray-700 dark:text-gray-300">PayPal</span>
+              </label>
+            </div>
+          </div>
+          
           <div className="flex flex-col sm:flex-row gap-3">
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || (paymentMethod === 'paypal' && !paypalLoaded)}
               className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-md disabled:opacity-50"
             >
               {isSubmitting ? 'Processing...' : 'List for Resale'}
+              {paymentMethod === 'paypal' && !paypalLoaded && ' (Loading PayPal...)'}
             </button>
             <button
               type="button"

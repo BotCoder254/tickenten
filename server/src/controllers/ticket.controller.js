@@ -1136,24 +1136,6 @@ exports.purchaseResaleTicket = async (req, res) => {
       });
     }
 
-    // Check if user is trying to buy their own ticket
-    if (ticket.user.toString() === req.user.id) {
-      return res.status(400).json({
-        success: false,
-        message: 'You cannot purchase your own resale ticket',
-      });
-    }
-
-    const { paymentMethod, paymentReference } = req.body;
-
-    // For paid tickets, verify payment information is provided
-    if (!paymentMethod || !paymentReference) {
-      return res.status(400).json({
-        success: false,
-        message: 'Payment information is required for resale ticket purchase',
-      });
-    }
-
     // Get the previous owner for notification purposes
     const previousOwner = await User.findById(ticket.user);
 

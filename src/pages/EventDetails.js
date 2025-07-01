@@ -1,13 +1,15 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FiCalendar, FiMapPin, FiClock, FiTag, FiShare2, FiHeart, FiTrash2, FiMail, FiUser, FiPhone } from 'react-icons/fi';
+import { FiCalendar, FiMapPin, FiClock, FiTag, FiShare2, FiHeart, FiTrash2, FiMail, FiUser, FiPhone, FiCheck, FiCopy } from 'react-icons/fi';
 import { useQuery } from '@tanstack/react-query';
 import eventService from '../services/eventService';
 import ticketService from '../services/ticketService';
 import queueService from '../services/queueService';
+import paypalService from '../services/paypalService';
 import QueueStatus from '../components/QueueStatus';
 import { useAuth } from '../context/AuthContext';
+import { toast } from 'react-toastify';
 
 // Add the getImageUrl helper function
 const getImageUrl = (imagePath) => {
@@ -37,6 +39,14 @@ const EventDetails = () => {
   const [showQueueModal, setShowQueueModal] = useState(false);
   const [queueInfo, setQueueInfo] = useState(null);
   const [isQueueReady, setIsQueueReady] = useState(false);
+  
+  // Share modal state
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('paystack'); // 'paystack' or 'paypal'
+
+  const paypalButtonRef = useRef(null);
+  const [paypalButtonRendered, setPaypalButtonRendered] = useState(false);
 
   const { data: event, isLoading, error } = useQuery({
     queryKey: ['event', eventId],
@@ -185,32 +195,152 @@ const EventDetails = () => {
     setGuestInfo(prev => ({ ...prev, [name]: value }));
   };
 
-  // Add this useEffect for loading Paystack script
+  // Add this useEffect for loading PayPal SDK
   useEffect(() => {
-    // Load the Paystack script when the component mounts
-    const script = document.createElement('script');
-    script.src = 'https://js.paystack.co/v1/inline.js';
-    script.async = true;
-    document.body.appendChild(script);
+    // Only load the PayPal script if a ticket is selected and it's not free
+    if (selectedTicketType && selectedTicketType.price > 0 && paymentMethod === 'paypal') {
+      const loadPayPalScript = async () => {
+        try {
+          // Get client ID from our server
+          const config = await paypalService.getClientConfig();
+          if (config && config.success && config.data && config.data['client-id']) {
+            await paypalService.loadScript(config.data['client-id']);
+            
+            // Render PayPal buttons when the script is loaded
+            if (!paypalButtonRendered && window.paypal) {
+              renderPayPalButtons();
+            }
+          } else {
+            console.error('Invalid PayPal configuration from server');
+            setPurchaseError('PayPal is not available. Please try another payment method.');
+          }
+        } catch (error) {
+          console.error('Error loading PayPal script:', error);
+          setPurchaseError('Failed to load PayPal. Please try another payment method.');
+        }
+      };
+      
+      loadPayPalScript();
+    }
+  }, [selectedTicketType, paymentMethod, paypalButtonRendered]);
+  
+  // Function to render PayPal buttons
+  const renderPayPalButtons = () => {
+    if (!window.paypal || !paypalButtonRef.current || !selectedTicketType) {
+      return;
+    }
     
-    // Cleanup function to remove the script when component unmounts
-    return () => {
-      if (document.body.contains(script)) {
-        document.body.removeChild(script);
+    // Clear any existing buttons
+    paypalButtonRef.current.innerHTML = '';
+    
+    const totalAmount = selectedTicketType.price * quantity;
+    
+    try {
+      // Create a container with a unique ID to help prevent zoid errors
+      const containerId = `paypal-btn-container-${Date.now()}`;
+      paypalButtonRef.current.innerHTML = `<div id="${containerId}"></div>`;
+      const container = document.getElementById(containerId);
+      
+      if (!container) {
+        console.error('Failed to create container for PayPal buttons');
+        return;
       }
-    };
-  }, []);
-
-  // Define the payment success callback outside the handlePurchaseTicket function
+      
+      window.paypal.Buttons({
+        // Create order
+        createOrder: (data, actions) => {
+          return actions.order.create({
+            purchase_units: [{
+              amount: {
+                currency_code: selectedTicketType.currency || 'USD',
+                value: totalAmount.toFixed(2)
+              },
+              description: `Ticket for ${event.title}`
+            }]
+          });
+        },
+        
+        // On approval
+        onApprove: async (data, actions) => {
+          try {
+            setIsProcessing(true);
+            
+            // Capture the order
+            const orderDetails = await actions.order.capture();
+            
+            // Process the ticket purchase
+            const ticketTypeId = selectedTicketType._id;
+            await handlePaymentSuccess({
+              status: 'success',
+              reference: orderDetails.id,
+              trans: orderDetails.id
+            }, ticketTypeId);
+            
+          } catch (err) {
+            console.error('PayPal approval error:', err);
+            setPurchaseError('Error processing PayPal payment. Please try again.');
+            setIsProcessing(false);
+          }
+        },
+        
+        // On error
+        onError: (err) => {
+          console.error('PayPal error:', err);
+          setPurchaseError('PayPal encountered an error. Please try again or use a different payment method.');
+          setIsProcessing(false);
+        },
+        
+        // On cancel
+        onCancel: () => {
+          setPurchaseError('Payment was cancelled. Please try again to complete your purchase.');
+          setIsProcessing(false);
+        }
+      }).render(container).catch(err => {
+        console.error('PayPal render error:', err);
+        setPurchaseError('Failed to initialize PayPal. Please try a different payment method.');
+      });
+      
+      setPaypalButtonRendered(true);
+    } catch (err) {
+      console.error('Error rendering PayPal buttons:', err);
+      setPurchaseError('Failed to initialize PayPal. Please try again later.');
+    }
+  };
+  
+  // Update the handlePaymentMethodChange function
+  const handlePaymentMethodChange = (method) => {
+    setPaymentMethod(method);
+    
+    // Reset any purchase errors
+    setPurchaseError(null);
+    
+    // Reset PayPal button rendered state when changing payment methods
+    if (method === 'paypal') {
+      setPaypalButtonRendered(false);
+      
+      // Add a slight delay before re-rendering the PayPal buttons
+      // This helps prevent the "zoid destroyed all components" error
+      setTimeout(() => {
+        if (window.paypal && paypalButtonRef.current) {
+          renderPayPalButtons();
+        }
+      }, 100);
+    }
+  };
+  
+  // Update the handlePaymentSuccess callback to support both Paystack and PayPal
   const handlePaymentSuccess = useCallback(async (response, ticketTypeId) => {
     try {
       if (response.status === 'success') {
-        // Prepare payment info from Paystack
+        // Determine the payment method
+        const isPayPal = !response.trans && response.reference.startsWith('order_');
+        
+        // Prepare payment info
         const paymentInfo = {
-          method: "Paystack",
+          method: isPayPal ? "PayPal" : "Paystack",
           currency: selectedTicketType?.currency || "USD",
           reference: response.reference,
-          trans: response.trans
+          trans: response.trans || response.reference
         };
         
         // Process the actual ticket purchase with payment info
@@ -276,7 +406,7 @@ const EventDetails = () => {
     } finally {
       setIsProcessing(false);
     }
-  }, [eventId, guestInfo, isAuthenticated, navigate, quantity, selectedTicketType, event, queueInfo]);
+  }, [eventId, guestInfo, isAuthenticated, navigate, quantity, selectedTicketType, event]);
 
   // Add effect to check for saved ticket selection when component mounts
   useEffect(() => {
@@ -304,6 +434,13 @@ const EventDetails = () => {
     try {
       // For free tickets, we might still want to queue if it's a high-demand event
       const isFreeTicket = selectedTicketType.price === 0;
+      
+      // For PayPal, the buttons will handle the purchase flow
+      if (paymentMethod === 'paypal' && !isFreeTicket) {
+        setIsProcessing(false);
+        setPurchaseError('Please use the PayPal buttons below to complete your purchase');
+        return;
+      }
       
       // Check if we need to queue (for popular events or during high traffic)
       const shouldQueue = selectedTicketType.quantitySold > 10; // Example condition
@@ -419,8 +556,16 @@ const EventDetails = () => {
         return;
       }
       
-      // For paid tickets, continue with payment processing
+      // For PayPal, the buttons will handle the purchase flow
+      if (paymentMethod === 'paypal') {
+        // We don't need to do anything here as the PayPal buttons handle the flow
+        // Just inform the user to use the PayPal buttons
+        setPurchaseError('Please use the PayPal buttons below to complete your purchase');
+        setIsProcessing(false);
+        return;
+      }
       
+      // Default to Paystack
       // Calculate total amount in the smallest currency unit (kobo for NGN, cents for USD)
       const totalAmount = selectedTicketType.price * quantity * 100; // Convert to cents/kobo
       
@@ -645,6 +790,49 @@ const EventDetails = () => {
     }
   };
 
+  // Add this function to handle sharing
+  const handleShare = () => {
+    setShowShareModal(true);
+  };
+
+  // Update the copyToClipboard function
+  const copyToClipboard = () => {
+    const eventUrl = window.location.href;
+    try {
+      navigator.clipboard.writeText(eventUrl)
+        .then(() => {
+          setLinkCopied(true);
+          toast.success('Link copied to clipboard!');
+          
+          // Reset the copied state after 3 seconds
+          setTimeout(() => {
+            setLinkCopied(false);
+          }, 3000);
+        })
+        .catch(err => {
+          console.error('Failed to copy using clipboard API:', err);
+          // Fallback method for browsers that don't support clipboard API
+          const textArea = document.createElement('textarea');
+          textArea.value = eventUrl;
+          document.body.appendChild(textArea);
+          textArea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textArea);
+          
+          setLinkCopied(true);
+          toast.success('Link copied to clipboard!');
+          
+          // Reset the copied state after 3 seconds
+          setTimeout(() => {
+            setLinkCopied(false);
+          }, 3000);
+        });
+    } catch (err) {
+      console.error('Failed to copy:', err);
+      toast.error('Failed to copy link. Please try again.');
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -777,7 +965,10 @@ const EventDetails = () => {
                   <FiHeart className={`mr-2 ${isLiked ? 'fill-current' : ''}`} />
                   {isLiked ? 'Saved' : 'Save'}
                 </button>
-                <button className="flex items-center px-4 py-2 rounded-lg border border-white/30 hover:bg-white/10 transition-colors">
+                <button 
+                  onClick={handleShare}
+                  className="flex items-center px-4 py-2 rounded-lg border border-white/30 hover:bg-white/10 transition-colors"
+                >
                   <FiShare2 className="mr-2" />
                   Share
                 </button>
@@ -1145,63 +1336,105 @@ const EventDetails = () => {
                                 Phone
                               </label>
                               <div className="relative">
-  {/* Country code dropdown with flags */}
-  <div className="absolute inset-y-0 left-0 flex items-center pl-2">
-    <select
-      className="bg-transparent text-sm pr-6 pl-1 focus:outline-none h-full"
-      onChange={(e) => {
-        const countryCode = e.target.value;
-        const localNumber = guestInfo.phoneNumber.replace(/^\+\d+\s?/, '');
-        handleGuestInfoChange({
-          target: {
-            name: 'phoneNumber',
-            value: `${countryCode} ${localNumber}`
-          }
-        });
-      }}
-    >
-      <option value="+1">🇺🇸 +1</option>
-      <option value="+44">🇬🇧 +44</option>
-      <option value="+91">🇮🇳 +91</option>
-    </select>
-  </div>
+                                <div className="absolute inset-y-0 left-0 flex items-center pl-2">
+                                  <select
+                                    className="bg-transparent text-sm pr-6 pl-1 focus:outline-none h-full"
+                                    onChange={(e) => {
+                                      const countryCode = e.target.value;
+                                      const localNumber = guestInfo.phoneNumber.replace(/^\+\d+\s?/, '');
+                                      handleGuestInfoChange({
+                                        target: {
+                                          name: 'phoneNumber',
+                                          value: `${countryCode} ${localNumber}`
+                                        }
+                                      });
+                                    }}
+                                  >
+                                    <option value="+1">🇺🇸 +1</option>
+                                    <option value="+44">🇬🇧 +44</option>
+                                    <option value="+91">🇮🇳 +91</option>
+                                  </select>
+                                </div>
 
-  {/* Phone icon */}
-  <div className="absolute inset-y-0 left-20 pl-3 flex items-center pointer-events-none">
-    <FiPhone className="text-gray-400" />
-  </div>
+                                <div className="absolute inset-y-0 left-20 pl-3 flex items-center pointer-events-none">
+                                  <FiPhone className="text-gray-400" />
+                                </div>
 
-  {/* Phone input */}
-  <input
-    type="tel"
-    className="input pl-32 w-full"
-    placeholder="Phone number"
-    value={guestInfo.phoneNumber.split(' ').slice(1).join(' ')}
-    onChange={(e) => {
-      const numbers = e.target.value.replace(/\D/g, '');
-      const countryCode = guestInfo.phoneNumber.split(' ')[0] || '+1';
-      handleGuestInfoChange({
-        target: {
-          name: 'phoneNumber',
-          value: `${countryCode} ${numbers}`
-        }
-      });
-    }}
-    required
-  />
-</div>
+                                <input
+                                  type="tel"
+                                  className="input pl-32 w-full"
+                                  placeholder="Phone number"
+                                  value={guestInfo.phoneNumber.split(' ').slice(1).join(' ')}
+                                  onChange={(e) => {
+                                    const numbers = e.target.value.replace(/\D/g, '');
+                                    const countryCode = guestInfo.phoneNumber.split(' ')[0] || '+1';
+                                    handleGuestInfoChange({
+                                      target: {
+                                        name: 'phoneNumber',
+                                        value: `${countryCode} ${numbers}`
+                                      }
+                                    });
+                                  }}
+                                  required
+                                />
+                              </div>
                             </div>
                           </div>
                         </div>
                       )}
                       
-                      <button 
-                        className="btn btn-primary w-full"
-                        onClick={handlePurchaseTicket}
-                        disabled={isProcessing || !guestInfo.phoneNumber || (!isAuthenticated && (!guestInfo.name || !guestInfo.email))}
-                      >
-                        {isProcessing ? 'Processing...' : selectedTicketType.price === 0 ? 'Get Free Ticket' : 'Get Tickets'}
-                      </button>
+                      {/* Add payment method selection inside the ticket card */}
+                      {selectedTicketType && selectedTicketType.price > 0 && (
+                        <div className="mb-4">
+                          <h3 className="font-medium text-gray-900 dark:text-white mb-2">Payment Method</h3>
+                          <div className="flex flex-col space-y-2">
+                            <label className="flex items-center space-x-2 p-3 border rounded-md cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                              <input
+                                type="radio"
+                                name="paymentMethod"
+                                value="paystack"
+                                checked={paymentMethod === 'paystack'}
+                                onChange={() => handlePaymentMethodChange('paystack')}
+                                className="h-4 w-4 text-primary-600 focus:ring-primary-500"
+                              />
+                              <span className="ml-2">Paystack</span>
+                            </label>
+                            <label className="flex items-center space-x-2 p-3 border rounded-md cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                              <input
+                                type="radio"
+                                name="paymentMethod"
+                                value="paypal"
+                                checked={paymentMethod === 'paypal'}
+                                onChange={() => handlePaymentMethodChange('paypal')}
+                                className="h-4 w-4 text-primary-600 focus:ring-primary-500"
+                              />
+                              <span className="ml-2">PayPal</span>
+                            </label>
+                          </div>
+                          
+                          {paymentMethod === 'paypal' && (
+                            <div className="mt-4">
+                              <div ref={paypalButtonRef} id="paypal-button-container"></div>
+                              {!paypalButtonRendered && (
+                                <div className="text-center py-4">
+                                  <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-primary-500 mx-auto"></div>
+                                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">Loading PayPal...</p>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      
+                      {paymentMethod !== 'paypal' && (
+                        <button 
+                          className="btn btn-primary w-full"
+                          onClick={handlePurchaseTicket}
+                          disabled={isProcessing || !guestInfo.phoneNumber || (!isAuthenticated && (!guestInfo.name || !guestInfo.email))}
+                        >
+                          {isProcessing ? 'Processing...' : selectedTicketType.price === 0 ? 'Get Free Ticket' : 'Get Tickets'}
+                        </button>
+                      )}
                       
                       {!isAuthenticated && (
                         <div className="mt-3 text-center">
@@ -1271,6 +1504,106 @@ const EventDetails = () => {
                 className="text-sm text-gray-600 dark:text-gray-400 hover:underline"
               >
                 {isQueueReady ? 'Close' : 'I\'ll come back later'}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+      
+      {/* Share Modal */}
+      {showShareModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6"
+          >
+            <h3 className="text-lg font-bold mb-4 text-gray-900 dark:text-white text-center">
+              Share This Event
+            </h3>
+            
+            <div className="mb-6">
+              <p className="text-gray-600 dark:text-gray-400 text-center mb-4">
+                Share this event with your friends and family
+              </p>
+              
+              <div className="flex justify-center space-x-4">
+                <a 
+                  href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-3 bg-blue-600 text-white rounded-full hover:bg-blue-700"
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M18.77 7.46H14.5v-1.9c0-.9.6-1.1 1-1.1h3V.5h-4.33C10.24.5 9.5 3.44 9.5 5.32v2.15h-3v4h3v12h5v-12h3.85l.42-4z" />
+                  </svg>
+                </a>
+                <a 
+                  href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Check out this event: ${event?.title}`)}&url=${encodeURIComponent(window.location.href)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-3 bg-sky-500 text-white rounded-full hover:bg-sky-600"
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M23.44 4.83c-.8.37-1.5.38-2.22.02.93-.56.98-.96 1.32-2.02-.88.52-1.86.9-2.9 1.1-.82-.88-2-1.43-3.3-1.43-2.5 0-4.55 2.04-4.55 4.54 0 .36.03.7.1 1.04-3.77-.2-7.12-2-9.36-4.75-.4.67-.6 1.45-.6 2.3 0 1.56.8 2.95 2 3.77-.74-.03-1.44-.23-2.05-.57v.06c0 2.2 1.56 4.03 3.64 4.44-.67.2-1.37.2-2.06.08.58 1.8 2.26 3.12 4.25 3.16C5.78 18.1 3.37 18.74 1 18.46c2 1.3 4.4 2.04 6.97 2.04 8.35 0 12.92-6.92 12.92-12.93 0-.2 0-.4-.02-.6.9-.63 1.96-1.22 2.56-2.14z" />
+                  </svg>
+                </a>
+                <a 
+                  href={`mailto:?subject=${encodeURIComponent(`Join me at ${event?.title}`)}&body=${encodeURIComponent(`I thought you might be interested in this event: ${event?.title}\n\n${window.location.href}`)}`}
+                  className="p-3 bg-red-500 text-white rounded-full hover:bg-red-600"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                </a>
+                <a 
+                  href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`Check out this event: ${event?.title} ${window.location.href}`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-3 bg-green-500 text-white rounded-full hover:bg-green-600"
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
+                    <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm0 22.5c-1.721 0-3.343-.404-4.792-1.12l-5.458 1.428 1.455-5.296A10.465 10.465 0 012.25 12C2.25 6.7 6.7 2.25 12 2.25S21.75 6.7 21.75 12 17.3 21.75 12 21.75z" />
+                  </svg>
+                </a>
+              </div>
+            </div>
+            
+            <div className="mb-6">
+              <div className="flex items-center">
+                <input
+                  type="text"
+                  value={window.location.href}
+                  readOnly
+                  className="flex-1 p-2 border border-gray-300 dark:border-gray-600 rounded-l-md bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                />
+                <button
+                  onClick={copyToClipboard}
+                  className={`${linkCopied ? 'bg-green-600 hover:bg-green-700' : 'bg-primary-600 hover:bg-primary-700'} text-white px-4 py-2 rounded-r-md flex items-center`}
+                >
+                  {linkCopied ? (
+                    <>
+                      <FiCheck className="mr-1" /> Copied
+                    </>
+                  ) : (
+                    <>
+                      <FiCopy className="mr-1" /> Copy
+                    </>
+                  )}
+                </button>
+              </div>
+              {linkCopied && (
+                <p className="mt-2 text-xs text-green-600 dark:text-green-400">Link copied to clipboard!</p>
+              )}
+            </div>
+            
+            <div className="text-center">
+              <button
+                onClick={() => setShowShareModal(false)}
+                className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600"
+              >
+                Close
               </button>
             </div>
           </motion.div>
