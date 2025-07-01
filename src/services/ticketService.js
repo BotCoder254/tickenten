@@ -264,14 +264,23 @@ const ticketService = {
   listTicketForResale: async (ticketId, resaleData) => {
     try {
       console.log(`Attempting to list ticket for resale: ${ticketId}`, resaleData);
+      
+      // Validate resale price
+      if (!resaleData.resalePrice || isNaN(parseFloat(resaleData.resalePrice)) || parseFloat(resaleData.resalePrice) <= 0) {
+        console.error('Invalid resale price:', resaleData.resalePrice);
+        throw new Error('Invalid resale price. Please enter a valid price greater than zero.');
+      }
+      
       // Remove the /api prefix since axios instance already has it configured
       const response = await api.post(`/tickets/${ticketId}/resale`, resaleData);
+      console.log('Resale response:', response.data);
       return response.data;
     } catch (error) {
       console.error('Error listing ticket for resale:', error);
       
       // Handle specific error cases
       if (error.response) {
+        console.error('Server response error:', error.response.status, error.response.data);
         if (error.response.status === 401) {
           throw new Error('You must be logged in to resell tickets');
         } else if (error.response.status === 403) {
@@ -285,7 +294,12 @@ const ticketService = {
         }
       }
       
-      throw error;
+      // If it's already an Error object, just throw it
+      if (error instanceof Error) {
+        throw error;
+      }
+      
+      throw new Error('Failed to list ticket for resale. Please try again.');
     }
   },
 

@@ -1,6 +1,7 @@
 const express = require('express');
 const { body } = require('express-validator');
 const { protect, optionalProtect } = require('../middleware/auth.middleware');
+const { validateRequest } = require('../middleware/validate');
 const ticketController = require('../controllers/ticket.controller');
 
 const router = express.Router();
@@ -116,6 +117,7 @@ router.post(
     body('description').optional().isString().withMessage('Description must be a string'),
   ],
   protect,
+  validateRequest,
   ticketController.listTicketForResale
 );
 

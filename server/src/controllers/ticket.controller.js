@@ -907,11 +907,23 @@ exports.listTicketForResale = async (req, res) => {
   if (!errors.isEmpty()) {
     return res.status(400).json({
       success: false,
+      message: 'Validation error',
       errors: errors.array(),
     });
   }
 
   try {
+    console.log('Listing ticket for resale:', req.params.ticketId, req.body);
+    
+    // Validate resale price
+    const resalePrice = parseFloat(req.body.resalePrice);
+    if (isNaN(resalePrice) || resalePrice <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Resale price must be a positive number',
+      });
+    }
+    
     const ticket = await Ticket.findById(req.params.ticketId);
 
     if (!ticket) {
@@ -947,11 +959,13 @@ exports.listTicketForResale = async (req, res) => {
 
     // Update ticket with resale information
     ticket.isForResale = true;
-    ticket.resalePrice = req.body.resalePrice;
+    ticket.resalePrice = resalePrice;
     ticket.resaleDescription = req.body.description || '';
     ticket.resaleListingDate = Date.now();
 
     await ticket.save();
+    
+    console.log('Ticket listed for resale successfully:', ticket._id);
 
     res.status(200).json({
       success: true,
