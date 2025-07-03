@@ -1468,6 +1468,7 @@ const EventDetails = () => {
                                     <option value="+1">🇺🇸 +1</option>
                                     <option value="+44">🇬🇧 +44</option>
                                     <option value="+91">🇮🇳 +91</option>
+                                      <option value="+234">🇳🇬 +234</option>
                                   </select>
                                 </div>
 
