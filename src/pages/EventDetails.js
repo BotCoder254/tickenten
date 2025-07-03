@@ -1308,17 +1308,16 @@ const EventDetails = () => {
                             Sold Out
                           </span>
                         ) : (
-                          <button
-                            onClick={() => setSelectedTicketType(ticket)}
-                            className={`px-3 py-1 rounded-full text-sm ${
-                              isSelected 
-                                ? 'bg-primary-600 text-white' 
-                                : 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700'
-                            }`}
-                          >
-                            {isSelected ? 'Selected' : 'Select'}
-                          <
-    
+    <button
+  onClick={() => setSelectedTicketType(ticket)}
+  className={`px-3 py-1 rounded-full text-sm ${
+    isSelected 
+      ? 'bg-primary-600 text-white' 
+      : 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700'
+  }`}
+>
+  {isSelected ? 'Selected' : 'Select'}
+</button>
 const isSelected = selectedTicketType && selectedTicketType.name === ticket.name;
                       const remainingTickets = ticket.quantity - ticket.quantitySold;
                       const isSoldOut = remainingTickets <= 0;
