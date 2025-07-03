@@ -1008,159 +1008,244 @@ const EventDetails = () => {
     </div>
   </div>
 </div>
-      {/* Event Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Event Description */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="lg:col-span-2"
-          >
-            <div className="card p-6 mb-8">
-              <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">About This Event</h2>
-              <div className="prose max-w-none dark:prose-invert prose-headings:text-gray-900 dark:prose-headings:text-white prose-p:text-gray-600 dark:prose-p:text-gray-300">
-                <p className="whitespace-pre-line">{event.description}</p>
-              </div>
-              
-              {/* Event Details */}
-              <div className="mt-8 border-t border-gray-200 dark:border-gray-700 pt-6">
-                <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Event Details</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <h4 className="font-medium text-gray-900 dark:text-white">Date & Time</h4>
-                    <p className="text-gray-600 dark:text-gray-400">
-                      {formatDate(event.startDate)}
-                      <br />
-                      {formatTime(event.startDate)} - {formatTime(event.endDate)}
-                    </p>
-                  </div>
-                  
-                  <div>
-                    <h4 className="font-medium text-gray-900 dark:text-white">Category</h4>
-                    <p className="text-gray-600 dark:text-gray-400">{event.category}</p>
-                  </div>
-                  
-                  <div>
-                    <h4 className="font-medium text-gray-900 dark:text-white">Venue</h4>
-                    <p className="text-gray-600 dark:text-gray-400">
-                      {event.isVirtual 
-                        ? 'Virtual Event' 
-                        : event.location?.venue || 'Venue not specified'}
-                    </p>
-                    {!event.isVirtual && event.location && (
-                      <p className="text-gray-600 dark:text-gray-400 mt-1">
-                        {event.location.city}{event.location.country ? `, ${event.location.country}` : ''}
-                      </p>
-                    )}
-                  </div>
-                  
-                  <div>
-                    <h4 className="font-medium text-gray-900 dark:text-white">Status</h4>
-                    <p className="text-gray-600 dark:text-gray-400 capitalize">
-                      {event.hasEnded ? 'Ended' : 
-                       event.isSoldOut ? 'Sold Out' : 
-                       'Open'}
-                    </p>
-                  </div>
-                  
-                  {event.tags && event.tags.length > 0 && (
-                    <div className="md:col-span-2">
-                      <h4 className="font-medium text-gray-900 dark:text-white">Tags</h4>
-                      <div className="flex flex-wrap gap-2 mt-1">
-                        {event.tags.map((tag, index) => (
-                          <span key={index} className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded-full text-xs text-gray-800 dark:text-gray-200">
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* Social links if available */}
-                  {event.socialLinks && (
-                    <div className="md:col-span-2">
-                      <h4 className="font-medium text-gray-900 dark:text-white">Social Links</h4>
-                      <div className="flex flex-wrap gap-3 mt-2">
-                        {event.socialLinks.website && (
-                          <a href={event.socialLinks.website} target="_blank" rel="noopener noreferrer" 
-                             className="text-primary-600 dark:text-primary-400 hover:underline">Website</a>
-                        )}
-                        {event.socialLinks.facebook && (
-                          <a href={event.socialLinks.facebook} target="_blank" rel="noopener noreferrer" 
-                             className="text-primary-600 dark:text-primary-400 hover:underline">Facebook</a>
-                        )}
-                        {event.socialLinks.twitter && (
-                          <a href={event.socialLinks.twitter} target="_blank" rel="noopener noreferrer" 
-                             className="text-primary-600 dark:text-primary-400 hover:underline">Twitter</a>
-                        )}
-                        {event.socialLinks.instagram && (
-                          <a href={event.socialLinks.instagram} target="_blank" rel="noopener noreferrer" 
-                             className="text-primary-600 dark:text-primary-400 hover:underline">Instagram</a>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-              
-              {/* FAQ section if available */}
-              {event.faq && event.faq.length > 0 && (
-                <div className="mt-8 border-t border-gray-200 dark:border-gray-700 pt-6">
-                  <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Frequently Asked Questions</h3>
-                  <div className="space-y-4">
-                    {event.faq.map((item, index) => (
-                      <div key={index} className="border-b border-gray-200 dark:border-gray-700 pb-4 last:border-0 last:pb-0">
-                        <h4 className="font-medium text-gray-900 dark:text-white mb-2">{item.question}</h4>
-                        <p className="text-gray-600 dark:text-gray-400">{item.answer}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Organizer */}
-            <div className="card p-6">
-              <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Organizer</h2>
-              <div className="flex items-center">
-                {event.creator?.avatar ? (
-                  <img 
-                    src={
-                      event.creator.avatar.startsWith('http') 
-                        ? event.creator.avatar
-                        : `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}${event.creator.avatar}`
-                    }
-                    alt={event.creator.name} 
-                    className="h-12 w-12 rounded-full object-cover"
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src = 'https://via.placeholder.com/40?text=U';
-                    }}
-                  />
-                ) : (
-                  <div className="h-12 w-12 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-400">
-                    <span className="text-lg font-bold">
-                      {event.creator?.name ? event.creator.name.charAt(0) : 'O'}
+     {/* Event Content */}
+<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+  <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    {/* Event Description */}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay: 0.3 }}
+      className="lg:col-span-2 space-y-8"
+    >
+      <div className="card p-6 hover:shadow-lg transition-shadow duration-300">
+        <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">About This Event</h2>
+        <div className="prose max-w-none dark:prose-invert prose-headings:text-gray-900 dark:prose-headings:text-white prose-p:text-gray-600 dark:prose-p:text-gray-300">
+          <p className="whitespace-pre-line">{event.description}</p>
+        </div>
+      </div>
+      
+      {/* Event Details */}
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.4 }}
+        className="card p-6 hover:shadow-lg transition-shadow duration-300"
+      >
+        <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Event Details</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {[
+            {
+              title: "Date & Time",
+              content: (
+                <>
+                  {formatDate(event.startDate)}
+                  <br />
+                  {formatTime(event.startDate)} - {formatTime(event.endDate)}
+                </>
+              )
+            },
+            {
+              title: "Category",
+              content: event.category
+            },
+            {
+              title: "Venue",
+              content: (
+                <>
+                  {event.isVirtual 
+                    ? 'Virtual Event' 
+                    : event.location?.venue || 'Venue not specified'}
+                  {!event.isVirtual && event.location && (
+                    <span className="block mt-1">
+                      {event.location.city}{event.location.country ? `, ${event.location.country}` : ''}
                     </span>
-                  </div>
-                )}
-                <div className="ml-4">
-                  <p className="font-medium text-gray-900 dark:text-white">
-                    {event.creator?.name || 'Event Organizer'}
-                  </p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {event.creator?.email || 'Contact information unavailable'}
-                  </p>
-                  {isCreator && (
-                    <p className="text-xs text-primary-600 dark:text-primary-400 mt-1">You are the organizer</p>
+                  )}
+                </>
+              )
+            },
+            {
+              title: "Status",
+              content: event.hasEnded ? 'Ended' : event.isSoldOut ? 'Sold Out' : 'Open'
+            },
+            event.tags?.length > 0 && {
+              title: "Tags",
+              content: (
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {event.tags.map((tag, index) => (
+                    <span 
+                      key={index} 
+                      className="px-3 py-1 bg-gray-100 dark:bg-gray-800 rounded-full text-sm text-gray-800 dark:text-gray-200"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              ),
+              fullWidth: true
+            },
+            event.socialLinks && {
+              title: "Social Links",
+              content: (
+                <div className="flex flex-wrap gap-4 mt-1">
+                  {event.socialLinks.website && (
+                    <a href={event.socialLinks.website} target="_blank" rel="noopener noreferrer" 
+                       className="flex items-center text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors">
+                      <FiGlobe className="mr-2" /> Website
+                    </a>
+                  )}
+                  {event.socialLinks.facebook && (
+                    <a href={event.socialLinks.facebook} target="_blank" rel="noopener noreferrer" 
+                       className="flex items-center text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors">
+                      <FiFacebook className="mr-2" /> Facebook
+                    </a>
+                  )}
+                  {event.socialLinks.twitter && (
+                    <a href={event.socialLinks.twitter} target="_blank" rel="noopener noreferrer" 
+                       className="flex items-center text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors">
+                      <FiTwitter className="mr-2" /> Twitter
+                    </a>
+                  )}
+                  {event.socialLinks.instagram && (
+                    <a href={event.socialLinks.instagram} target="_blank" rel="noopener noreferrer" 
+                       className="flex items-center text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors">
+                      <FiInstagram className="mr-2" /> Instagram
+                    </a>
                   )}
                 </div>
-              </div>
-            </div>
-          </motion.div>
+              ),
+              fullWidth: true
+            }
+          ].filter(Boolean).map((item, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.5 + (index * 0.1) }}
+              className={item.fullWidth ? "md:col-span-2" : ""}
+            >
+              <h4 className="font-medium text-gray-900 dark:text-white mb-2">{item.title}</h4>
+              <p className="text-gray-600 dark:text-gray-400">{item.content}</p>
+            </motion.div>
+          ))}
+        </div>
+      </motion.div>
+      
+      {/* FAQ section if available */}
+      {event.faq?.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.6 }}
+          className="card p-6 hover:shadow-lg transition-shadow duration-300"
+        >
+          <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Frequently Asked Questions</h3>
+          <div className="space-y-4">
+            {event.faq.map((item, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.7 + (index * 0.1) }}
+                className="border-b border-gray-200 dark:border-gray-700 pb-4 last:border-0 last:pb-0"
+              >
+                <h4 className="font-medium text-gray-900 dark:text-white mb-2">{item.question}</h4>
+                <p className="text-gray-600 dark:text-gray-400">{item.answer}</p>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+      )}
+    </motion.div>
+  </div>
+</div>
+{/* Organizer */}
+<motion.div
+  initial={{ opacity: 0, y: 20 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.5, delay: 0.4 }}
+  className="card p-6 hover:shadow-lg transition-shadow duration-300"
+>
+  <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Organizer</h2>
+  <div className="flex items-center">
+    <motion.div
+      whileHover={{ scale: 1.05 }}
+      className="relative"
+    >
+      {event.creator?.avatar ? (
+        <img 
+          src={
+            event.creator.avatar.startsWith('http') 
+              ? event.creator.avatar
+              : `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}${event.creator.avatar}`
+          }
+          alt={event.creator.name} 
+          className="h-12 w-12 rounded-full object-cover border-2 border-white dark:border-gray-700 shadow-sm"
+          onError={(e) => {
+            e.target.onerror = null;
+            e.target.src = 'https://via.placeholder.com/40?text=U';
+          }}
+        />
+      ) : (
+        <div className="h-12 w-12 rounded-full bg-gradient-to-br from-primary-100 to-secondary-100 dark:from-primary-900 dark:to-secondary-900 flex items-center justify-center text-primary-600 dark:text-primary-300 shadow-sm">
+          <span className="text-lg font-bold">
+            {event.creator?.name ? event.creator.name.charAt(0) : 'O'}
+          </span>
+        </div>
+      )}
+    </motion.div>
+    
+    <motion.div 
+      className="ml-4"
+      initial={{ opacity: 0, x: -10 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: 0.5 }}
+    >
+      <p className="font-medium text-gray-900 dark:text-white">
+        {event.creator?.name || 'Event Organizer'}
+      </p>
+      <p className="text-sm text-gray-600 dark:text-gray-400">
+        {event.creator?.email || 'Contact information unavailable'}
+      </p>
+      {isCreator && (
+        <motion.p 
+          initial={{ scale: 0.9 }}
+          animate={{ scale: 1 }}
+          className="text-xs text-primary-600 dark:text-primary-400 mt-1 inline-block px-2 py-1 bg-primary-50 dark:bg-primary-900/20 rounded-full"
+        >
+          You are the organizer
+        </motion.p>
+      )}
+    </motion.div>
+  </div>
 
+  {event.creator?.bio && (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ delay: 0.6 }}
+      className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700"
+    >
+      <p className="text-gray-600 dark:text-gray-300 text-sm">
+        {event.creator.bio}
+      </p>
+    </motion.div>
+  )}
+
+  {!isCreator && (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ delay: 0.7 }}
+      className="mt-6"
+    >
+      <button className="btn btn-outline w-full sm:w-auto">
+        <FiMail className="mr-2" />
+        Contact Organizer
+      </button>
+    </motion.div>
+  )}
+</motion.div>
           {/* Ticket Selection */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
