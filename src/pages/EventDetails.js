@@ -875,409 +875,451 @@ const EventDetails = () => {
     );
   }
 
-  return (
-    <div className="pt-20 pb-16">
-   {/* Event Hero Section */}
-<div className="w-full bg-gradient-to-r from-primary-600 to-secondary-600 text-white py-12 relative overflow-hidden">
-  {/* Subtle animated background elements */}
-  <div className="absolute inset-0 opacity-10">
-    <div className="absolute top-0 left-0 w-32 h-32 bg-white rounded-full mix-blend-overlay animate-[float_8s_infinite_linear]"></div>
-    <div className="absolute bottom-10 right-20 w-40 h-40 bg-white rounded-full mix-blend-overlay animate-[float_12s_infinite_reverse_linear]"></div>
-  </div>
-
-  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-    <div className="flex flex-col md:flex-row gap-8">
-      {/* Event Image */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, type: 'spring', stiffness: 100 }}
-        whileHover={{ scale: 1.02 }}
-        className="md:w-1/3"
-      >
-        <div className="rounded-xl overflow-hidden shadow-2xl border-4 border-white/20 hover:border-white/30 transition-all duration-300">
-          <img
-            src={getImageUrl(event.featuredImage)}
-            alt={event.title}
-            className="w-full h-64 object-cover hover:scale-105 transition-transform duration-500"
-            onError={(e) => {
-              e.target.onerror = null;
-              e.target.src = "https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80";
-            }}
-          />
-        </div>
-      </motion.div>
-
-      {/* Event Info */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.2, type: 'spring', stiffness: 100 }}
-        className="md:w-2/3"
-      >
-        <div className="flex items-center mb-4">
-          <motion.span 
-            whileHover={{ scale: 1.05 }}
-            className="px-3 py-1 bg-white/20 rounded-full text-sm font-medium backdrop-blur-sm hover:bg-white/30 transition-colors"
-          >
-            {event.category}
-          </motion.span>
-          
-          {isCreator && (
-            <motion.div 
-              className="ml-auto"
-              whileHover={{ scale: 1.03 }}
-            >
-              <button
-                onClick={handleDeleteEvent}
-                disabled={deleting}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg flex items-center shadow-lg hover:shadow-red-500/30 transition-all"
-              >
-                <FiTrash2 className="mr-2" />
-                {deleting ? (
-                  <span className="flex items-center">
-                    <span className="animate-pulse">Deleting</span>
-                    <span className="ml-1 animate-[bounce_1s_infinite]">...</span>
-                  </span>
-                ) : 'Delete Event'}
-              </button>
-            </motion.div>
-          )}
-        </div>
-
-        <motion.h1 
-          className="text-3xl md:text-4xl font-bold mb-4"
-          whileHover={{ x: 5 }}
-          transition={{ type: 'spring', stiffness: 300 }}
-        >
-          {event.title}
-        </motion.h1>
-        
-        <p className="text-lg text-white/90 mb-6 leading-relaxed">
-          {event.shortDescription}
-        </p>
-        
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-          {[
-            { icon: <FiCalendar className="mr-2" />, text: formatDate(event.startDate) },
-            { icon: <FiClock className="mr-2" />, text: `${formatTime(event.startDate)} - ${formatTime(event.endDate)}` },
-            { icon: <FiMapPin className="mr-2" />, text: event.isVirtual ? 'Virtual Event' : `${event.location.venue}, ${event.location.city}` },
-            { icon: <FiTag className="mr-2" />, text: event.ticketTypes?.length > 0 ? `From ${event.ticketTypes[0].price} ${event.ticketTypes[0].currency}` : 'Free' }
-          ].map((item, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3 + (index * 0.1) }}
-              className="flex items-center bg-white/10 px-3 py-2 rounded-lg backdrop-blur-sm hover:bg-white/20 transition-colors"
-            >
-              {item.icon}
-              <span>{item.text}</span>
-            </motion.div>
-          ))}
-        </div>
-
-        <div className="flex space-x-4">
-          <motion.button
-            onClick={toggleLike}
-            whileTap={{ scale: 0.95 }}
-            className={`flex items-center px-4 py-2 rounded-lg border border-white/30 hover:bg-white/10 transition-all ${
-              isLiked ? 'text-red-300 bg-red-500/10' : 'text-white'
-            } shadow-lg hover:shadow-white/10`}
-          >
-            <motion.div
-              animate={isLiked ? { scale: [1, 1.2, 1] } : {}}
-              transition={{ duration: 0.3 }}
-            >
-              <FiHeart className={`mr-2 ${isLiked ? 'fill-current' : ''}`} />
-            </motion.div>
-            {isLiked ? 'Saved' : 'Save'}
-          </motion.button>
-          
-          <motion.button 
-            onClick={handleShare}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="flex items-center px-4 py-2 rounded-lg border border-white/30 hover:bg-white/10 transition-all shadow-lg hover:shadow-white/10"
-          >
-            <FiShare2 className="mr-2" />
-            Share
-          </motion.button>
-        </div>
-      </motion.div>
+  return (<div className="pt-20 pb-16">
+  {/* Event Hero Section */}
+  <div className="w-full bg-gradient-to-r from-primary-600 to-secondary-600 text-white py-12 relative overflow-hidden">
+    {/* Subtle animated background elements */}
+    <div className="absolute inset-0 opacity-10">
+      <div className="absolute top-0 left-0 w-32 h-32 bg-white rounded-full mix-blend-overlay animate-[float_8s_infinite_linear]"></div>
+      <div className="absolute bottom-10 right-20 w-40 h-40 bg-white rounded-full mix-blend-overlay animate-[float_12s_infinite_reverse_linear]"></div>
     </div>
-  </div>
-</div>
-     {/* Event Content */}
-<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-  <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-    {/* Event Description */}
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: 0.3 }}
-      className="lg:col-span-2 space-y-8"
-    >
-      <div className="card p-6 hover:shadow-lg transition-shadow duration-300">
-        <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">About This Event</h2>
-        <div className="prose max-w-none dark:prose-invert prose-headings:text-gray-900 dark:prose-headings:text-white prose-p:text-gray-600 dark:prose-p:text-gray-300">
-          <p className="whitespace-pre-line">{event.description}</p>
-        </div>
-      </div>
-      
-      {/* Event Details */}
-      <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.4 }}
-        className="card p-6 hover:shadow-lg transition-shadow duration-300"
-      >
-        <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Event Details</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {[
-            {
-              title: "Date & Time",
-              content: (
-                <>
-                  {formatDate(event.startDate)}
-                  <br />
-                  {formatTime(event.startDate)} - {formatTime(event.endDate)}
-                </>
-              )
-            },
-            {
-              title: "Category",
-              content: event.category
-            },
-            {
-              title: "Venue",
-              content: (
-                <>
-                  {event.isVirtual 
-                    ? 'Virtual Event' 
-                    : event.location?.venue || 'Venue not specified'}
-                  {!event.isVirtual && event.location && (
-                    <span className="block mt-1">
-                      {event.location.city}{event.location.country ? `, ${event.location.country}` : ''}
-                    </span>
-                  )}
-                </>
-              )
-            },
-            {
-              title: "Status",
-              content: event.hasEnded ? 'Ended' : event.isSoldOut ? 'Sold Out' : 'Open'
-            },
-            event.tags?.length > 0 && {
-              title: "Tags",
-              content: (
-                <div className="flex flex-wrap gap-2 mt-1">
-                  {event.tags.map((tag, index) => (
-                    <span 
-                      key={index} 
-                      className="px-3 py-1 bg-gray-100 dark:bg-gray-800 rounded-full text-sm text-gray-800 dark:text-gray-200"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              ),
-              fullWidth: true
-            },
-            event.socialLinks && {
-              title: "Social Links",
-              content: (
-                <div className="flex flex-wrap gap-4 mt-1">
-                  {event.socialLinks.website && (
-                    <a href={event.socialLinks.website} target="_blank" rel="noopener noreferrer" 
-                       className="flex items-center text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors">
-                      <FiGlobe className="mr-2" /> Website
-                    </a>
-                  )}
-                  {event.socialLinks.facebook && (
-                    <a href={event.socialLinks.facebook} target="_blank" rel="noopener noreferrer" 
-                       className="flex items-center text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors">
-                      <FiFacebook className="mr-2" /> Facebook
-                    </a>
-                  )}
-                  {event.socialLinks.twitter && (
-                    <a href={event.socialLinks.twitter} target="_blank" rel="noopener noreferrer" 
-                       className="flex items-center text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors">
-                      <FiTwitter className="mr-2" /> Twitter
-                    </a>
-                  )}
-                  {event.socialLinks.instagram && (
-                    <a href={event.socialLinks.instagram} target="_blank" rel="noopener noreferrer" 
-                       className="flex items-center text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors">
-                      <FiInstagram className="mr-2" /> Instagram
-                    </a>
-                  )}
-                </div>
-              ),
-              fullWidth: true
-            }
-          ].filter(Boolean).map((item, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.5 + (index * 0.1) }}
-              className={item.fullWidth ? "md:col-span-2" : ""}
-            >
-              <h4 className="font-medium text-gray-900 dark:text-white mb-2">{item.title}</h4>
-              <p className="text-gray-600 dark:text-gray-400">{item.content}</p>
-            </motion.div>
-          ))}
-        </div>
-      </motion.div>
-      
-      {/* FAQ section if available */}
-      {event.faq?.length > 0 && (
+
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      <div className="flex flex-col md:flex-row gap-8">
+        {/* Event Image */}
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6 }}
-          className="card p-6 hover:shadow-lg transition-shadow duration-300"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, type: 'spring', stiffness: 100 }}
+          whileHover={{ scale: 1.02 }}
+          className="md:w-1/3"
         >
-          <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Frequently Asked Questions</h3>
-          <div className="space-y-4">
-            {event.faq.map((item, index) => (
+          <div className="rounded-xl overflow-hidden shadow-2xl border-4 border-white/20 hover:border-white/30 transition-all duration-300">
+            <img
+              src={getImageUrl(event.featuredImage)}
+              alt={event.title}
+              className="w-full h-64 object-cover hover:scale-105 transition-transform duration-500"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = "https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80";
+              }}
+            />
+          </div>
+        </motion.div>
+
+        {/* Event Info */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2, type: 'spring', stiffness: 100 }}
+          className="md:w-2/3"
+        >
+          <div className="flex items-center mb-4">
+            <motion.span 
+              whileHover={{ scale: 1.05 }}
+              className="px-3 py-1 bg-white/20 rounded-full text-sm font-medium backdrop-blur-sm hover:bg-white/30 transition-colors"
+            >
+              {event.category}
+            </motion.span>
+            
+            {isCreator && (
+              <motion.div 
+                className="ml-auto"
+                whileHover={{ scale: 1.03 }}
+              >
+                <button
+                  onClick={handleDeleteEvent}
+                  disabled={deleting}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg flex items-center shadow-lg hover:shadow-red-500/30 transition-all"
+                >
+                  <FiTrash2 className="mr-2" />
+                  {deleting ? (
+                    <span className="flex items-center">
+                      <span className="animate-pulse">Deleting</span>
+                      <span className="ml-1 animate-[bounce_1s_infinite]">...</span>
+                    </span>
+                  ) : 'Delete Event'}
+                </button>
+              </motion.div>
+            )}
+          </div>
+
+          <motion.h1 
+            className="text-3xl md:text-4xl font-bold mb-4"
+            whileHover={{ x: 5 }}
+            transition={{ type: 'spring', stiffness: 300 }}
+          >
+            {event.title}
+          </motion.h1>
+          
+          <p className="text-lg text-white/90 mb-6 leading-relaxed">
+            {event.shortDescription}
+          </p>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+            {[
+              { icon: <FiCalendar className="mr-2" />, text: formatDate(event.startDate) },
+              { icon: <FiClock className="mr-2" />, text: `${formatTime(event.startDate)} - ${formatTime(event.endDate)}` },
+              { icon: <FiMapPin className="mr-2" />, text: event.isVirtual ? 'Virtual Event' : `${event.location.venue}, ${event.location.city}` },
+              { icon: <FiTag className="mr-2" />, text: event.ticketTypes?.length > 0 ? `From ${event.ticketTypes[0].price} ${event.ticketTypes[0].currency}` : 'Free' }
+            ].map((item, index) => (
               <motion.div
                 key={index}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.7 + (index * 0.1) }}
-                className="border-b border-gray-200 dark:border-gray-700 pb-4 last:border-0 last:pb-0"
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.3 + (index * 0.1) }}
+                className="flex items-center bg-white/10 px-3 py-2 rounded-lg backdrop-blur-sm hover:bg-white/20 transition-colors"
               >
-                <h4 className="font-medium text-gray-900 dark:text-white mb-2">{item.question}</h4>
-                <p className="text-gray-600 dark:text-gray-400">{item.answer}</p>
+                {item.icon}
+                <span>{item.text}</span>
+              </motion.div>
+            ))}
+          </div>
+
+          <div className="flex space-x-4">
+            <motion.button
+              onClick={toggleLike}
+              whileTap={{ scale: 0.95 }}
+              className={`flex items-center px-4 py-2 rounded-lg border border-white/30 hover:bg-white/10 transition-all ${
+                isLiked ? 'text-red-300 bg-red-500/10' : 'text-white'
+              } shadow-lg hover:shadow-white/10`}
+            >
+              <motion.div
+                animate={isLiked ? { scale: [1, 1.2, 1] } : {}}
+                transition={{ duration: 0.3 }}
+              >
+                <FiHeart className={`mr-2 ${isLiked ? 'fill-current' : ''}`} />
+              </motion.div>
+              {isLiked ? 'Saved' : 'Save'}
+            </motion.button>
+            
+            <motion.button 
+              onClick={handleShare}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="flex items-center px-4 py-2 rounded-lg border border-white/30 hover:bg-white/10 transition-all shadow-lg hover:shadow-white/10"
+            >
+              <FiShare2 className="mr-2" />
+              Share
+            </motion.button>
+          </div>
+        </motion.div>
+      </div>
+    </div>
+  </div>
+
+  {/* Event Content */}
+  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      {/* Left Column (2/3 width) */}
+      <div className="lg:col-span-2 space-y-8">
+        {/* Event Description */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+          className="card p-6 hover:shadow-lg transition-shadow duration-300"
+        >
+          <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">About This Event</h2>
+          <div className="prose max-w-none dark:prose-invert prose-headings:text-gray-900 dark:prose-headings:text-white prose-p:text-gray-600 dark:prose-p:text-gray-300">
+            <p className="whitespace-pre-line">{event.description}</p>
+          </div>
+        </motion.div>
+        
+        {/* Event Details */}
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4 }}
+          className="card p-6 hover:shadow-lg transition-shadow duration-300"
+        >
+          <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Event Details</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {[
+              {
+                title: "Date & Time",
+                content: (
+                  <>
+                    {formatDate(event.startDate)}
+                    <br />
+                    {formatTime(event.startDate)} - {formatTime(event.endDate)}
+                  </>
+                )
+              },
+              {
+                title: "Category",
+                content: event.category
+              },
+              {
+                title: "Venue",
+                content: (
+                  <>
+                    {event.isVirtual 
+                      ? 'Virtual Event' 
+                      : event.location?.venue || 'Venue not specified'}
+                    {!event.isVirtual && event.location && (
+                      <span className="block mt-1">
+                        {event.location.city}{event.location.country ? `, ${event.location.country}` : ''}
+                      </span>
+                    )}
+                  </>
+                )
+              },
+              {
+                title: "Status",
+                content: event.hasEnded ? 'Ended' : event.isSoldOut ? 'Sold Out' : 'Open'
+              },
+              event.tags?.length > 0 && {
+                title: "Tags",
+                content: (
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {event.tags.map((tag, index) => (
+                      <span 
+                        key={index} 
+                        className="px-3 py-1 bg-gray-100 dark:bg-gray-800 rounded-full text-sm text-gray-800 dark:text-gray-200"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                ),
+                fullWidth: true
+              },
+              event.socialLinks && {
+                title: "Social Links",
+                content: (
+                  <div className="flex flex-wrap gap-4 mt-1">
+                    {event.socialLinks.website && (
+                      <a href={event.socialLinks.website} target="_blank" rel="noopener noreferrer" 
+                        className="flex items-center text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors">
+                        <FiGlobe className="mr-2" /> Website
+                      </a>
+                    )}
+                    {event.socialLinks.facebook && (
+                      <a href={event.socialLinks.facebook} target="_blank" rel="noopener noreferrer" 
+                        className="flex items-center text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors">
+                        <FiFacebook className="mr-2" /> Facebook
+                      </a>
+                    )}
+                    {event.socialLinks.twitter && (
+                      <a href={event.socialLinks.twitter} target="_blank" rel="noopener noreferrer" 
+                        className="flex items-center text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors">
+                        <FiTwitter className="mr-2" /> Twitter
+                      </a>
+                    )}
+                    {event.socialLinks.instagram && (
+                      <a href={event.socialLinks.instagram} target="_blank" rel="noopener noreferrer" 
+                        className="flex items-center text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors">
+                        <FiInstagram className="mr-2" /> Instagram
+                      </a>
+                    )}
+                  </div>
+                ),
+                fullWidth: true
+              }
+            ].filter(Boolean).map((item, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.5 + (index * 0.1) }}
+                className={item.fullWidth ? "md:col-span-2" : ""}
+              >
+                <h4 className="font-medium text-gray-900 dark:text-white mb-2">{item.title}</h4>
+                <p className="text-gray-600 dark:text-gray-400">{item.content}</p>
               </motion.div>
             ))}
           </div>
         </motion.div>
-      )}
-    </motion.div>
-  </div>
-</div>
-{/* Organizer */}
-<motion.div
-  initial={{ opacity: 0, y: 20 }}
-  animate={{ opacity: 1, y: 0 }}
-  transition={{ duration: 0.5, delay: 0.4 }}
-  className="card p-6 hover:shadow-lg transition-shadow duration-300"
->
-  <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Organizer</h2>
-  <div className="flex items-center">
-    <motion.div
-      whileHover={{ scale: 1.05 }}
-      className="relative"
-    >
-      {event.creator?.avatar ? (
-        <img 
-          src={
-            event.creator.avatar.startsWith('http') 
-              ? event.creator.avatar
-              : `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}${event.creator.avatar}`
-          }
-          alt={event.creator.name} 
-          className="h-12 w-12 rounded-full object-cover border-2 border-white dark:border-gray-700 shadow-sm"
-          onError={(e) => {
-            e.target.onerror = null;
-            e.target.src = 'https://via.placeholder.com/40?text=U';
-          }}
-        />
-      ) : (
-        <div className="h-12 w-12 rounded-full bg-gradient-to-br from-primary-100 to-secondary-100 dark:from-primary-900 dark:to-secondary-900 flex items-center justify-center text-primary-600 dark:text-primary-300 shadow-sm">
-          <span className="text-lg font-bold">
-            {event.creator?.name ? event.creator.name.charAt(0) : 'O'}
-          </span>
-        </div>
-      )}
-    </motion.div>
-    
-    <motion.div 
-      className="ml-4"
-      initial={{ opacity: 0, x: -10 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: 0.5 }}
-    >
-      <p className="font-medium text-gray-900 dark:text-white">
-        {event.creator?.name || 'Event Organizer'}
-      </p>
-      <p className="text-sm text-gray-600 dark:text-gray-400">
-        {event.creator?.email || 'Contact information unavailable'}
-      </p>
-      {isCreator && (
-        <motion.p 
-          initial={{ scale: 0.9 }}
-          animate={{ scale: 1 }}
-          className="text-xs text-primary-600 dark:text-primary-400 mt-1 inline-block px-2 py-1 bg-primary-50 dark:bg-primary-900/20 rounded-full"
-        >
-          You are the organizer
-        </motion.p>
-      )}
-    </motion.div>
-  </div>
-
-  {event.creator?.bio && (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ delay: 0.6 }}
-      className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700"
-    >
-      <p className="text-gray-600 dark:text-gray-300 text-sm">
-        {event.creator.bio}
-      </p>
-    </motion.div>
-  )}
-
-  {!isCreator && (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ delay: 0.7 }}
-      className="mt-6"
-    >
-      <button className="btn btn-outline w-full sm:w-auto">
-        <FiMail className="mr-2" />
-        Contact Organizer
-      </button>
-    </motion.div>
-  )}
-</motion.div>
-          {/* Ticket Selection */}
+        
+        {/* FAQ section if available */}
+        {event.faq?.length > 0 && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-            className="lg:col-span-1"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.6 }}
+            className="card p-6 hover:shadow-lg transition-shadow duration-300"
           >
-            <div className="card p-6 sticky top-24">
-              <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Tickets</h2>
-              
-              {purchaseSuccess && (
-                <div className="mb-4 p-3 bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 rounded-lg">
-                  <p className="font-medium">Tickets purchased successfully!</p>
-                  {isAuthenticated ? (
-                    <p className="text-sm mt-1">You can view your tickets in your account.</p>
-                  ) : (
-                    <p className="text-sm mt-1">A confirmation email has been sent to your email address.</p>
-                  )}
+            <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Frequently Asked Questions</h3>
+            <div className="space-y-4">
+              {event.faq.map((item, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.7 + (index * 0.1) }}
+                  className="border-b border-gray-200 dark:border-gray-700 pb-4 last:border-0 last:pb-0"
+                >
+                  <h4 className="font-medium text-gray-900 dark:text-white mb-2">{item.question}</h4>
+                  <p className="text-gray-600 dark:text-gray-400">{item.answer}</p>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </div>
+
+      {/* Right Column (1/3 width) */}
+      <div className="lg:col-span-1 space-y-8">
+        {/* Organizer */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+          className="card p-6 hover:shadow-lg transition-shadow duration-300"
+        >
+          <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Organizer</h2>
+          <div className="flex items-center">
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              className="relative"
+            >
+              {event.creator?.avatar ? (
+                <img 
+                  src={
+                    event.creator.avatar.startsWith('http') 
+                      ? event.creator.avatar
+                      : `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}${event.creator.avatar}`
+                  }
+                  alt={event.creator.name} 
+                  className="h-12 w-12 rounded-full object-cover border-2 border-white dark:border-gray-700 shadow-sm"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = 'https://via.placeholder.com/40?text=U';
+                  }}
+                />
+              ) : (
+                <div className="h-12 w-12 rounded-full bg-gradient-to-br from-primary-100 to-secondary-100 dark:from-primary-900 dark:to-secondary-900 flex items-center justify-center text-primary-600 dark:text-primary-300 shadow-sm">
+                  <span className="text-lg font-bold">
+                    {event.creator?.name ? event.creator.name.charAt(0) : 'O'}
+                  </span>
                 </div>
               )}
-              
-              {purchaseError && (
-                <div className="mb-4 p-3 bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 rounded-lg">
-                  <p>{purchaseError}</p>
-                </div>
+            </motion.div>
+            
+            <motion.div 
+              className="ml-4"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.5 }}
+            >
+              <p className="font-medium text-gray-900 dark:text-white">
+                {event.creator?.name || 'Event Organizer'}
+              </p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                {event.creator?.email || 'Contact information unavailable'}
+              </p>
+              {isCreator && (
+                <motion.p 
+                  initial={{ scale: 0.9 }}
+                  animate={{ scale: 1 }}
+                  className="text-xs text-primary-600 dark:text-primary-400 mt-1 inline-block px-2 py-1 bg-primary-50 dark:bg-primary-900/20 rounded-full"
+                >
+                  You are the organizer
+                </motion.p>
               )}
-              
-              {event.ticketTypes && event.ticketTypes.length > 0 ? (
-                <div>
-                  <div className="space-y-4 mb-6">
-                    {event.ticketTypes.map((ticket, index) => {
-                      const isSelected = selectedTicketType && selectedTicketType.name === ticket.name;
+            </motion.div>
+          </div>
+
+          {event.creator?.bio && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.6 }}
+              className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700"
+            >
+              <p className="text-gray-600 dark:text-gray-300 text-sm">
+                {event.creator.bio}
+              </p>
+            </motion.div>
+          )}
+
+          {!isCreator && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.7 }}
+              className="mt-6"
+            >
+              <button className="btn btn-outline w-full sm:w-auto">
+                <FiMail className="mr-2" />
+                Contact Organizer
+              </button>
+            </motion.div>
+          )}
+        </motion.div>
+
+        {/* Ticket Selection */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+          className="card p-6 sticky top-24"
+        >
+          <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Tickets</h2>
+          
+          {purchaseSuccess && (
+            <div className="mb-4 p-3 bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 rounded-lg">
+              <p className="font-medium">Tickets purchased successfully!</p>
+              {isAuthenticated ? (
+                <p className="text-sm mt-1">You can view your tickets in your account.</p>
+              ) : (
+                <p className="text-sm mt-1">A confirmation email has been sent to your email address.</p>
+              )}
+            </div>
+          )}
+          
+          {purchaseError && (
+            <div className="mb-4 p-3 bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 rounded-lg">
+              <p>{purchaseError}</p>
+            </div>
+          )}
+          
+          {event.ticketTypes && event.ticketTypes.length > 0 ? (
+            <div>
+              <div className="space-y-4 mb-6">
+                {event.ticketTypes.map((ticket, index) => {
+                  const isSelected = selectedTicketType && selectedTicketType.name === ticket.name;
+                  const remainingTickets = ticket.quantity - ticket.quantitySold;
+                  const isSoldOut = remainingTickets <= 0;
+                  
+                  return (
+                    <motion.div
+                      key={index}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.5 + (index * 0.1) }}
+                      className={`border rounded-lg p-4 transition-all ${isSelected ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20' : 'border-gray-200 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-500'}`}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="font-medium text-gray-900 dark:text-white">{ticket.name}</h3>
+                          <p className="text-primary-600 dark:text-primary-400 font-semibold mt-1">
+                            {ticket.price} {ticket.currency}
+                          </p>
+                          {!isSoldOut && (
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                              {remainingTickets} of {ticket.quantity} remaining
+                            </p>
+                          )}
+                        </div>
+                        {isSoldOut ? (
+                          <span className="px-2 py-1 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 text-xs rounded-full">
+                            Sold Out
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => setSelectedTicketType(ticket)}
+                            className={`px-3 py-1 rounded-full text-sm ${
+                              isSelected 
+                                ? 'bg-primary-600 text-white' 
+                                : 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700'
+                            }`}
+                          >
+                            {isSelected ? 'Selected' : 'Select'}
+                          <
+    
+const isSelected = selectedTicketType && selectedTicketType.name === ticket.name;
                       const remainingTickets = ticket.quantity - ticket.quantitySold;
                       const isSoldOut = remainingTickets <= 0;
                       
@@ -1573,6 +1615,7 @@ const EventDetails = () => {
             </div>
           </motion.div>
         </div>
+                </div>
       </div>
       
       {/* Queue Modal */}
