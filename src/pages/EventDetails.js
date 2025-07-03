@@ -877,107 +877,137 @@ const EventDetails = () => {
 
   return (
     <div className="pt-20 pb-16">
-      {/* Event Hero Section */}
-      <div className="w-full bg-gradient-to-r from-primary-600 to-secondary-600 text-white py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row gap-8">
-            {/* Event Image */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="md:w-1/3"
-            >
-              <div className="rounded-xl overflow-hidden shadow-lg">
-                <img
-                  src={getImageUrl(event.featuredImage)}
-                  alt={event.title}
-                  className="w-full h-64 object-cover"
-                  onError={(e) => {
-                    e.target.onerror = null;
-                    e.target.src = "https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80";
-                  }}
-                />
-              </div>
-            </motion.div>
+   {/* Event Hero Section */}
+<div className="w-full bg-gradient-to-r from-primary-600 to-secondary-600 text-white py-12 relative overflow-hidden">
+  {/* Subtle animated background elements */}
+  <div className="absolute inset-0 opacity-10">
+    <div className="absolute top-0 left-0 w-32 h-32 bg-white rounded-full mix-blend-overlay animate-[float_8s_infinite_linear]"></div>
+    <div className="absolute bottom-10 right-20 w-40 h-40 bg-white rounded-full mix-blend-overlay animate-[float_12s_infinite_reverse_linear]"></div>
+  </div>
 
-            {/* Event Info */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="md:w-2/3"
-            >
-              <div className="flex items-center mb-4">
-                <span className="px-3 py-1 bg-white/20 rounded-full text-sm font-medium">
-                  {event.category}
-                </span>
-                {isCreator && (
-                  <div className="ml-auto">
-                    <button
-                      onClick={handleDeleteEvent}
-                      disabled={deleting}
-                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg flex items-center"
-                    >
-                      <FiTrash2 className="mr-2" />
-                      {deleting ? 'Deleting...' : 'Delete Event'}
-                    </button>
-                  </div>
-                )}
-              </div>
-              <h1 className="text-3xl md:text-4xl font-bold mb-4">{event.title}</h1>
-              <p className="text-lg text-white/90 mb-6">{event.shortDescription}</p>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                <div className="flex items-center">
-                  <FiCalendar className="mr-2" />
-                  <span>{formatDate(event.startDate)}</span>
-                </div>
-                <div className="flex items-center">
-                  <FiClock className="mr-2" />
-                  <span>{formatTime(event.startDate)} - {formatTime(event.endDate)}</span>
-                </div>
-                <div className="flex items-center">
-                  <FiMapPin className="mr-2" />
-                  <span>
-                    {event.isVirtual
-                      ? 'Virtual Event'
-                      : `${event.location.venue}, ${event.location.city}`}
-                  </span>
-                </div>
-                <div className="flex items-center">
-                  <FiTag className="mr-2" />
-                  <span>
-                    {event.ticketTypes && event.ticketTypes.length > 0
-                      ? `From ${event.ticketTypes[0].price} ${event.ticketTypes[0].currency}`
-                      : 'Free'}
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex space-x-4">
-                <button
-                  onClick={toggleLike}
-                  className={`flex items-center px-4 py-2 rounded-lg border border-white/30 hover:bg-white/10 transition-colors ${
-                    isLiked ? 'text-red-300' : 'text-white'
-                  }`}
-                >
-                  <FiHeart className={`mr-2 ${isLiked ? 'fill-current' : ''}`} />
-                  {isLiked ? 'Saved' : 'Save'}
-                </button>
-                <button 
-                  onClick={handleShare}
-                  className="flex items-center px-4 py-2 rounded-lg border border-white/30 hover:bg-white/10 transition-colors"
-                >
-                  <FiShare2 className="mr-2" />
-                  Share
-                </button>
-              </div>
-            </motion.div>
-          </div>
+  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+    <div className="flex flex-col md:flex-row gap-8">
+      {/* Event Image */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, type: 'spring', stiffness: 100 }}
+        whileHover={{ scale: 1.02 }}
+        className="md:w-1/3"
+      >
+        <div className="rounded-xl overflow-hidden shadow-2xl border-4 border-white/20 hover:border-white/30 transition-all duration-300">
+          <img
+            src={getImageUrl(event.featuredImage)}
+            alt={event.title}
+            className="w-full h-64 object-cover hover:scale-105 transition-transform duration-500"
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = "https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80";
+            }}
+          />
         </div>
-      </div>
+      </motion.div>
 
+      {/* Event Info */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.2, type: 'spring', stiffness: 100 }}
+        className="md:w-2/3"
+      >
+        <div className="flex items-center mb-4">
+          <motion.span 
+            whileHover={{ scale: 1.05 }}
+            className="px-3 py-1 bg-white/20 rounded-full text-sm font-medium backdrop-blur-sm hover:bg-white/30 transition-colors"
+          >
+            {event.category}
+          </motion.span>
+          
+          {isCreator && (
+            <motion.div 
+              className="ml-auto"
+              whileHover={{ scale: 1.03 }}
+            >
+              <button
+                onClick={handleDeleteEvent}
+                disabled={deleting}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg flex items-center shadow-lg hover:shadow-red-500/30 transition-all"
+              >
+                <FiTrash2 className="mr-2" />
+                {deleting ? (
+                  <span className="flex items-center">
+                    <span className="animate-pulse">Deleting</span>
+                    <span className="ml-1 animate-[bounce_1s_infinite]">...</span>
+                  </span>
+                ) : 'Delete Event'}
+              </button>
+            </motion.div>
+          )}
+        </div>
+
+        <motion.h1 
+          className="text-3xl md:text-4xl font-bold mb-4"
+          whileHover={{ x: 5 }}
+          transition={{ type: 'spring', stiffness: 300 }}
+        >
+          {event.title}
+        </motion.h1>
+        
+        <p className="text-lg text-white/90 mb-6 leading-relaxed">
+          {event.shortDescription}
+        </p>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+          {[
+            { icon: <FiCalendar className="mr-2" />, text: formatDate(event.startDate) },
+            { icon: <FiClock className="mr-2" />, text: `${formatTime(event.startDate)} - ${formatTime(event.endDate)}` },
+            { icon: <FiMapPin className="mr-2" />, text: event.isVirtual ? 'Virtual Event' : `${event.location.venue}, ${event.location.city}` },
+            { icon: <FiTag className="mr-2" />, text: event.ticketTypes?.length > 0 ? `From ${event.ticketTypes[0].price} ${event.ticketTypes[0].currency}` : 'Free' }
+          ].map((item, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.3 + (index * 0.1) }}
+              className="flex items-center bg-white/10 px-3 py-2 rounded-lg backdrop-blur-sm hover:bg-white/20 transition-colors"
+            >
+              {item.icon}
+              <span>{item.text}</span>
+            </motion.div>
+          ))}
+        </div>
+
+        <div className="flex space-x-4">
+          <motion.button
+            onClick={toggleLike}
+            whileTap={{ scale: 0.95 }}
+            className={`flex items-center px-4 py-2 rounded-lg border border-white/30 hover:bg-white/10 transition-all ${
+              isLiked ? 'text-red-300 bg-red-500/10' : 'text-white'
+            } shadow-lg hover:shadow-white/10`}
+          >
+            <motion.div
+              animate={isLiked ? { scale: [1, 1.2, 1] } : {}}
+              transition={{ duration: 0.3 }}
+            >
+              <FiHeart className={`mr-2 ${isLiked ? 'fill-current' : ''}`} />
+            </motion.div>
+            {isLiked ? 'Saved' : 'Save'}
+          </motion.button>
+          
+          <motion.button 
+            onClick={handleShare}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="flex items-center px-4 py-2 rounded-lg border border-white/30 hover:bg-white/10 transition-all shadow-lg hover:shadow-white/10"
+          >
+            <FiShare2 className="mr-2" />
+            Share
+          </motion.button>
+        </div>
+      </motion.div>
+    </div>
+  </div>
+</div>
       {/* Event Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
